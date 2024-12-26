@@ -21,13 +21,13 @@ index 7b26860a91c..c1be0ddb8fd 100644
        revision: 0f7b166487b1ac08e1c6c492383f5c103320b2be
 ```
 
-2. install *.yaml to zephyr/dts/bindings/misc
+3. install *.yaml to zephyr/dts/bindings/misc
 ```
 cd /data/hunter/zephyr/zephyr_linkedsemi_rgmii_new_fpga_tpm/modules/lib/pfr_tpm
 bash install.sh /data/hunter/zephyr/zephyr_linkedsemi_rgmii_new_fpga_tpm/modules/lib/pfr_tpm /data/hunter/zephyr/zephyr_linkedsemi_rgmii_new_fpga_tpm/zephyr
 ```
 
-3. build
+4. build
 ```
 cd /data/hunter/zephyr/zephyr_linkedsemi_rgmii_new_fpga_tpm
 west build -b lsqsh_evb@runbmc_v3_2os/lsqsh/cpu0 -p always modules/lib/pfr_tpm/samples/spid
