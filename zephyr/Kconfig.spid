@@ -1,0 +1,9 @@
+# Copyright (c) 2024 linkedsemi <htliu@linkedsemi.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SPID_LINKEDSEMI
+    bool "tpm SPI device"
+    default y
+    depends on DT_HAS_LINKEDSEMI_SPID_ENABLED # external modual can not set
+    help
+      SPID_LINKEDSEMI

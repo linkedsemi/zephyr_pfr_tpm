@@ -1,0 +1,69 @@
+/ {
+    
+    aliases {
+        spid = &spid2;
+    };
+
+    soc {
+        spid1: spid@4000c000 {
+            compatible = "linkedsemi,spid";
+            reg = <0x4000c000 0x2000>;
+            interrupts = <56 3>, <57 3>;
+            interrupt-names = "main", "sysc";
+            status = "disabled";
+        };
+
+        spid2: spid@4000e000 {
+            compatible = "linkedsemi,spid";
+            reg = <0x4000e000 0x2000>;
+            interrupts = <58 3>, <59 3>;
+            interrupt-names = "main", "sysc";
+            status = "disabled";
+        };
+    };
+};
+
+&pinctrl {
+    /omit-if-no-ref/spid1_nss_pc00: spid1_nss_pc00 {
+        pinmux = <LS_PINMUX_SET(PC00, LSFUNC(PINMUX_FUNC4))>;
+        input-enable;
+    };
+    /omit-if-no-ref/spid1_sck_pc01: spid1_sck_pc01 {
+        pinmux = <LS_PINMUX_SET(PC01, LSFUNC(PINMUX_FUNC4))>;
+        input-enable;
+    };
+    /omit-if-no-ref/spid1_mosi_pc02: spid1_mosi_pc02 {
+        pinmux = <LS_PINMUX_SET(PC02, LSFUNC(PINMUX_FUNC4))>;
+        input-enable;
+    };
+    /omit-if-no-ref/spid1_miso_pc03: spid1_miso_pc03 {
+        pinmux = <LS_PINMUX_SET(PC03, LSFUNC(PINMUX_FUNC4))>;
+        input-enable;
+    };
+
+    /omit-if-no-ref/spid2_nss_pe04: spid2_nss_pe04 {
+        pinmux = <LS_PINMUX_SET(PE04, LSFUNC(PINMUX_FUNC4))>;
+        input-enable;
+    };
+    /omit-if-no-ref/spid2_sck_pe05: spid2_sck_pe05 {
+        pinmux = <LS_PINMUX_SET(PE05, LSFUNC(PINMUX_FUNC4))>;
+        input-enable;
+    };
+    /omit-if-no-ref/spid2_mosi_pe06: spid2_mosi_pe06 {
+        pinmux = <LS_PINMUX_SET(PE06, LSFUNC(PINMUX_FUNC4))>;
+        input-enable;
+    };
+    /omit-if-no-ref/spid2_miso_pe07: spid2_miso_pe07 {
+        pinmux = <LS_PINMUX_SET(PE07, LSFUNC(PINMUX_FUNC4))>;
+        input-enable;
+    };
+};
+
+&spid2 {
+    pinctrl-0 = <&spid2_nss_pe04
+                &spid2_sck_pe05
+                &spid2_mosi_pe06
+                &spid2_miso_pe07>;
+    pinctrl-names = "default";
+    status = "okay";
+};

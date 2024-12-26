@@ -1,0 +1,9 @@
+# Copyright (c) 2024 linkedsemi
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_FILTER_LINKEDSEMI
+    bool "i2c filter"
+    default y
+    depends on DT_HAS_LINKEDSEMI_I2C_FILTER_ENABLED
+    help
+      I2C_FILTER_LINKEDSEMI

@@ -1,0 +1,131 @@
+/ {
+    
+    aliases {
+        i2cfilter = &i2cfilter2;
+    };
+
+    soc {
+        i2cfilter1: i2cfilter@40090000 {
+            compatible = "linkedsemi,i2c-filter";
+            reg = <0x40090000 0x800>;
+            interrupts = <155 3>;
+            master-scl-delay = <0x0>;
+            master-sda-delay = <0x0>;
+            slave-scl-delay = <0x0>;
+            slave-sda-delay = <0x0>;
+            scl-hold-time = <0x1f3>;
+            status = "disabled";
+        };
+
+        i2cfilter2: i2cfilter@40090800 {
+            compatible = "linkedsemi,i2c-filter";
+            reg = <0x40090800 0x800>;
+            interrupts = <156 3>;
+            master-scl-delay = <0x0>;
+            master-sda-delay = <0x0>;
+            slave-scl-delay = <0x0>;
+            slave-sda-delay = <0x0>;
+            scl-hold-time = <0x1f3>;
+            status = "disabled";
+        };
+
+        i2cfilter3: i2cfilter@40091000 {
+            compatible = "linkedsemi,i2c-filter";
+            reg = <0x40091000 0x800>;
+            interrupts = <157 3>;
+            master-scl-delay = <0x0>;
+            master-sda-delay = <0x0>;
+            slave-scl-delay = <0x0>;
+            slave-sda-delay = <0x0>;
+            scl-hold-time = <0x1f3>;
+            status = "disabled";
+        };
+
+        i2cfilter4: i2cfilter@40091800 {
+            compatible = "linkedsemi,i2c-filter";
+            reg = <0x40091800 0x800>;
+            interrupts = <158 3>;
+            master-scl-delay = <0x0>;
+            master-sda-delay = <0x0>;
+            slave-scl-delay = <0x0>;
+            slave-sda-delay = <0x0>;
+            scl-hold-time = <0x1f3>;
+            status = "disabled";
+        };
+    };
+};
+
+&pinctrl {
+    /omit-if-no-ref/i2cfilter1_sdao_pb10: i2cfilter1_sdao_pb10 {
+        pinmux = <LS_PINMUX_SET(PB10, LSFUNC(PINMUX_FUNC3))>;
+        input-enable;
+    };
+    /omit-if-no-ref/i2cfilter1_sclo_pb11: i2cfilter1_sclo_pb11 {
+        pinmux = <LS_PINMUX_SET(PB11, LSFUNC(PINMUX_FUNC3))>;
+    };
+    /omit-if-no-ref/i2cfilter1_sdai_pq02: i2cfilter1_sdai_pq02 {
+        pinmux = <LS_PINMUX_SET(PQ02, LSFUNC(PINMUX_FUNC3))>;
+        input-enable;
+    };
+    /omit-if-no-ref/i2cfilter1_scli_pn12: i2cfilter1_scli_pn12 {
+        pinmux = <LS_PINMUX_SET(PN12, LSFUNC(PINMUX_FUNC3))>;
+        input-enable;
+    };
+
+    /omit-if-no-ref/i2cfilter2_sdao_pn13: i2cfilter2_sdao_pn13 {
+        pinmux = <LS_PINMUX_SET(PN13, LSFUNC(PINMUX_FUNC3))>;
+        input-enable;
+    };
+    /omit-if-no-ref/i2cfilter2_sclo_pn14: i2cfilter2_sclo_pn14 {
+        pinmux = <LS_PINMUX_SET(PN14, LSFUNC(PINMUX_FUNC3))>;
+    };
+    /omit-if-no-ref/i2cfilter2_sdai_pn11: i2cfilter2_sdai_pn11 {
+        pinmux = <LS_PINMUX_SET(PN11, LSFUNC(PINMUX_FUNC3))>;
+        input-enable;
+    };
+    /omit-if-no-ref/i2cfilter2_scli_pn15: i2cfilter2_scli_pn15 {
+        pinmux = <LS_PINMUX_SET(PN15, LSFUNC(PINMUX_FUNC3))>;
+        input-enable;
+    };
+
+    /omit-if-no-ref/i2cfilter3_sdao_pb14: i2cfilter3_sdao_pb14 {
+        pinmux = <LS_PINMUX_SET(PB14, LSFUNC(PINMUX_FUNC3))>;
+        input-enable;
+    };
+    /omit-if-no-ref/i2cfilter3_sclo_pb15: i2cfilter3_sclo_pb15 {
+        pinmux = <LS_PINMUX_SET(PB15, LSFUNC(PINMUX_FUNC3))>;
+    };
+    /omit-if-no-ref/i2cfilter3_sdai_pb12: i2cfilter3_sdai_pb12 {
+        pinmux = <LS_PINMUX_SET(PB12, LSFUNC(PINMUX_FUNC3))>;
+        input-enable;
+    };
+    /omit-if-no-ref/i2cfilter3_scli_pb13: i2cfilter3_scli_pb13 {
+        pinmux = <LS_PINMUX_SET(PB13, LSFUNC(PINMUX_FUNC3))>;
+        input-enable;
+    };
+
+    /omit-if-no-ref/i2cfilter4_sdao_pq06: i2cfilter4_sdao_pq06 {
+        pinmux = <LS_PINMUX_SET(PQq06, LSFUNC(PINMUX_FUNC3))>;
+        input-enable;
+    };
+    /omit-if-no-ref/i2cfilter4_sclo_pq05: i2cfilter4_sclo_pq05 {
+        pinmux = <LS_PINMUX_SET(PQ05, LSFUNC(PINMUX_FUNC3))>;
+    };
+    /omit-if-no-ref/i2cfilter4_sdai_pq04: i2cfilter4_sdai_pq04 {
+        pinmux = <LS_PINMUX_SET(PQ12, LSFUNC(PINMUX_FUNC3))>;
+        input-enable;
+    };
+    /omit-if-no-ref/i2cfilter4_scli_pq13: i2cfilter4_scli_pq13 {
+        pinmux = <LS_PINMUX_SET(PQ13, LSFUNC(PINMUX_FUNC3))>;
+        input-enable;
+    };
+};
+
+&i2cfilter2 {
+    // pinctrl-0 = <&i2cfilter2_nss_pc12
+    //             &i2cfilter2_sck_pc13
+    //             &i2cfilter2_mosi_pc14
+    //             &i2cfilter2_miso_pc15>;
+    // pinctrl-names = "default";
+    status = "okay";
+};

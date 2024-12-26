@@ -1,0 +1,9 @@
+# Copyright (c) 2024 linkedsemi
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_MONITOR_LINKEDSEMI
+    bool "spi monitor"
+    default y
+    depends on DT_HAS_LINKEDSEMI_SPI_MONITOR_ENABLED
+    help
+      SPI_MONITOR_LINKEDSEMI

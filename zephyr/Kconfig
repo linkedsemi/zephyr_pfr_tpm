@@ -1,0 +1,6 @@
+# Copyright (c) 2024 linkedsemi
+# SPDX-License-Identifier: Apache-2.0
+
+rsource "Kconfig.i2cfilter"
+rsource "Kconfig.spimonitor"
+rsource "Kconfig.spid"
