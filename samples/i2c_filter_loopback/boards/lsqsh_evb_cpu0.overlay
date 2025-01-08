@@ -1,0 +1,184 @@
+#include "../../../include/pfr_tpm_pinctrl.h"
+/ {
+    
+    aliases {
+        i2cmaster1 = &i2c5;
+        i2cmaster2 = &i2c10;
+        i2cfilter = &i2cfilter2;
+        eeprom1 = &eeprom10_50;
+    };
+
+    soc {
+        i2cfilter1: i2cfilter@40090000 {
+            compatible = "linkedsemi,i2c-filter";
+            reg = <0x40090000 0x800>;
+            interrupts = <155 3>;
+            master-scl-delay = <0x0>;
+            master-sda-delay = <0x0>;
+            slave-scl-delay = <0x0>;
+            slave-sda-delay = <0x0>;
+            scl-hold-time = <0x1f3>;
+            status = "disabled";
+        };
+
+        i2cfilter2: i2cfilter@40090800 {
+            compatible = "linkedsemi,i2c-filter";
+            reg = <0x40090800 0x800>;
+            interrupts = <156 3>;
+            master-scl-delay = <0x0>;
+            master-sda-delay = <0x0>;
+            slave-scl-delay = <0x0>;
+            slave-sda-delay = <0x0>;
+            scl-hold-time = <0x1f3>;
+            status = "disabled";
+        };
+
+        i2cfilter3: i2cfilter@40091000 {
+            compatible = "linkedsemi,i2c-filter";
+            reg = <0x40091000 0x800>;
+            interrupts = <157 3>;
+            master-scl-delay = <0x0>;
+            master-sda-delay = <0x0>;
+            slave-scl-delay = <0x0>;
+            slave-sda-delay = <0x0>;
+            scl-hold-time = <0x1f3>;
+            status = "disabled";
+        };
+
+        i2cfilter4: i2cfilter@40091800 {
+            compatible = "linkedsemi,i2c-filter";
+            reg = <0x40091800 0x800>;
+            interrupts = <158 3>;
+            master-scl-delay = <0x0>;
+            master-sda-delay = <0x0>;
+            slave-scl-delay = <0x0>;
+            slave-sda-delay = <0x0>;
+            scl-hold-time = <0x1f3>;
+            status = "disabled";
+        };
+    };
+};
+
+&pinctrl {
+    /omit-if-no-ref/i2cfilter1_sdao_pb10: i2cfilter1_sdao_pb10 {
+        pinmux = <LS_PINMUX_SMBF1_SDAO_FUNC3_PB10>;
+        input-enable;
+    };
+    /omit-if-no-ref/i2cfilter1_sclo_pb11: i2cfilter1_sclo_pb11 {
+        pinmux = <LS_PINMUX_SMBF1_SCLO_FUNC3_PB11>;
+        input-enable;
+    };
+    /omit-if-no-ref/i2cfilter1_sdai_pq02: i2cfilter1_sdai_pq02 {
+        pinmux = <LS_PINMUX_SMBF1_SDAI_FUNC3_PQ02>;
+        input-enable;
+    };
+    /omit-if-no-ref/i2cfilter1_scli_pn12: i2cfilter1_scli_pn12 {
+        pinmux = <LS_PINMUX_SMBF1_SCLI_FUNC3_PN12>;
+        input-enable;
+    };
+
+    /omit-if-no-ref/i2cfilter2_sdao_pn13: i2cfilter2_sdao_pn13 {
+        pinmux = <LS_PINMUX_SMBF2_SDAO_FUNC3_PN13>;
+        input-enable;
+    };
+    /omit-if-no-ref/i2cfilter2_sclo_pn14: i2cfilter2_sclo_pn14 {
+        pinmux = <LS_PINMUX_SMBF2_SCLO_FUNC3_PN14>;
+        input-enable;
+    };
+    /omit-if-no-ref/i2cfilter2_sdai_pn11: i2cfilter2_sdai_pn11 {
+        pinmux = <LS_PINMUX_SMBF2_SDAI_FUNC3_PN11>;
+        input-enable;
+    };
+    /omit-if-no-ref/i2cfilter2_scli_pn15: i2cfilter2_scli_pn15 {
+        pinmux = <LS_PINMUX_SMBF2_SCLI_FUNC3_PN15>;
+        input-enable;
+    };
+
+    /omit-if-no-ref/i2cfilter3_sdao_pb14: i2cfilter3_sdao_pb14 {
+        pinmux = <LS_PINMUX_SMBF3_SDAO_FUNC4_PB14>;
+        input-enable;
+    };
+    /omit-if-no-ref/i2cfilter3_sclo_pb15: i2cfilter3_sclo_pb15 {
+        pinmux = <LS_PINMUX_SMBF3_SCLO_FUNC4_PB15>;
+        input-enable;
+    };
+    /omit-if-no-ref/i2cfilter3_sdai_pb12: i2cfilter3_sdai_pb12 {
+        pinmux = <LS_PINMUX_SMBF3_SDAI_FUNC4_PB12>;
+        input-enable;
+    };
+    /omit-if-no-ref/i2cfilter3_scli_pb13: i2cfilter3_scli_pb13 {
+        pinmux = <LS_PINMUX_SMBF3_SCLI_FUNC4_PB13>;
+        input-enable;
+    };
+
+    /omit-if-no-ref/i2cfilter4_sdao_pq06: i2cfilter4_sdao_pq06 {
+        pinmux = <LS_PINMUX_SMBF4_SDAO_FUNC3_PQ06>;
+        input-enable;
+    };
+    /omit-if-no-ref/i2cfilter4_sclo_pq05: i2cfilter4_sclo_pq05 {
+        pinmux = <LS_PINMUX_SMBF4_SCLO_FUNC3_PQ05>;
+        input-enable;
+    };
+    /omit-if-no-ref/i2cfilter4_sdai_pq04: i2cfilter4_sdai_pq04 {
+        pinmux = <LS_PINMUX_SMBF4_SDAI_FUNC3_PQ04>;
+        input-enable;
+    };
+    /omit-if-no-ref/i2cfilter4_scli_pq13: i2cfilter4_scli_pq13 {
+        pinmux = <LS_PINMUX_SMBF4_SCLI_FUNC3_PQ03>;
+        input-enable;
+    };
+
+    /omit-if-no-ref/i2c5_scl_pe10: i2c5_scl_pe10 {
+        pinmux = <LS_PINMUX_SET(PE10, FIOE_I2C5_SCL)>;
+        drive-strength = "quarter max driver";
+        input-enable;
+        drive-open-drain;
+    };
+    /omit-if-no-ref/i2c5_sda_pe11: i2c5_sda_pe11 {
+        pinmux = <LS_PINMUX_SET(PE11, FIOE_I2C5_SDA)>;
+        drive-strength = "quarter max driver";
+        input-enable;
+        drive-open-drain;
+    };
+
+    /omit-if-no-ref/i2c10_scl_pj03: i2c10_scl_pj03 {
+        pinmux = <LS_PINMUX_SET(PJ03, FIOJ_I2C10_SCL)>;
+        drive-strength = "quarter max driver";
+        input-enable;
+        drive-open-drain;
+    };
+    /omit-if-no-ref/i2c10_sda_pj02: i2c10_sda_pj02 {
+        pinmux = <LS_PINMUX_SET(PJ02, FIOJ_I2C10_SDA)>;
+        drive-strength = "quarter max driver";
+        input-enable;
+        drive-open-drain;
+    };
+};
+
+&i2cfilter2 {
+    pinctrl-0 = <&i2cfilter2_scli_pn15
+                &i2cfilter2_sdai_pn11
+                &i2cfilter2_sclo_pn14
+                &i2cfilter2_sdao_pn13>;
+    pinctrl-names = "default";
+    status = "okay";
+};
+
+&i2c5 {
+    pinctrl-0 = <&i2c5_scl_pe10 &i2c5_sda_pe11>;
+    pinctrl-names = "default";
+    status = "okay";
+};
+
+&i2c10 {
+    pinctrl-0 = <&i2c10_scl_pj03 &i2c10_sda_pj02>;
+    pinctrl-names = "default";
+    status = "okay";
+
+    eeprom10_50: eeprom@50 {
+        compatible = "zephyr,i2c-target-eeprom";
+        reg = <0x50>;
+        size = <256>;
+        status = "okay";
+    };
+};

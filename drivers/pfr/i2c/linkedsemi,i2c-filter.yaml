@@ -8,32 +8,8 @@ compatible: "linkedsemi,i2c-filter"
 include: [base.yaml, pinctrl-device.yaml]
 
 properties:
-    master-scl-delay:
-      type: int
-      required: true
-      description: |
-        master-scl-delay
-
-    master-sda-delay:
-      type: int
-      required: true
-      description: |
-        master-sda-delay
-
     scl-hold-time:
       type: int
       required: true
       description: |
         scl-hold-time
-
-    slave-scl-delay:
-      type: int
-      required: true
-      description: |
-        slave-scl-delay
-
-    slave-sda-delay:
-      type: int
-      required: true
-      description: |
-        slave-scl-delay

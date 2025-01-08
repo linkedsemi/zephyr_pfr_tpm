@@ -1,9 +1,11 @@
 if(CONFIG_SPID_LINKEDSEMI)
   zephyr_include_directories(
+    ${ZEPHYR_CURRENT_MODULE_DIR}/include
     ${ZEPHYR_CURRENT_MODULE_DIR}/drivers/spid/
   )
 
   zephyr_library_include_directories(
+    ${ZEPHYR_CURRENT_MODULE_DIR}/include
     ${ZEPHYR_CURRENT_MODULE_DIR}/drivers/spid/
   )
 
@@ -16,10 +18,12 @@ endif()
 
 if(CONFIG_I2C_FILTER_LINKEDSEMI)
   zephyr_include_directories(
+    ${ZEPHYR_CURRENT_MODULE_DIR}/include
     ${ZEPHYR_CURRENT_MODULE_DIR}/drivers/pfr/i2c/
   )
 
   zephyr_library_include_directories(
+    ${ZEPHYR_CURRENT_MODULE_DIR}/include
     ${ZEPHYR_CURRENT_MODULE_DIR}/drivers/pfr/i2c/
   )
 
