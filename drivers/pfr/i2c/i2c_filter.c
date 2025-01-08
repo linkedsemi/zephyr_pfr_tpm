@@ -36,7 +36,7 @@ int linkedsemi_i2c_filter_config_scl_hold_time(const struct device *dev, uint16_
     smbf_control0_reg_t smbf_control0_reg;
 
     smbf_control0_reg.value = sys_read32(dev_config->base + SMBF_CONTROL0_REG);
-    smbf_control0_reg.field.SCL_HOLD_TIME = scl_hold_time,
+    smbf_control0_reg.field.SCL_HOLD_TIME = scl_hold_time;
     sys_write32(smbf_control0_reg.value, dev_config->base + SMBF_CONTROL0_REG);
 
     return 0;
@@ -148,7 +148,7 @@ static int linkedsemi_i2c_filter_init(const struct device *dev)
     sys_write32(intr_mask.value, dev_config->base + INTR_MSK);
 
     linkedsemi_i2c_filter_en(dev, false, false, true);
-    // linkedsemi_i2c_filter_config_scl_hold_time(dev, dev_data->scl_hold_time);
+    linkedsemi_i2c_filter_config_scl_hold_time(dev, dev_data->scl_hold_time);
 
     dev_config->irq_config_func(dev);
 
