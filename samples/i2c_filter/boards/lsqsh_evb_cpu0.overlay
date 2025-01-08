@@ -227,10 +227,6 @@
             compatible = "linkedsemi,i2c-filter";
             reg = <0x40090000 0x800>;
             interrupts = <155 3>;
-            master-scl-delay = <0x0>;
-            master-sda-delay = <0x0>;
-            slave-scl-delay = <0x0>;
-            slave-sda-delay = <0x0>;
             scl-hold-time = <0x1f3>;
             status = "disabled";
         };
@@ -239,10 +235,6 @@
             compatible = "linkedsemi,i2c-filter";
             reg = <0x40090800 0x800>;
             interrupts = <156 3>;
-            master-scl-delay = <0x0>;
-            master-sda-delay = <0x0>;
-            slave-scl-delay = <0x0>;
-            slave-sda-delay = <0x0>;
             scl-hold-time = <0x1f3>;
             status = "disabled";
         };
@@ -251,10 +243,6 @@
             compatible = "linkedsemi,i2c-filter";
             reg = <0x40091000 0x800>;
             interrupts = <157 3>;
-            master-scl-delay = <0x0>;
-            master-sda-delay = <0x0>;
-            slave-scl-delay = <0x0>;
-            slave-sda-delay = <0x0>;
             scl-hold-time = <0x1f3>;
             status = "disabled";
         };
@@ -263,10 +251,6 @@
             compatible = "linkedsemi,i2c-filter";
             reg = <0x40091800 0x800>;
             interrupts = <158 3>;
-            master-scl-delay = <0x0>;
-            master-sda-delay = <0x0>;
-            slave-scl-delay = <0x0>;
-            slave-sda-delay = <0x0>;
             scl-hold-time = <0x1f3>;
             status = "disabled";
         };
