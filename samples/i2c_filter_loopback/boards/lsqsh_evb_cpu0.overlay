@@ -113,26 +113,26 @@
     };
 
     /omit-if-no-ref/i2c5_scl_pe10: i2c5_scl_pe10 {
-        pinmux = <LS_PINMUX_SET(PE10, FIOE_I2C5_SCL)>;
+        pinmux = <LS_PINMUX_I2C5_SCL_FUNC1_PE10_IDX6>;
         drive-strength = "quarter max driver";
         input-enable;
         drive-open-drain;
     };
     /omit-if-no-ref/i2c5_sda_pe11: i2c5_sda_pe11 {
-        pinmux = <LS_PINMUX_SET(PE11, FIOE_I2C5_SDA)>;
+        pinmux = <LS_PINMUX_I2C5_SDA_FUNC1_PE11_IDX7>;
         drive-strength = "quarter max driver";
         input-enable;
         drive-open-drain;
     };
 
     /omit-if-no-ref/i2c10_scl_pj03: i2c10_scl_pj03 {
-        pinmux = <LS_PINMUX_SET(PJ03, FIOJ_I2C10_SCL)>;
+        pinmux = <LS_PINMUX_I2C10_SCL_FUNC1_PJ03_IDX6>;
         drive-strength = "quarter max driver";
         input-enable;
         drive-open-drain;
     };
     /omit-if-no-ref/i2c10_sda_pj02: i2c10_sda_pj02 {
-        pinmux = <LS_PINMUX_SET(PJ02, FIOJ_I2C10_SDA)>;
+        pinmux = <LS_PINMUX_I2C10_SDA_FUNC1_PJ02_IDX7>;
         drive-strength = "quarter max driver";
         input-enable;
         drive-open-drain;
