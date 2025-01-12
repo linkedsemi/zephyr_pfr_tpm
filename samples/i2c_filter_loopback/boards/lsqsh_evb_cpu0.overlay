@@ -4,7 +4,7 @@
     aliases {
         i2cmaster1 = &i2c5;
         i2cmaster2 = &i2c10;
-        i2cfilter = &i2cfilter2;
+        i2cfilter = &i2cfilter3;
         eeprom1 = &eeprom10_50;
     };
 
@@ -29,7 +29,7 @@
             compatible = "linkedsemi,i2c-filter";
             reg = <0x40091000 0x800>;
             interrupts = <157 3>;
-            scl-hold-time = <0x1f3>;
+            scl-hold-time = <0xfa>;
             status = "disabled";
         };
 
@@ -44,14 +44,6 @@
 };
 
 &pinctrl {
-    /omit-if-no-ref/i2cfilter1_sdao_pb10: i2cfilter1_sdao_pb10 {
-        pinmux = <LS_PINMUX_SMBF1_SDAO_FUNC3_PB10>;
-        input-enable;
-    };
-    /omit-if-no-ref/i2cfilter1_sclo_pb11: i2cfilter1_sclo_pb11 {
-        pinmux = <LS_PINMUX_SMBF1_SCLO_FUNC3_PB11>;
-        input-enable;
-    };
     /omit-if-no-ref/i2cfilter1_sdai_pq02: i2cfilter1_sdai_pq02 {
         pinmux = <LS_PINMUX_SMBF1_SDAI_FUNC3_PQ02>;
         input-enable;
@@ -69,12 +61,13 @@
         pinmux = <LS_PINMUX_SMBF2_SCLO_FUNC3_PN14>;
         input-enable;
     };
-    /omit-if-no-ref/i2cfilter2_sdai_pn11: i2cfilter2_sdai_pn11 {
-        pinmux = <LS_PINMUX_SMBF2_SDAI_FUNC3_PN11>;
+
+    /omit-if-no-ref/i2c13_sda_pn11: i2c13_sda_pn11 {
+        pinmux = <LS_PINMUX_I2C13_SDA_FUNC1_IDX11_PN(11)>;
         input-enable;
     };
-    /omit-if-no-ref/i2cfilter2_scli_pn15: i2cfilter2_scli_pn15 {
-        pinmux = <LS_PINMUX_SMBF2_SCLI_FUNC3_PN15>;
+    /omit-if-no-ref/i2c13_scl_pn15: i2c13_scl_pn15 {
+        pinmux = <LS_PINMUX_I2C13_SCL_FUNC1_IDX10_PN(15)>;
         input-enable;
     };
 
@@ -112,42 +105,54 @@
         input-enable;
     };
 
-    /omit-if-no-ref/i2c5_scl_pe10: i2c5_scl_pe10 {
-        pinmux = <LS_PINMUX_I2C5_SCL_FUNC1_PE10_IDX6>;
+    /omit-if-no-ref/i2c2_scl_pb11: i2c2_scl_pb11 {
+        pinmux = <LS_PINMUX_I2C2_SCL_FUNC1_IDX10_PB(11)>;
         drive-strength = "quarter max driver";
         input-enable;
-        drive-open-drain;
+    };
+    /omit-if-no-ref/i2c2_sda_pb10: i2c2_sda_pb10 {
+        pinmux = <LS_PINMUX_I2C2_SDA_FUNC1_IDX11_PB(10)>;
+        drive-strength = "quarter max driver";
+        input-enable;
+    };
+
+    /omit-if-no-ref/i2c5_scl_pe10: i2c5_scl_pe10 {
+        pinmux = <LS_PINMUX_I2C5_SCL_FUNC1_IDX6_PE(10)>;
+        drive-strength = "quarter max driver";
+        input-enable;
     };
     /omit-if-no-ref/i2c5_sda_pe11: i2c5_sda_pe11 {
-        pinmux = <LS_PINMUX_I2C5_SDA_FUNC1_PE11_IDX7>;
+        pinmux = <LS_PINMUX_I2C5_SDA_FUNC1_IDX7_PE(11)>;
         drive-strength = "quarter max driver";
         input-enable;
-        drive-open-drain;
     };
 
     /omit-if-no-ref/i2c10_scl_pj03: i2c10_scl_pj03 {
-        pinmux = <LS_PINMUX_I2C10_SCL_FUNC1_PJ03_IDX6>;
+        pinmux = <LS_PINMUX_I2C10_SCL_FUNC1_IDX6_PJ(03)>;
         drive-strength = "quarter max driver";
         input-enable;
-        drive-open-drain;
     };
     /omit-if-no-ref/i2c10_sda_pj02: i2c10_sda_pj02 {
-        pinmux = <LS_PINMUX_I2C10_SDA_FUNC1_PJ02_IDX7>;
+        pinmux = <LS_PINMUX_I2C10_SDA_FUNC1_IDX7_PJ(02)>;
         drive-strength = "quarter max driver";
         input-enable;
-        drive-open-drain;
     };
 };
 
-&i2cfilter2 {
-    pinctrl-0 = <&i2cfilter2_scli_pn15
-                &i2cfilter2_sdai_pn11
-                &i2cfilter2_sclo_pn14
-                &i2cfilter2_sdao_pn13>;
+&i2cfilter3 {
+    pinctrl-0 = <&i2cfilter3_sdao_pb14
+                &i2cfilter3_sclo_pb15
+                &i2cfilter3_sdai_pb12
+                &i2cfilter3_scli_pb13>;
     pinctrl-names = "default";
     status = "okay";
 };
 
+&i2c2 {
+    pinctrl-0 = <&i2c2_sda_pb10 &i2c2_scl_pb11>;
+    pinctrl-names = "default";
+    status = "okay";
+};
 &i2c5 {
     pinctrl-0 = <&i2c5_scl_pe10 &i2c5_sda_pe11>;
     pinctrl-names = "default";
@@ -164,5 +169,18 @@
         reg = <0x50>;
         size = <256>;
         status = "okay";
+    };
+};
+
+&i2c13 {
+    pinctrl-0 = <&i2c13_sda_pn11 &i2c13_scl_pn15>;
+    pinctrl-names = "default";
+    status = "disabled";
+
+    eeprom13_50: eeprom@50 {
+        compatible = "zephyr,i2c-target-eeprom";
+        reg = <0x50>;
+        size = <256>;
+        status = "disabled";
     };
 };
