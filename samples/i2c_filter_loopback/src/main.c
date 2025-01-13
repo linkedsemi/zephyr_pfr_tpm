@@ -147,9 +147,9 @@ while(1);
     for (uint8_t bit = 0; bit <= 0xff; bit++) {
         printf("\n------------------------------------------------------\n");
         sys_bitfield_set_bit((mem_addr_t)bitmap, bit);
-        linkedsemi_i2c_filter_en(i2cfilter, false, is_whitelist_on, false); /* close filter */
+        linkedsemi_i2c_filter_en(i2cfilter, false, is_whitelist_on, false); /* disable filter */
         linkedsemi_i2c_filter_fill_bitmap(i2cfilter, 0, WHT_ADDR_0, bitmap); /* set bitmap */
-        linkedsemi_i2c_filter_en(i2cfilter, true, is_whitelist_on, false); /* reopen filter */
+        linkedsemi_i2c_filter_en(i2cfilter, true, is_whitelist_on, false); /* enable filter */
         for (uint16_t len = 1; len <= BUF_SIZE; len++) {
             printf("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
             for (uint16_t start_addr = 0; start_addr <= 0xff; start_addr++) {
@@ -180,6 +180,8 @@ while(1);
                     }
                     printf("bit: %d  len: %d  start_addr: %#x\n", bit, len, start_addr);
                     printf("result: pass\n");
+                    memset(wdata_buf, 0, curr_len);
+                    i2c_burst_write(i2cmaster1, dev_addr, start_addr, wdata_buf, curr_len);
                 }
             }
             sys_bitfield_clear_bit((mem_addr_t)bitmap, bit);
