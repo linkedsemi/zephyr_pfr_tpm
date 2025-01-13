@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2024, linkedsemi
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+ / {
+    aliases {
+        sw0 = &btn0;
+    };
+
+    keys {
+        compatible = "gpio-keys";
+        btn0: btn_0{
+            gpios = <&gpiot 15 BTN_GPIO_FLAGS>;
+            label = "Push button 1";
+        };
+    };
+};
