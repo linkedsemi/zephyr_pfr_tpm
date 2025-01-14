@@ -1,0 +1,8 @@
+# Copyright (c) 2024, linkedsemi
+# SPDX-License-Identifier: Apache-2.0
+
+description: linkedsemi spi filter
+
+compatible: "linkedsemi,spi-filter"
+
+include: [base.yaml, pinctrl-device.yaml]
