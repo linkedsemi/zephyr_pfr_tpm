@@ -323,6 +323,15 @@
     };
 };
 
+&i2cfilter1 {
+    pinctrl-0 = <&i2cfilter1_sdao_pb10
+                &i2cfilter1_sclo_pb11
+                &i2cfilter1_sdai_pq02
+                &i2cfilter1_scli_pn12>;
+    pinctrl-names = "default";
+    status = "disabled";
+};
+
 &i2cfilter2 {
     pinctrl-0 = <&i2cfilter2_scli_pn15
                 &i2cfilter2_sdai_pn11
@@ -330,4 +339,22 @@
                 &i2cfilter2_sdao_pn13>;
     pinctrl-names = "default";
     status = "okay";
+};
+
+&i2cfilter3 {
+    pinctrl-0 = <&i2cfilter3_sdao_pb14
+                &i2cfilter3_sclo_pb15
+                &i2cfilter3_sdai_pb12
+                &i2cfilter3_scli_pb13>;
+    pinctrl-names = "default";
+    status = "disabled";
+};
+
+&i2cfilter4 {
+    pinctrl-0 = <&i2cfilter4_sdao_pq06
+                &i2cfilter4_sclo_pq05
+                &i2cfilter4_sdai_pq04
+                &i2cfilter4_scli_pq13>;
+    pinctrl-names = "default";
+    status = "disabled";
 };
