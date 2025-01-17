@@ -6,3 +6,95 @@ description: linkedsemi spi filter
 compatible: "linkedsemi,spi-filter"
 
 include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  cmd-page-program:
+      type: int
+      default: 0x02
+  cmd-page-program-quad-address-quad-data:
+      type: int
+      default: 0x38
+  cmd-erase-4kb:
+      type: int
+      default: 0x20
+  cmd-erase-32kb:
+      type: int
+      default: 0x52
+  cmd-erase-64kb:
+      type: int
+      default: 0xd8
+  cmd-read:
+      type: int
+      default: 0x03
+  cmd-fast-read:
+      type: int
+      default: 0x0b
+  cmd-read-quad-data:
+      type: int
+      default: 0x6b
+  cmd-read-quad-address-quad-data:
+      type: int
+      default: 0xeb
+  cmd-quad-spi-mode-enter:
+      type: int
+      default: 0x35
+  cmd-quad-spi-mode-exit:
+      type: int
+      default: 0xf5
+  cmd-4byte-mode-enter:
+      type: int
+      default: 0xb7
+  cmd-4byte-mode-exit:
+      type: int
+      default: 0xe9
+  cmd-4byte-read-extended-address:
+      type: int
+      default: 0xc8
+  cmd-4byte-write-extended-address:
+      type: int
+      default: 0xc5
+  cmd-4byte-page-program:
+      type: int
+      default: 0x12
+  cmd-4byte-page-program-quad-address-quad-data:
+      type: int
+      default: 0x3e
+  cmd-4byte-erase-4kb:
+      type: int
+      default: 0x21
+  cmd-4byte-erase-32kb:
+      type: int
+      default: 0x5c
+  cmd-4byte-erase-64kb:
+      type: int
+      default: 0xdc
+  cmd-4byte-read:
+      type: int
+      default: 0x13
+  cmd-4byte-fast-read:
+      type: int
+      default: 0x0c
+  cmd-4byte-read-quad-data:
+      type: int
+      default: 0x6c
+  cmd-4byte-read-quad-address-quad-data:
+      type: int
+      default: 0xec
+  cmd-read-dual-data:
+      type: int
+      default: 0x3b
+  cmd-read-dual-addr-dual-data:
+      type: int
+      default: 0x3c
+  cmd-4byte-read-dual-data:
+      type: int
+      default: 0xbb
+  cmd-4byte-read-dual-addr-dual-data:
+      type: int
+      default: 0xbc
+  cmd-program-quad-data:
+      type: int
+      default: 0x32
+  cmd-4byte-program-quad-data:
+      type: int
+      default: 0x34
