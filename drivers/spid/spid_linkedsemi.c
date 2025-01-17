@@ -29,7 +29,7 @@ struct spid_linkedsemi_data {
 typedef void (*irq_cfg_func_t)(const struct device *dev);
 
 struct spid_linkedsemi_config {
-    mem_addr_t reg;
+    mm_reg_t reg;
     uint32_t data;
 #if defined(CONFIG_PINCTRL)
     const struct pinctrl_dev_config *pcfg;
@@ -45,7 +45,9 @@ static void linkedsemi_spid_main_isr(const struct device *dev)
     uint32_t stat = sys_read32(cfg->reg + SPID_INTR_STATE);
     printk("%s stat: 0x%x\n", __func__, stat);
     if (stat) {
-        data->cb(dev, 0, data->user_data, NULL);
+        if (data->cb) {
+            data->cb(dev, 0, data->user_data, NULL);
+        }
     }
 
     sys_write32(0xff, cfg->reg + SPID_INTR_STATE);
@@ -127,7 +129,7 @@ static int spid_linkedsemi_init(const struct device *dev)
     IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_INST_DEFINE(index)));                        \
     SPID_LINKEDSEMI_IRQ_HANDLER(index)                                                  \
     static const struct spid_linkedsemi_config spid_linkedsemi_cfg_##index = {          \
-        .reg = (mem_addr_t)DT_INST_REG_ADDR(index),                                     \
+        .reg = (mm_reg_t)DT_INST_REG_ADDR(index),                                     \
         .irq_config_func = spid_linkedsemi_irq_config_func_##index,                     \
         IF_ENABLED(CONFIG_PINCTRL, (.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index), ))   \
         IF_ENABLED(DT_HAS_CLOCKS(index), (.cctl_cfg = LS_DT_CLK_CFG_ITEM(index), ))     \
