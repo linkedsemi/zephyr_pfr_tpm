@@ -44,6 +44,14 @@
 };
 
 &pinctrl {
+    /omit-if-no-ref/i2cfilter1_sdao_pb10: i2cfilter1_sdao_pb10 {
+        pinmux = <LS_PINMUX_SMBF1_SDAO_FUNC3_PB10>;
+        input-enable;
+    };
+    /omit-if-no-ref/i2cfilter1_sclo_pb11: i2cfilter1_sclo_pb11 {
+        pinmux = <LS_PINMUX_SMBF1_SCLO_FUNC3_PB11>;
+        input-enable;
+    };
     /omit-if-no-ref/i2cfilter1_sdai_pq02: i2cfilter1_sdai_pq02 {
         pinmux = <LS_PINMUX_SMBF1_SDAI_FUNC3_PQ02>;
         input-enable;
@@ -61,13 +69,12 @@
         pinmux = <LS_PINMUX_SMBF2_SCLO_FUNC3_PN14>;
         input-enable;
     };
-
-    /omit-if-no-ref/i2c13_sda_pn11: i2c13_sda_pn11 {
-        pinmux = <LS_PINMUX_I2C13_SDA_FUNC1_IDX11_PN(11)>;
+    /omit-if-no-ref/i2cfilter2_sdai_pn11: i2cfilter2_sdai_pn11 {
+        pinmux = <LS_PINMUX_SMBF2_SDAI_FUNC3_PN11>;
         input-enable;
     };
-    /omit-if-no-ref/i2c13_scl_pn15: i2c13_scl_pn15 {
-        pinmux = <LS_PINMUX_I2C13_SCL_FUNC1_IDX10_PN(15)>;
+    /omit-if-no-ref/i2cfilter2_scli_pn15: i2cfilter2_scli_pn15 {
+        pinmux = <LS_PINMUX_SMBF2_SCLI_FUNC3_PN15>;
         input-enable;
     };
 
@@ -199,15 +206,15 @@
     };
 };
 
-&i2c13 {
-    pinctrl-0 = <&i2c13_sda_pn11 &i2c13_scl_pn15>;
-    pinctrl-names = "default";
-    status = "disabled";
+// &i2c13 {
+//     pinctrl-0 = <&i2c13_sda_pn11 &i2c13_scl_pn15>;
+//     pinctrl-names = "default";
+//     status = "disabled";
 
-    eeprom13_50: eeprom@50 {
-        compatible = "zephyr,i2c-target-eeprom";
-        reg = <0x50>;
-        size = <256>;
-        status = "disabled";
-    };
-};
+//     eeprom13_50: eeprom@50 {
+//         compatible = "zephyr,i2c-target-eeprom";
+//         reg = <0x50>;
+//         size = <256>;
+//         status = "disabled";
+//     };
+// };
