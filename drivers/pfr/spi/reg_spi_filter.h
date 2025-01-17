@@ -83,6 +83,9 @@
 #define SPIF_INIT_CMD39               (0x140)
 #define SPIF_WRITE_ADDR_VALID_EN_ADDR (0x800)  /* 0x800-0xfff */
 #define SPIF_READ_ADDR_VALID_EN_ADDR  (0x1000) /* 0x1000-0x17ff */
+#define SPIF_ADDR_SIZE                (0x800)
+#define SPIF_CMD_BASE                 SPIF_PRG_CMD
+#define SPIF_ADDR_PRIV_TABLE_BASE     SPIF_WRITE_ADDR_VALID_EN_ADDR
 
 typedef union __packed __aligned(4) {
     volatile uint32_t value;
@@ -144,7 +147,40 @@ typedef union __packed __aligned(4) {
     } field;
 } spif_cmd_t;
 
-#define SPIF_CMD_BASE                                 SPIF_PRG_CMD
+
+enum cmd_table {
+    IDX_CMD_PAGE_PROGRAM,
+    IDX_CMD_PAGE_PROGRAM_QUAD_ADDRESS_QUAD_DATA,
+    IDX_CMD_ERASE_4KB,
+    IDX_CMD_ERASE_32KB,
+    IDX_CMD_ERASE_64KB,
+    IDX_CMD_READ,
+    IDX_CMD_FAST_READ,
+    IDX_CMD_READ_QUAD_DATA,
+    IDX_CMD_READ_QUAD_ADDRESS_QUAD_DATA,
+    IDX_CMD_QUAD_SPI_MODE_ENTER,
+    IDX_CMD_QUAD_SPI_MODE_EXIT,
+    IDX_CMD_4BYTE_MODE_ENTER,
+    IDX_CMD_4BYTE_MODE_EXIT,
+    IDX_CMD_4BYTE_READ_EXTENDED_ADDRESS,
+    IDX_CMD_4BYTE_WRITE_EXTENDED_ADDRESS,
+    IDX_CMD_4BYTE_PAGE_PROGRAM,
+    IDX_CMD_4BYTE_PAGE_PROGRAM_QUAD_ADDRESS_QUAD_DATA,
+    IDX_CMD_4BYTE_ERASE_4KB,
+    IDX_CMD_4BYTE_ERASE_32KB,
+    IDX_CMD_4BYTE_ERASE_64KB,
+    IDX_CMD_4BYTE_READ,
+    IDX_CMD_4BYTE_FAST_READ,
+    IDX_CMD_4BYTE_READ_QUAD_DATA,
+    IDX_CMD_4BYTE_READ_QUAD_ADDRESS_QUAD_DATA,
+    IDX_CMD_READ_DUAL_DATA,
+    IDX_CMD_READ_DUAL_ADDR_DUAL_DATA,
+    IDX_CMD_4BYTE_READ_DUAL_DATA,
+    IDX_CMD_4BYTE_READ_DUAL_ADDR_DUAL_DATA,
+    IDX_CMD_PROGRAM_QUAD_DATA,
+    IDX_CMD_4BYTE_PROGRAM_QUAD_DATA,
+};
+
 #define CMD_PAGE_PROGRAM                              0x02
 #define CMD_PAGE_PROGRAM_QUAD_ADDRESS_QUAD_DATA       0x38
 #define CMD_ERASE_4KB                                 0x20
@@ -169,7 +205,12 @@ typedef union __packed __aligned(4) {
 #define CMD_4BYTE_FAST_READ                           0x0c
 #define CMD_4BYTE_READ_QUAD_DATA                      0x6c
 #define CMD_4BYTE_READ_QUAD_ADDRESS_QUAD_DATA         0xec
-//#define Enable_Quad_SPI_Mode                0, 1 0
-//#define Enable_4_byte_Address               0, 1 0
+#define CMD_READ_DUAL_DATA                            0x3b
+#define CMD_READ_DUAL_ADDR_DUAL_DATA                  0x3c
+#define CMD_4BYTE_READ_DUAL_DATA                      0xbb
+#define CMD_4BYTE_READ_DUAL_ADDR_DUAL_DATA            0xbc
+#define CMD_PROGRAM_QUAD_DATA                         0x32
+#define CMD_4BYTE_PROGRAM_QUAD_DATA                   0x34
+
 
 #endif /* REG_SPI_FILTER_H_ */
