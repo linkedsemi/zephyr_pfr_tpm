@@ -20,7 +20,7 @@
 LOG_MODULE_REGISTER(i2c_pfr_filter);
 
 struct linkedsemi_i2c_filter_config {
-    mem_addr_t base;
+    mm_reg_t base;
     const struct pinctrl_dev_config *pcfg;
     void (*irq_config_func)(const struct device *dev);
 };
@@ -88,7 +88,7 @@ int linkedsemi_i2c_filter_fill_bitmap(const struct device *dev,
     sys_write32(idx, dev_config->base + SMBF_ADDRESS_INDEX);
     for (uint8_t i = 0; i < LINKEDSEMI_I2C_F_REMAP_SIZE_U32; i++) {
         uint32_t val = bitmap[i];
-        mem_addr_t reg = (mem_addr_t)(WHITELIST_COMMAND_0 + i * 4);
+        mm_reg_t reg = (mm_reg_t)(WHITELIST_COMMAND_0 + i * 4);
         sys_write32(val, dev_config->base + reg);
     }
 
@@ -117,7 +117,7 @@ int linkedsemi_i2c_filter_en(const struct device *dev,
         for (uint8_t idx = 0; idx < LINKEDSEMI_I2C_F_ADDR_NUM; idx++) {
             sys_write32(idx, dev_config->base + SMBF_ADDRESS_INDEX);
             for (uint8_t whtlst = 0; whtlst < LINKEDSEMI_I2C_F_REMAP_SIZE_U32; whtlst++) {
-                sys_write32(0, dev_config->base + (mem_addr_t)(WHITELIST_COMMAND_0 + whtlst * 4));
+                sys_write32(0, dev_config->base + (mm_reg_t)(WHITELIST_COMMAND_0 + whtlst * 4));
             }
         }
     }
@@ -131,11 +131,13 @@ static int linkedsemi_i2c_filter_init(const struct device *dev)
     __unused struct linkedsemi_i2c_filter_data *dev_data = dev->data;
 
 #if defined(CONFIG_PINCTRL)
-    int ret;
-    ret = pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_DEFAULT);
-    if (ret < 0) {
-        LOG_ERR("Could not configure ethernet pins");
-        return ret;
+    if (dev_config->pcfg != NULL) {
+        int ret;
+        ret = pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_DEFAULT);
+        if (ret < 0) {
+            LOG_ERR("Could not configure ethernet pins");
+            return ret;
+        }
     }
 #endif
 
@@ -168,7 +170,7 @@ static int linkedsemi_i2c_filter_init(const struct device *dev)
     }                                                                                     \
     PINCTRL_DT_INST_DEFINE(inst);                                                         \
     static const struct linkedsemi_i2c_filter_config linkedsemi_i2c_filter_cfg_##inst = { \
-        .base = (mem_addr_t)DT_INST_REG_ADDR(inst),                                       \
+        .base = (mm_reg_t)DT_INST_REG_ADDR(inst),                                       \
         .irq_config_func = linkedsemi_i2c_filter_irq_config_func_##inst,                  \
         IF_ENABLED(CONFIG_PINCTRL, (.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst), ))      \
     };                                                                                    \
