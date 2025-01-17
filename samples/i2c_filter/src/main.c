@@ -14,7 +14,7 @@
 int main(void)
 {
     const struct device *const i2cfilter = DEVICE_DT_GET(DT_ALIAS(i2cfilter));
-    uint8_t bitmap[LINKEDSEMI_I2C_F_REMAP_SIZE_BYTE] = {};
+    uint32_t bitmap[LINKEDSEMI_I2C_F_REMAP_SIZE_U32] = {};
     linkedsemi_i2c_filter_fill_bitmap(i2cfilter, 0, 0x50, bitmap);
     linkedsemi_i2c_filter_en(i2cfilter, true, true, false);
 
