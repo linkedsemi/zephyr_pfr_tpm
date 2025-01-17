@@ -27,6 +27,8 @@ struct linkedsemi_i2c_filter_config {
 
 struct linkedsemi_i2c_filter_data {
     uint16_t scl_hold_time;
+    i2c_filter_callback_t cb;
+    void *user_data;
 };
 
 int linkedsemi_i2c_filter_config_scl_hold_time(const struct device *dev, uint16_t scl_hold_time)
@@ -38,6 +40,19 @@ int linkedsemi_i2c_filter_config_scl_hold_time(const struct device *dev, uint16_
     smbf_control0_reg.value = sys_read32(dev_config->base + SMBF_CONTROL0_REG);
     smbf_control0_reg.field.SCL_HOLD_TIME = scl_hold_time;
     sys_write32(smbf_control0_reg.value, dev_config->base + SMBF_CONTROL0_REG);
+
+    return 0;
+}
+
+int linkedsemi_i2c_filter_register_callback(const struct device *dev,
+                                      uint32_t callback_idx,
+                                      i2c_filter_callback_t cb,
+                                      void *user_data)
+{
+    struct linkedsemi_spi_filter_data *dev_data = dev->data;
+
+    dev_data->cb = cb;
+    dev_data->user_data = user_data;
 
     return 0;
 }
@@ -60,6 +75,10 @@ static void linkedsemi_i2c_filter_isr(const struct device *dev)
         LOG_DBG("command beyond whitelist: i2c@%#x cmd@%#x\n",
                                                     smbf_nonwhitelist.field.ERROR_ADDRESS,
                                                     smbf_nonwhitelist.field.ERROR_COMMAND);
+    }
+
+    if (dev_data->cb) {
+        dev_data->cb(dev, 0, dev_data->user_data, NULL);
     }
 }
 

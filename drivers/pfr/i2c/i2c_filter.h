@@ -15,6 +15,16 @@
 extern "C" {
 #endif
 
+typedef void (*i2c_filter_callback_t)(const struct device *dev,
+                                    uint32_t callback_idx,
+                                    void *user_data,
+                                    void *drv_data);
+
+int linkedsemi_i2c_filter_register_callback(const struct device *dev,
+                                      uint32_t callback_idx,
+                                      i2c_filter_callback_t cb,
+                                      void *user_data);
+
 int linkedsemi_i2c_filter_fill_bitmap(const struct device *dev,
                                     uint8_t idx,
                                     uint8_t addr,

@@ -33,7 +33,7 @@ struct linkedsemi_spi_filter_data {
     void *user_data;
 };
 
-int spif_linkedsemi_register_callback(const struct device *dev,
+int linkedsemi_spif_register_callback(const struct device *dev,
                                       uint32_t callback_idx,
                                       spif_callback_t cb,
                                       void *user_data)

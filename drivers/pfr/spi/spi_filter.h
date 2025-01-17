@@ -42,6 +42,10 @@ typedef void (*spif_callback_t)(const struct device *dev,
                                 void *user_data,
                                 void *drv_data);
 
+int linkedsemi_spif_register_callback(const struct device *dev,
+                                      uint32_t callback_idx,
+                                      spif_callback_t cb,
+                                      void *user_data);
 void spif_dump_cmd_table(const struct device *dev);
 int spif_get_cmd_slot(const struct device *dev, uint8_t cmd, uint32_t start_off);
 int spif_add_cmd(const struct device *dev, uint8_t cmd);
@@ -53,7 +57,6 @@ int spif_address_privilege_config(const struct device *dev,
                                   mm_reg_t addr,
                                   uint32_t len);
 void spif_monitor_enable(const struct device *dev, bool enable);
-void aspeed_spi_monitor_sw_rst(const struct device *dev);
 
 /**
  * @}
