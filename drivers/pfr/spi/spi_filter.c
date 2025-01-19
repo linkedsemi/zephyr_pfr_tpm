@@ -51,11 +51,16 @@ static void linkedsemi_spi_filter_isr(const struct device *dev)
     __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
     __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
     spif_intr_t intr_status;
+    uint32_t illegal_cmd;
+    uint32_t illegal_addr;
 
     intr_status.value = sys_read32(dev_config->base + SPIF_INTR_STT);
     sys_write32(intr_status.value, dev_config->base + SPIF_INTR_CLR);
-
-    printk("linkedsemi_spi_filter_isr: %#x\n", intr_status.value);
+    illegal_cmd = sys_read32(dev_config->base + SPIF_ILLEGAL_CMD);
+    illegal_addr = sys_read32(dev_config->base + SPIF_ILLEGAL_ADDR);
+    LOG_DBG("linkedsemi_spi_filter_isr: %#x\n", intr_status.value);
+    LOG_DBG("SPIF_ILLEGAL_CMD: %#x\n", illegal_cmd);
+    LOG_DBG("SPIF_ILLEGAL_ADDR: %#x\n", illegal_addr);
 
     if (dev_data->cb) {
         dev_data->cb(dev, 0, dev_data->user_data, NULL);
@@ -80,6 +85,22 @@ static void release_spif_device(const struct device *dev)
     }
 }
 
+static int spif_get_empty_general_cmd_slot(const struct device *dev)
+{
+    __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
+    __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
+    int idx;
+    spif_cmd_t spif_cmd;
+
+    for (idx = 0; idx < SPIF_GENERAL_CMD_TABLE_NUM; idx++) {
+        spif_cmd.value = sys_read32(dev_config->base + SPIF_GENERAL_CMD_BASE + idx * 4);
+        if ((spif_cmd.value) == 0)
+            return idx;
+    }
+
+    return -ENOSR;
+}
+
 static int spif_get_empty_cmd_slot(const struct device *dev)
 {
     __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
@@ -90,6 +111,22 @@ static int spif_get_empty_cmd_slot(const struct device *dev)
     for (idx = SPIF_FIXED_CMD_TABLE_NUM; idx < SPIF_CMD_TABLE_NUM; idx++) {
         spif_cmd.value = sys_read32(dev_config->base + SPIF_CMD_BASE + idx * 4);
         if ((spif_cmd.value) == 0)
+            return idx;
+    }
+
+    return -ENOSR;
+}
+
+int spif_get_general_cmd_slot(const struct device *dev, uint8_t cmd, uint32_t start_off)
+{
+    __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
+    __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
+    int idx;
+    spif_cmd_t spif_cmd;
+
+    for (idx = start_off; idx < SPIF_GENERAL_CMD_TABLE_NUM; idx++) {
+        spif_cmd.value = sys_read32(dev_config->base + SPIF_GENERAL_CMD_BASE + idx * 4);
+        if ((spif_cmd.field.CMD) == cmd)
             return idx;
     }
 
@@ -111,7 +148,6 @@ int spif_get_cmd_slot(const struct device *dev, uint8_t cmd, uint32_t start_off)
 
     return -ENOSR;
 }
-
 void spif_dump_cmd_table(const struct device *dev)
 {
     __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
@@ -124,7 +160,7 @@ void spif_dump_cmd_table(const struct device *dev)
         spif_cmd.value = sys_read32(dev_config->base + SPIF_CMD_BASE + i * 4);
         if (spif_cmd.value == 0)
             continue;
-        printk("[%s]idx %02d: 0x%02x: %s\n", dev->name, i,
+        LOG_DBG("[%s]idx %02d: 0x%02x: %s\n", dev->name, i,
             spif_cmd.field.CMD, spif_cmd.field.EN == 1 ? "enabled" : "disabled");
     }
 
@@ -198,12 +234,12 @@ void spif_dump_rw_addr_privilege_table(const struct device *dev)
     for (rw = 0; rw < 2; rw++) {
         memset(&start, 0x0, sizeof(struct priv_reg_info));
         memset(&res, 0x0, sizeof(struct priv_reg_info));
-        printk("%s mgnt regions:\n", rw == 0 ? "read" : "write");
+        LOG_DBG("%s mgnt regions:\n", rw == 0 ? "read" : "write");
         do {
             spif_mgnt_area_parser(dev, start, &res, &num_forbidden_blk, rw);
             if (num_forbidden_blk != 0) {
                 mgnt_en = true;
-                printk("[0x%08x - 0x%08x]\n",
+                LOG_DBG("[0x%08x - 0x%08x]\n",
                        SPIF_ABS_ADDR(res.start_reg_off, res.start_bit_off),
                        SPIF_ABS_ADDR(res.end_reg_off, res.end_bit_off));
                 start.start_reg_off = res.end_reg_off;
@@ -212,8 +248,8 @@ void spif_dump_rw_addr_privilege_table(const struct device *dev)
         } while (num_forbidden_blk != 0);
 
         if (!mgnt_en)
-            printk("all regions are %s!\n", rw == 0 ? "readable" : "writable");
-        printk("======END======\n\n");
+            LOG_DBG("all regions are %s!\n", rw == 0 ? "readable" : "writable");
+        LOG_DBG("======END======\n\n");
     }
 
     release_spif_device(dev);
@@ -328,6 +364,46 @@ end:
     return ret;
 }
 
+int spif_add_general_cmd(const struct device *dev, uint8_t cmd)
+{
+    __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
+    __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
+    int ret = 0;
+    mm_reg_t table_base = dev_config->base + SPIF_GENERAL_CMD_BASE;
+    int idx;
+
+    acquire_spif_device(dev);
+
+    for (uint8_t off = 0; off < SPIF_GENERAL_CMD_TABLE_NUM; off++) {
+        idx = spif_get_general_cmd_slot(dev, cmd, off);
+        if (idx >= 0) {
+            spif_cmd_t spif_cmd;
+            spif_cmd.value = sys_read32(table_base + idx * 4);
+            spif_cmd.field.EN = 1;
+            sys_write32(spif_cmd.value, table_base + idx * 4);
+            goto end;
+        } else {
+            break;
+        }
+    }
+
+    idx = spif_get_empty_general_cmd_slot(dev);
+    if (idx < 0) {
+        LOG_ERR("No more space for new cmd");
+        ret = -ENOSR;
+        goto end;
+    }
+    spif_cmd_t spif_cmd;
+    spif_cmd.field.CMD = cmd;
+    spif_cmd.field.EN = 1;
+    sys_write32(spif_cmd.value, table_base + idx * 4);
+
+end:
+    release_spif_device(dev);
+
+    return ret;
+}
+
 int spif_add_cmd(const struct device *dev, uint8_t cmd)
 {
     __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
@@ -345,6 +421,7 @@ int spif_add_cmd(const struct device *dev, uint8_t cmd)
             spif_cmd.value = sys_read32(table_base + idx * 4);
             spif_cmd.field.EN = 1;
             sys_write32(spif_cmd.value, table_base + idx * 4);
+            goto end;
         } else {
             break;
         }
@@ -370,6 +447,39 @@ int spif_add_cmd(const struct device *dev, uint8_t cmd)
     spif_cmd.field.CMD = cmd;
     spif_cmd.field.EN = 1;
     sys_write32(spif_cmd.value, table_base + idx * 4);
+
+end:
+    release_spif_device(dev);
+
+    return ret;
+}
+
+int spif_remove_general_cmd(const struct device *dev, uint8_t cmd)
+{
+    __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
+    __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
+    mm_reg_t table_base = dev_config->base + SPIF_GENERAL_CMD_BASE;
+    int ret = 0;
+    int idx;
+    uint32_t off;
+    bool found = false;
+
+    acquire_spif_device(dev);
+
+    for (off = 0; off < SPIF_GENERAL_CMD_TABLE_NUM; off++) {
+        idx = spif_get_general_cmd_slot(dev, cmd, off);
+        if (idx >= 0) {
+            found = true;
+            sys_write32(0, table_base + idx * 4);
+            /* break; */ /* do not break for remove all */
+        }
+    }
+
+    if (!found) {
+        LOG_ERR("cmd %02x is not found in allow cmd table", cmd);
+        ret = -EINVAL;
+        goto end;
+    }
 
 end:
     release_spif_device(dev);
@@ -450,6 +560,8 @@ static int linkedsemi_spi_filter_init(const struct device *dev)
         spif_cmd.field.EN = 0;
         sys_write32(spif_cmd.value, table_base + i * 4);
     }
+    sys_write32(0xffffffff, dev_config->base + SPIF_TARGET_ADDR);
+    sys_write32(0x7, dev_config->base + SPIF_BCMD_RANGE);
     spif_cfg_t spif_cfg = {
         .field = {
             .EN = 1,

@@ -12,8 +12,8 @@ extern "C" {
 #endif
 
 #define SPIF_FIXED_CMD_TABLE_NUM  30
-#define SPIF_COMMON_CMD_TABLE_NUM 40
-#define SPIF_CMD_TABLE_NUM        (SPIF_FIXED_CMD_TABLE_NUM + SPIF_COMMON_CMD_TABLE_NUM)
+#define SPIF_GENERAL_CMD_TABLE_NUM 40
+#define SPIF_CMD_TABLE_NUM        (SPIF_FIXED_CMD_TABLE_NUM + SPIF_GENERAL_CMD_TABLE_NUM)
 
 #define SPIF_ABS_ADDR(reg_off, bit_off) ((reg_off)*524288 + (bit_off)*16384)
 
@@ -50,6 +50,9 @@ void spif_dump_cmd_table(const struct device *dev);
 int spif_get_cmd_slot(const struct device *dev, uint8_t cmd, uint32_t start_off);
 int spif_add_cmd(const struct device *dev, uint8_t cmd);
 int spif_remove_cmd(const struct device *dev, uint8_t cmd);
+int spif_get_general_cmd_slot(const struct device *dev, uint8_t cmd, uint32_t start_off);
+int spif_add_general_cmd(const struct device *dev, uint8_t cmd);
+int spif_remove_general_cmd(const struct device *dev, uint8_t cmd);
 void spif_dump_rw_addr_privilege_table(const struct device *dev);
 int spif_address_privilege_config(const struct device *dev,
                                   enum addr_priv_rw_select rw_select,

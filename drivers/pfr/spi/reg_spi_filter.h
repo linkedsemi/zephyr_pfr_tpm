@@ -85,6 +85,7 @@
 #define SPIF_READ_ADDR_VALID_EN_ADDR  (0x1000) /* 0x1000-0x17ff */
 #define SPIF_ADDR_SIZE                (0x800)
 #define SPIF_CMD_BASE                 SPIF_PRG_CMD
+#define SPIF_GENERAL_CMD_BASE         SPIF_INIT_CMD0
 #define SPIF_ADDR_PRIV_TABLE_BASE     SPIF_WRITE_ADDR_VALID_EN_ADDR
 
 typedef union __packed __aligned(4) {
