@@ -49,7 +49,7 @@ int linkedsemi_i2c_filter_register_callback(const struct device *dev,
                                       i2c_filter_callback_t cb,
                                       void *user_data)
 {
-    struct linkedsemi_spi_filter_data *dev_data = dev->data;
+    struct linkedsemi_i2c_filter_data *dev_data = dev->data;
 
     dev_data->cb = cb;
     dev_data->user_data = user_data;
