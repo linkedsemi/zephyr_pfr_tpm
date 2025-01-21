@@ -58,9 +58,9 @@ static void linkedsemi_spi_filter_isr(const struct device *dev)
     sys_write32(intr_status.value, dev_config->base + SPIF_INTR_CLR);
     illegal_cmd = sys_read32(dev_config->base + SPIF_ILLEGAL_CMD);
     illegal_addr = sys_read32(dev_config->base + SPIF_ILLEGAL_ADDR);
-    LOG_DBG("linkedsemi_spi_filter_isr: %#x\n", intr_status.value);
-    LOG_DBG("SPIF_ILLEGAL_CMD: %#x\n", illegal_cmd);
-    LOG_DBG("SPIF_ILLEGAL_ADDR: %#x\n", illegal_addr);
+    printk("linkedsemi_spi_filter_isr: %#x\n", intr_status.value);
+    printk("SPIF_ILLEGAL_CMD: %#x\n", illegal_cmd);
+    printk("SPIF_ILLEGAL_ADDR: %#x\n", illegal_addr);
 
     if (dev_data->cb) {
         dev_data->cb(dev, 0, dev_data->user_data, NULL);
@@ -160,7 +160,7 @@ void spif_dump_cmd_table(const struct device *dev)
         spif_cmd.value = sys_read32(dev_config->base + SPIF_CMD_BASE + i * 4);
         if (spif_cmd.value == 0)
             continue;
-        LOG_DBG("[%s]idx %02d: 0x%02x: %s\n", dev->name, i,
+        printk("[%s]idx %02d: 0x%02x: %s\n", dev->name, i,
             spif_cmd.field.CMD, spif_cmd.field.EN == 1 ? "enabled" : "disabled");
     }
 
@@ -234,12 +234,12 @@ void spif_dump_rw_addr_privilege_table(const struct device *dev)
     for (rw = 0; rw < 2; rw++) {
         memset(&start, 0x0, sizeof(struct priv_reg_info));
         memset(&res, 0x0, sizeof(struct priv_reg_info));
-        LOG_DBG("%s mgnt regions:\n", rw == 0 ? "read" : "write");
+        printk("%s mgnt regions:\n", rw == 0 ? "read" : "write");
         do {
             spif_mgnt_area_parser(dev, start, &res, &num_forbidden_blk, rw);
             if (num_forbidden_blk != 0) {
                 mgnt_en = true;
-                LOG_DBG("[0x%08x - 0x%08x]\n",
+                printk("[0x%08x - 0x%08x]\n",
                        SPIF_ABS_ADDR(res.start_reg_off, res.start_bit_off),
                        SPIF_ABS_ADDR(res.end_reg_off, res.end_bit_off));
                 start.start_reg_off = res.end_reg_off;
@@ -248,8 +248,8 @@ void spif_dump_rw_addr_privilege_table(const struct device *dev)
         } while (num_forbidden_blk != 0);
 
         if (!mgnt_en)
-            LOG_DBG("all regions are %s!\n", rw == 0 ? "readable" : "writable");
-        LOG_DBG("======END======\n\n");
+            printk("all regions are %s!\n", rw == 0 ? "readable" : "writable");
+        printk("======END======\n\n");
     }
 
     release_spif_device(dev);
@@ -310,8 +310,8 @@ int spif_address_privilege_config(const struct device *dev,
     reg_off = addr / KB(512);            /* 512K per register; */
     bit_off = (addr % KB(512)) / KB(16); /* (512K / 16K); */
     total_bit_num = spif_get_cross_block_num(addr, len);
-    LOG_DBG("addr: 0x%08lx, len: 0x%08x\n", addr, len);
-    LOG_DBG("reg_off: 0x%08x, bit_off: 0x%08x, total_bit_num: 0x%08x\n",
+    printk("addr: 0x%08lx, len: 0x%08x\n", addr, len);
+    printk("reg_off: 0x%08x, bit_off: 0x%08x, total_bit_num: 0x%08x\n",
             reg_off,
             bit_off,
             total_bit_num);
@@ -349,7 +349,7 @@ int spif_address_privilege_config(const struct device *dev,
                             priv_table_base + reg_off * 4);
             }
 
-            LOG_DBG("reg: 0x%08lx, val: 0x%08x\n",
+            printk("reg: 0x%08lx, val: 0x%08x\n",
                     priv_table_base + reg_off * 4,
                     sys_read32(priv_table_base + reg_off * 4));
 
@@ -503,7 +503,14 @@ int spif_remove_cmd(const struct device *dev, uint8_t cmd)
         idx = spif_get_cmd_slot(dev, cmd, off);
         if (idx >= 0) {
             found = true;
-            sys_write32(0, table_base + idx * 4);
+            if (idx <= SPIF_FIXED_CMD_TABLE_NUM) {
+                spif_cmd_t spif_cmd;
+                spif_cmd.value = sys_read32(table_base + idx * 4);
+                spif_cmd.field.EN = 0;
+                sys_write32(spif_cmd.value, table_base + idx * 4);
+            } else {
+                sys_write32(0, table_base + idx * 4);
+            }
             /* break; */ /* do not break for remove all */
         }
     }
@@ -520,7 +527,7 @@ end:
     return ret;
 }
 
-void spif_monitor_enable(const struct device *dev, bool enable)
+void spif_filter_enable(const struct device *dev, bool enable)
 {
     __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
     __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;

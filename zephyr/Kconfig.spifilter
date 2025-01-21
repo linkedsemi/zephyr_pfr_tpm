@@ -7,3 +7,10 @@ config SPI_FILTER_LINKEDSEMI
     depends on DT_HAS_LINKEDSEMI_SPI_FILTER_ENABLED
     help
       SPI_FILTER_LINKEDSEMI
+
+config SPI_FILTER_LINKEDSEMI_SHELL
+    bool "spi filter"
+    default y
+    depends on DT_HAS_LINKEDSEMI_SPI_FILTER_ENABLED && SHELL
+    help
+      SPI_FILTER_LINKEDSEMI_SHELL

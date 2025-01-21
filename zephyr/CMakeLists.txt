@@ -49,5 +49,11 @@ if(CONFIG_SPI_FILTER_LINKEDSEMI)
     ${ZEPHYR_CURRENT_MODULE_DIR}/drivers/pfr/spi/spi_filter.c
   )
 
+  if(CONFIG_SPI_FILTER_LINKEDSEMI_SHELL)
+    zephyr_library_sources(
+      ${ZEPHYR_CURRENT_MODULE_DIR}/drivers/pfr/spi/spi_filter_shell.c
+    )
+  endif()
+
   # riscv64-unknown-elf-objdump -d -x -z  zephyr.elf > zephyr.elf.asm
 endif()
