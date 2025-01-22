@@ -130,6 +130,39 @@ end:
     return ret;
 }
 
+static int read_addr_priv_table_config(const struct shell *shell, size_t argc, char *argv[])
+{
+    int ret;
+    mm_reg_t addr = 0;
+    uint32_t len = 0;
+    bool enable = false;
+    enum addr_priv_op op;
+
+    if (!spif_device) {
+        shell_error(shell, "Please set the device first.");
+        return -ENODEV;
+    }
+
+    ret = addr_parse_helper(shell, &argc, &argv, &enable, &addr, &len);
+    if (ret)
+        goto end;
+
+    printk("read: %s, addr: 0x%08lx, len: 0x%08x\n",
+        enable ? "enable" : "disable", addr, len);
+
+    if (enable)
+        op = FLAG_ADDR_PRIV_ENABLE;
+    else
+        op = FLAG_ADDR_PRIV_DISABLE;
+
+    ret = spif_address_privilege_config(spif_device,
+                        FLAG_ADDR_PRIV_READ_SELECT,
+                        op, addr, len);
+
+end:
+    return ret;
+}
+
 static int write_addr_priv_table_config(const struct shell *shell, size_t argc, char *argv[])
 {
     int ret;
@@ -198,6 +231,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_spif_cmds,
 );
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_spif_addr,
+    SHELL_CMD_ARG(read, NULL, "<enable/disable> <addr> <len>",
+        read_addr_priv_table_config, 4, 0),
     SHELL_CMD_ARG(write, NULL, "<enable/disable> <addr> <len>",
         write_addr_priv_table_config, 4, 0),
 
