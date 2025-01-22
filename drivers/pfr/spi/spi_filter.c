@@ -427,7 +427,7 @@ int spif_add_cmd(const struct device *dev, uint8_t cmd)
         }
     }
 
-    for (uint8_t off = 0; off < SPIF_CMD_TABLE_NUM; off++) {
+    for (uint8_t off = 0; off < SPIF_FIXED_CMD_TABLE_NUM; off++) {
         if (dev_data->fixed_cmd_tab[off] == cmd) {
             spif_cmd_t spif_cmd;
             spif_cmd.field.CMD = cmd;
