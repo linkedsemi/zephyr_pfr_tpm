@@ -69,10 +69,10 @@ static void linkedsemi_i2c_filter_isr(const struct device *dev)
     smbf_nonwhitelist.value = sys_read32(dev_config->base + SMBF_NONWHITELIST);
 
     if (intr_status.ADDRESS_BEYOND_WHITELIST) {
-        LOG_DBG("address beyond whitelist: i2c@%#x\n", smbf_nonwhitelist.ERROR_ADDRESS);
+        printk("address beyond whitelist: i2c@%#x\n", smbf_nonwhitelist.ERROR_ADDRESS);
     }
     if (intr_status.COMMAND_BEYOND_WHITELIST) {
-        LOG_DBG("command beyond whitelist: i2c@%#x cmd@%#x\n",
+        printk("command beyond whitelist: i2c@%#x cmd@%#x\n",
                                                     smbf_nonwhitelist.ERROR_ADDRESS,
                                                     smbf_nonwhitelist.ERROR_COMMAND);
     }
@@ -111,6 +111,10 @@ int linkedsemi_i2c_filter_fill_bitmap(const struct device *dev,
         sys_write32(val, dev_config->base + reg);
     }
 
+    uint32_t smbf_address_enable = sys_read32(dev_config->base + SMBF_ADDRESS_ENABLE);
+    smbf_address_enable |= BIT(idx);
+    sys_write32(smbf_address_enable, dev_config->base + SMBF_ADDRESS_ENABLE);
+
     return 0;
 }
 
@@ -140,10 +144,6 @@ int linkedsemi_i2c_filter_dump_bitmap(const struct device *dev,
         mm_reg_t reg = (mm_reg_t)(WHITELIST_COMMAND_0 + i * 4);
         bitmap[i] = sys_read32(dev_config->base + reg);
     }
-
-    uint32_t smbf_address_enable = sys_read32(dev_config->base + SMBF_ADDRESS_ENABLE);
-    smbf_address_enable |= BIT(idx);
-    sys_write32(smbf_address_enable, dev_config->base + SMBF_ADDRESS_ENABLE);
 
     return 0;
 }
