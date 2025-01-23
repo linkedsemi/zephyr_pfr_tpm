@@ -227,7 +227,7 @@
             compatible = "linkedsemi,i2c-filter";
             reg = <0x40090000 0x800>;
             interrupts = <155 3>;
-            scl-hold-time = <0x1f3>;
+            scl-hold-time = <0xfa>;
             status = "disabled";
         };
 
@@ -235,7 +235,7 @@
             compatible = "linkedsemi,i2c-filter";
             reg = <0x40090800 0x800>;
             interrupts = <156 3>;
-            scl-hold-time = <0x1f3>;
+            scl-hold-time = <0xfa>;
             status = "disabled";
         };
 
@@ -243,7 +243,7 @@
             compatible = "linkedsemi,i2c-filter";
             reg = <0x40091000 0x800>;
             interrupts = <157 3>;
-            scl-hold-time = <0x1f3>;
+            scl-hold-time = <0xfa>;
             status = "disabled";
         };
 
@@ -251,7 +251,7 @@
             compatible = "linkedsemi,i2c-filter";
             reg = <0x40091800 0x800>;
             interrupts = <158 3>;
-            scl-hold-time = <0x1f3>;
+            scl-hold-time = <0xfa>;
             status = "disabled";
         };
     };
