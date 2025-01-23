@@ -114,6 +114,36 @@ int linkedsemi_i2c_filter_fill_bitmap(const struct device *dev,
     return 0;
 }
 
+int linkedsemi_i2c_filter_dump_bitmap(const struct device *dev,
+                                    uint8_t idx,
+                                    uint8_t *addr,
+                                    uint32_t bitmap[LINKEDSEMI_I2C_F_REMAP_SIZE_U32])
+{
+    __unused const struct linkedsemi_i2c_filter_config *dev_config = dev->config;
+    __unused struct linkedsemi_i2c_filter_data *dev_data = dev->data;
+
+    if (idx > (LINKEDSEMI_I2C_F_ADDR_NUM - 1)) {
+        LOG_ERR("i2c filter index invalid");
+        return -EINVAL;
+    } else if (!bitmap) {
+        LOG_ERR("i2c filter bitmap is NULL");
+        return -EINVAL;
+    }
+
+    uint32_t offset = (idx >> 2) << 2;
+    whitelist_address_t wht_addr;
+    wht_addr.value = sys_read32(dev_config->base + WHITELIST_ADDRESS_3_0 + offset);
+    *addr = wht_addr.field[idx % 4].WHITELIST_ADDRESS;
+
+    sys_write32(idx, dev_config->base + SMBF_ADDRESS_INDEX);
+    for (uint8_t i = 0; i < LINKEDSEMI_I2C_F_REMAP_SIZE_U32; i++) {
+        mm_reg_t reg = (mm_reg_t)(WHITELIST_COMMAND_0 + i * 4);
+        bitmap[i] = sys_read32(dev_config->base + reg);
+    }
+
+    return 0;
+}
+
 int linkedsemi_i2c_filter_en(const struct device *dev,
                              bool filter_en,
                              bool wlist_en,
@@ -166,6 +196,7 @@ static int linkedsemi_i2c_filter_init(const struct device *dev)
             .ADDRESS_BEYOND_WHITELIST = 1,
         },
     };
+    sys_write32(0x1, dev_config->base + SMBF_REG_ENABLE);
     sys_write32(intr_mask.value, dev_config->base + INTR_MSK);
 
     linkedsemi_i2c_filter_en(dev, false, false, true);

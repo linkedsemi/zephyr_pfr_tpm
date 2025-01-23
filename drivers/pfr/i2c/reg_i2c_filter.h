@@ -22,6 +22,8 @@
 #define SMBF_CONTROL0_REG       (0x44)
 #define SMBF_ADDRESS_INDEX      (0x4c)
 #define SMBF_NONWHITELIST       (0x50)
+#define SMF_FSM                 (0x54)
+#define SMBF_REG_ENABLE         (0x5c)
 
 typedef union __packed __aligned(4) {
     volatile uint32_t value;

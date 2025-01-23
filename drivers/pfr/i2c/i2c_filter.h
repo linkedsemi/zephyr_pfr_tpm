@@ -30,6 +30,11 @@ int linkedsemi_i2c_filter_fill_bitmap(const struct device *dev,
                                     uint8_t addr,
                                     uint32_t bitmap[LINKEDSEMI_I2C_F_REMAP_SIZE_U32]);
 
+int linkedsemi_i2c_filter_dump_bitmap(const struct device *dev,
+                                    uint8_t idx,
+                                    uint8_t *addr,
+                                    uint32_t bitmap[LINKEDSEMI_I2C_F_REMAP_SIZE_U32]);
+
 int linkedsemi_i2c_filter_en(const struct device *dev,
                              bool filter_en,
                              bool wlist_en,
