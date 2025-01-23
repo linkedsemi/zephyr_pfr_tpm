@@ -141,6 +141,10 @@ int linkedsemi_i2c_filter_dump_bitmap(const struct device *dev,
         bitmap[i] = sys_read32(dev_config->base + reg);
     }
 
+    uint32_t smbf_address_enable = sys_read32(dev_config->base + SMBF_ADDRESS_ENABLE);
+    smbf_address_enable |= BIT(idx);
+    sys_write32(smbf_address_enable, dev_config->base + SMBF_ADDRESS_ENABLE);
+
     return 0;
 }
 
