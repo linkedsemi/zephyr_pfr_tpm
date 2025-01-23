@@ -92,7 +92,9 @@ int main(void)
     static const struct device *eeprom1 = DEVICE_DT_GET(DT_ALIAS(eeprom1));
     const struct device *const i2cfilter = DEVICE_DT_GET(DT_ALIAS(i2cfilter));
     uint32_t bitmap[LINKEDSEMI_I2C_F_REMAP_SIZE_U32] = { 0 };
+    uint32_t dump_bitmap[LINKEDSEMI_I2C_F_REMAP_SIZE_U32] = {};
     uint16_t dev_addr = WHT_ADDR_0;
+    uint8_t dump_addr = 0;
 
     if (!device_is_ready(i2cmaster1)) {
         __ASSERT(0, "I2C device is not ready\n");
@@ -149,6 +151,10 @@ while(1);
         sys_bitfield_set_bit((mem_addr_t)bitmap, bit);
         linkedsemi_i2c_filter_en(i2cfilter, false, is_whitelist_on, false); /* disable filter */
         linkedsemi_i2c_filter_fill_bitmap(i2cfilter, 0, WHT_ADDR_0, bitmap); /* set bitmap */
+        linkedsemi_i2c_filter_dump_bitmap(i2cfilter, 0, &dump_addr, dump_bitmap);
+        int ret = memcmp(bitmap, dump_bitmap, LINKEDSEMI_I2C_F_REMAP_SIZE_BYTE);
+        __ASSERT_NO_MSG(ret == 0);
+        __ASSERT_NO_MSG(WHT_ADDR_0 == dump_addr);
         linkedsemi_i2c_filter_en(i2cfilter, true, is_whitelist_on, false); /* enable filter */
         for (uint16_t len = 1; len <= BUF_SIZE; len++) {
             printf("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
