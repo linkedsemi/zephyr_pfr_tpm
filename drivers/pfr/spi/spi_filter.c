@@ -126,7 +126,7 @@ int spif_get_general_cmd_slot(const struct device *dev, uint8_t cmd, uint32_t st
 
     for (idx = start_off; idx < SPIF_GENERAL_CMD_TABLE_NUM; idx++) {
         spif_cmd.value = sys_read32(dev_config->base + SPIF_GENERAL_CMD_BASE + idx * 4);
-        if ((spif_cmd.field.CMD) == cmd)
+        if ((spif_cmd.CMD) == cmd)
             return idx;
     }
 
@@ -142,7 +142,7 @@ int spif_get_cmd_slot(const struct device *dev, uint8_t cmd, uint32_t start_off)
 
     for (idx = start_off; idx < SPIF_CMD_TABLE_NUM; idx++) {
         spif_cmd.value = sys_read32(dev_config->base + SPIF_CMD_BASE + idx * 4);
-        if ((spif_cmd.field.CMD) == cmd)
+        if ((spif_cmd.CMD) == cmd)
             return idx;
     }
 
@@ -161,7 +161,7 @@ void spif_dump_cmd_table(const struct device *dev)
         if (spif_cmd.value == 0)
             continue;
         printk("[%s]idx %02d: 0x%02x: %s\n", dev->name, i,
-            spif_cmd.field.CMD, spif_cmd.field.EN == 1 ? "enabled" : "disabled");
+            spif_cmd.CMD, spif_cmd.EN == 1 ? "enabled" : "disabled");
     }
 
     release_spif_device(dev);
@@ -379,7 +379,7 @@ int spif_add_general_cmd(const struct device *dev, uint8_t cmd)
         if (idx >= 0) {
             spif_cmd_t spif_cmd;
             spif_cmd.value = sys_read32(table_base + idx * 4);
-            spif_cmd.field.EN = 1;
+            spif_cmd.EN = 1;
             sys_write32(spif_cmd.value, table_base + idx * 4);
             goto end;
         } else {
@@ -394,8 +394,8 @@ int spif_add_general_cmd(const struct device *dev, uint8_t cmd)
         goto end;
     }
     spif_cmd_t spif_cmd;
-    spif_cmd.field.CMD = cmd;
-    spif_cmd.field.EN = 1;
+    spif_cmd.CMD = cmd;
+    spif_cmd.EN = 1;
     sys_write32(spif_cmd.value, table_base + idx * 4);
 
 end:
@@ -419,7 +419,7 @@ int spif_add_cmd(const struct device *dev, uint8_t cmd)
         if (idx >= 0) {
             spif_cmd_t spif_cmd;
             spif_cmd.value = sys_read32(table_base + idx * 4);
-            spif_cmd.field.EN = 1;
+            spif_cmd.EN = 1;
             sys_write32(spif_cmd.value, table_base + idx * 4);
             goto end;
         } else {
@@ -430,8 +430,8 @@ int spif_add_cmd(const struct device *dev, uint8_t cmd)
     for (uint8_t off = 0; off < SPIF_FIXED_CMD_TABLE_NUM; off++) {
         if (dev_data->fixed_cmd_tab[off] == cmd) {
             spif_cmd_t spif_cmd;
-            spif_cmd.field.CMD = cmd;
-            spif_cmd.field.EN = 1;
+            spif_cmd.CMD = cmd;
+            spif_cmd.EN = 1;
             sys_write32(spif_cmd.value, table_base + idx * 4);
             goto end;
         }
@@ -444,8 +444,8 @@ int spif_add_cmd(const struct device *dev, uint8_t cmd)
         goto end;
     }
     spif_cmd_t spif_cmd;
-    spif_cmd.field.CMD = cmd;
-    spif_cmd.field.EN = 1;
+    spif_cmd.CMD = cmd;
+    spif_cmd.EN = 1;
     sys_write32(spif_cmd.value, table_base + idx * 4);
 
 end:
@@ -506,7 +506,7 @@ int spif_remove_cmd(const struct device *dev, uint8_t cmd)
             if (idx <= SPIF_FIXED_CMD_TABLE_NUM) {
                 spif_cmd_t spif_cmd;
                 spif_cmd.value = sys_read32(table_base + idx * 4);
-                spif_cmd.field.EN = 0;
+                spif_cmd.EN = 0;
                 sys_write32(spif_cmd.value, table_base + idx * 4);
             } else {
                 sys_write32(0, table_base + idx * 4);
@@ -536,7 +536,7 @@ void spif_filter_enable(const struct device *dev, bool enable)
 
     spif_cfg_t spif_cfg;
     spif_cfg.value = sys_read32(dev_config->base + SPIF_CFG);
-    spif_cfg.field.EN = enable ? 1 : 0;
+    spif_cfg.EN = enable ? 1 : 0;
     sys_write32(spif_cfg.value, dev_config->base + SPIF_CFG);
 
     release_spif_device(dev);
@@ -563,28 +563,24 @@ static int linkedsemi_spi_filter_init(const struct device *dev)
     for (uint8_t i = 0; i < SPIF_FIXED_CMD_TABLE_NUM; i++) {
         mm_reg_t table_base = dev_config->base + SPIF_CMD_BASE;
         spif_cmd_t spif_cmd;
-        spif_cmd.field.CMD = dev_data->fixed_cmd_tab[i];
-        spif_cmd.field.EN = 0;
+        spif_cmd.CMD = dev_data->fixed_cmd_tab[i];
+        spif_cmd.EN = 0;
         sys_write32(spif_cmd.value, table_base + i * 4);
     }
     sys_write32(0xffffffff, dev_config->base + SPIF_TARGET_ADDR);
     sys_write32(0x7, dev_config->base + SPIF_BCMD_RANGE);
     spif_cfg_t spif_cfg = {
-        .field = {
-            .EN = 1,
-            .OPERATION_MODE = 1,
-            .ALLOW_4BYTE_ADDR = 1,
-            .TARGET_ADDR_MODE_SEL = dev_config->blacklist_en ? 1 : 0,
-            .BOW_CMD_SEL = 0,
-        },
+        .EN = 1,
+        .OPERATION_MODE = 1,
+        .ALLOW_4BYTE_ADDR = 1,
+        .TARGET_ADDR_MODE_SEL = dev_config->blacklist_en ? 1 : 0,
+        .BOW_CMD_SEL = 0,
     };
     sys_write32(spif_cfg.value, dev_config->base + SPIF_CFG);
     spif_intr_t intr_mask = {
-        .field = {
-            .ERROR_OVERFLOW = 1,
-            .ERROR = 1,
-            .TARGET_ADDR = 1,
-        },
+        .ERROR_OVERFLOW = 1,
+        .ERROR = 1,
+        .TARGET_ADDR = 1,
     };
     sys_write32(intr_mask.value, dev_config->base + SPIF_INTR_MASK);
 

@@ -88,7 +88,7 @@
 #define SPIF_GENERAL_CMD_BASE         SPIF_INIT_CMD0
 #define SPIF_ADDR_PRIV_TABLE_BASE     SPIF_WRITE_ADDR_VALID_EN_ADDR
 
-typedef union __packed __aligned(4) {
+typedef union {
     volatile uint32_t value;
     struct {
         volatile uint32_t
@@ -98,10 +98,10 @@ typedef union __packed __aligned(4) {
             TARGET_ADDR_MODE_SEL : 1, /* [3] */
             BOW_CMD_SEL : 1,          /* [4] */
             reserved : 27;            /* [31:5] */
-    } field;
+    };
 } spif_cfg_t;
 
-typedef union __packed __aligned(4) {
+typedef union {
     volatile uint32_t value;
     struct {
         volatile uint32_t
@@ -109,43 +109,43 @@ typedef union __packed __aligned(4) {
             ERROR : 1,          /* [1] */
             TARGET_ADDR : 1,    /* [2] */
             reserved : 29;      /* [31:3] */
-    } field;
+    };
 } spif_intr_t;
 
-typedef union __packed __aligned(4) {
+typedef union {
     volatile uint32_t value;
     struct {
         volatile uint32_t
             READ_DUMMY_NUM : 5, /* [4:0] */
             reserved : 27;      /* [31:5] */
-    } field;
+    };
 } spif_read_dummy_num_t;
 
-typedef union __packed __aligned(4) {
+typedef union {
     volatile uint32_t value;
     struct {
         volatile uint32_t
             ILLEGAL_CMD : 8, /* [7:0] */
             reserved : 24;   /* [31:8] */
-    } field;
+    };
 } spif_illegal_addr_t;
 
-typedef union __packed __aligned(4) {
+typedef union {
     volatile uint32_t value;
     struct {
         volatile uint32_t
             BCMD_RANGE : 4;  /* [3:0] */
-    } field;
+    };
 } spif_bcmd_range_t;
 
-typedef union __packed __aligned(4) {
+typedef union {
     volatile uint32_t value;
     struct {
         volatile uint32_t
             CMD : 8,       /* [7:0] */
             RESERVED : 23, /* [30:8] */
             EN : 1;        /* [31] */
-    } field;
+    };
 } spif_cmd_t;
 
 

@@ -38,7 +38,7 @@ int linkedsemi_i2c_filter_config_scl_hold_time(const struct device *dev, uint16_
     smbf_control0_reg_t smbf_control0_reg;
 
     smbf_control0_reg.value = sys_read32(dev_config->base + SMBF_CONTROL0_REG);
-    smbf_control0_reg.field.SCL_HOLD_TIME = scl_hold_time;
+    smbf_control0_reg.SCL_HOLD_TIME = scl_hold_time;
     sys_write32(smbf_control0_reg.value, dev_config->base + SMBF_CONTROL0_REG);
 
     return 0;
@@ -68,13 +68,13 @@ static void linkedsemi_i2c_filter_isr(const struct device *dev)
     sys_write32(intr_status.value, dev_config->base + INTR_CLR);
     smbf_nonwhitelist.value = sys_read32(dev_config->base + SMBF_NONWHITELIST);
 
-    if (intr_status.field.ADDRESS_BEYOND_WHITELIST) {
-        LOG_DBG("address beyond whitelist: i2c@%#x\n", smbf_nonwhitelist.field.ERROR_ADDRESS);
+    if (intr_status.ADDRESS_BEYOND_WHITELIST) {
+        LOG_DBG("address beyond whitelist: i2c@%#x\n", smbf_nonwhitelist.ERROR_ADDRESS);
     }
-    if (intr_status.field.COMMAND_BEYOND_WHITELIST) {
+    if (intr_status.COMMAND_BEYOND_WHITELIST) {
         LOG_DBG("command beyond whitelist: i2c@%#x cmd@%#x\n",
-                                                    smbf_nonwhitelist.field.ERROR_ADDRESS,
-                                                    smbf_nonwhitelist.field.ERROR_COMMAND);
+                                                    smbf_nonwhitelist.ERROR_ADDRESS,
+                                                    smbf_nonwhitelist.ERROR_COMMAND);
     }
 
     if (dev_data->cb) {
@@ -156,12 +156,10 @@ int linkedsemi_i2c_filter_en(const struct device *dev,
     __unused const struct linkedsemi_i2c_filter_config *dev_config = dev->config;
     __unused struct linkedsemi_i2c_filter_data *dev_data = dev->data;
     smbf_set_t smbf_set = {
-        .field = {
-            .BLOCK_DISABLE = filter_en ? 0 : 1,
-            .FILTER_DISABLE = wlist_en ? 0 : 1,
-            .MASTER_WRITE_MODE = 1,
-            .reserve0 = 0,
-        },
+        .BLOCK_DISABLE = filter_en ? 0 : 1,
+        .FILTER_DISABLE = wlist_en ? 0 : 1,
+        .MASTER_WRITE_MODE = 1,
+        .reserve0 = 0,
     };
 
     sys_write32(smbf_set.value, dev_config->base + SMBUS_FILTER_SET);
@@ -195,10 +193,8 @@ static int linkedsemi_i2c_filter_init(const struct device *dev)
 #endif
 
     intr_t intr_mask = {
-        .field = {
-            .COMMAND_BEYOND_WHITELIST = 1,
-            .ADDRESS_BEYOND_WHITELIST = 1,
-        },
+        .COMMAND_BEYOND_WHITELIST = 1,
+        .ADDRESS_BEYOND_WHITELIST = 1,
     };
     sys_write32(0x1, dev_config->base + SMBF_REG_ENABLE);
     sys_write32(intr_mask.value, dev_config->base + INTR_MSK);
