@@ -147,7 +147,7 @@ static int read_addr_priv_table_config(const struct shell *shell, size_t argc, c
     if (ret)
         goto end;
 
-    printk("read: %s, addr: 0x%08lx, len: 0x%08x\n",
+    LOG_DBG("read: %s, addr: 0x%08lx, len: 0x%08x\n",
         enable ? "enable" : "disable", addr, len);
 
     if (enable)
@@ -180,7 +180,7 @@ static int write_addr_priv_table_config(const struct shell *shell, size_t argc, 
     if (ret)
         goto end;
 
-    printk("write: %s, addr: 0x%08lx, len: 0x%08x\n",
+    LOG_DBG("write: %s, addr: 0x%08lx, len: 0x%08x\n",
         enable ? "enable" : "disable", addr, len);
 
     if (enable)
