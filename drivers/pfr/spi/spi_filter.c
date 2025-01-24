@@ -504,7 +504,7 @@ int spif_remove_cmd(const struct device *dev, uint8_t cmd)
         idx = spif_get_cmd_slot(dev, cmd, off);
         if (idx >= 0) {
             found = true;
-            if (idx <= SPIF_FIXED_CMD_TABLE_NUM) {
+            if (idx < SPIF_FIXED_CMD_TABLE_NUM) {
                 spif_cmd_t spif_cmd;
                 spif_cmd.value = sys_read32(table_base + idx * 4);
                 spif_cmd.EN = 0;
