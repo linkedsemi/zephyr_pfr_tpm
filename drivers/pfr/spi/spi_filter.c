@@ -149,6 +149,43 @@ int spif_get_cmd_slot(const struct device *dev, uint8_t cmd, uint32_t start_off)
     return -ENOSR;
 }
 
+static const uint8_t fix_cmd_desc[][46] = {
+    "cmd-page-program                             ",
+    "cmd-page-program-quad-address-quad-data      ",
+    "cmd-erase-4kb                                ",
+    "cmd-erase-32kb                               ",
+    "cmd-erase-64kb                               ",
+    "cmd-read                                     ",
+    "cmd-fast-read                                ",
+    "cmd-read-quad-data                           ",
+    "cmd-read-quad-address-quad-data              ",
+    "cmd-quad-spi-mode-enter                      ",
+    "cmd-quad-spi-mode-exit                       ",
+    "cmd-4byte-mode-enter                         ",
+    "cmd-4byte-mode-exit                          ",
+    "cmd-4byte-read-extended-address              ",
+    "cmd-4byte-write-extended-address             ",
+    "cmd-4byte-page-program                       ",
+    "cmd-4byte-page-program-quad-address-quad-data",
+    "cmd-4byte-erase-4kb                          ",
+    "cmd-4byte-erase-32kb                         ",
+    "cmd-4byte-erase-64kb                         ",
+    "cmd-4byte-read                               ",
+    "cmd-4byte-fast-read                          ",
+    "cmd-4byte-read-quad-data                     ",
+    "cmd-4byte-read-quad-address-quad-data        ",
+    "cmd-read-dual-data                           ",
+    "cmd-read-dual-addr-dual-data                 ",
+    "cmd-4byte-read-dual-data                     ",
+    "cmd-4byte-read-dual-addr-dual-data           ",
+    "cmd-program-quad-data                        ",
+    "cmd-4byte-program-quad-data                  ",
+    "cmd-4byte-program-quad-data                  ",
+};
+
+static const uint8_t *general_cmd_desc =
+    "cmd-general                                  ";
+
 void spif_dump_cmd_table(const struct device *dev)
 {
     __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
@@ -161,8 +198,13 @@ void spif_dump_cmd_table(const struct device *dev)
         spif_cmd.value = sys_read32(dev_config->base + SPIF_CMD_BASE + i * 4);
         if (spif_cmd.value == 0)
             continue;
-        LOG_DBG("[%s]idx %02d: 0x%02x: %s\n", dev->name, i,
-            spif_cmd.CMD, spif_cmd.EN == 1 ? "enabled" : "disabled");
+        if (i < SPIF_FIXED_CMD_TABLE_NUM) {
+            LOG_DBG("[%s]idx %02d: %s: 0x%02x: %s\n", dev->name, i, fix_cmd_desc[i],
+                spif_cmd.CMD, spif_cmd.EN == 1 ? "enabled" : "disabled");
+        } else {
+            LOG_DBG("[%s]idx %02d: %s: 0x%02x: %s\n", dev->name, i, general_cmd_desc,
+                spif_cmd.CMD, spif_cmd.EN == 1 ? "enabled" : "disabled");
+        }
     }
 
     release_spif_device(dev);
