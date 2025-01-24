@@ -27,47 +27,52 @@
 #define SMBF_REG_ENABLE         (0x5c)
 
 typedef union {
-    volatile uint32_t value;
+    uint32_t value;
     struct {
-        volatile uint32_t COMMAND_BEYOND_WHITELIST : 1, /*[0]*/
-                          ADDRESS_BEYOND_WHITELIST : 1, /*[1]*/
-                          reserve0                 : 30; /*[31:2]*/
+        uint32_t
+            COMMAND_BEYOND_WHITELIST : 1, /*[0]*/
+            ADDRESS_BEYOND_WHITELIST : 1, /*[1]*/
+            reserve0 : 30;                /*[31:2]*/
     };
 } intr_t;
 
 typedef union {
-    volatile uint32_t value;
+    uint32_t value;
     struct {
-        volatile uint32_t BLOCK_DISABLE     : 1, /*[0]*/
-                          FILTER_DISABLE    : 1, /*[1]*/
-                          reserve0          : 1, /*[2]*/
-                          MASTER_WRITE_MODE : 1, /*[3]*/
-                          reserve1          : 30; /*[31:3]*/
+        uint32_t
+            BLOCK_DISABLE : 1,     /*[0]*/
+            FILTER_DISABLE : 1,    /*[1]*/
+            reserve0 : 1,          /*[2]*/
+            MASTER_WRITE_MODE : 1, /*[3]*/
+            reserve1 : 30;         /*[31:3]*/
     };
 } smbf_set_t;
 
 typedef union {
-    volatile uint32_t value;
+    uint32_t value;
     struct {
-        volatile uint8_t WHITELIST_ADDRESS : 7, /*[6:0]*/
-                         reserve0          : 1; /*[7]*/
+        uint8_t
+            WHITELIST_ADDRESS : 7, /*[6:0]*/
+            reserve0 : 1;          /*[7]*/
     } field[4];
 } whitelist_address_t;
 
 typedef union {
-    volatile uint32_t value;
+    uint32_t value;
     struct {
-        volatile uint32_t SCL_HOLD_TIME : 16, /*[15:0]*/
-                          reserve0      : 16; /*[31:16]*/
+        uint32_t
+            SCL_HOLD_TIME : 16, /*[15:0]*/
+            reserve0 : 16;      /*[31:16]*/
     };
 } smbf_control0_reg_t;
 
 typedef union {
-    volatile uint32_t value;
+    uint32_t value;
     struct {
-        volatile uint32_t ERROR_COMMAND : 8, /*[7:0]*/
-                          ERROR_ADDRESS : 8, /*[15:8]*/
-                          reserve0      : 15; /*[31:16]*/
+        uint32_t
+            ERROR_COMMAND : 8, /*[7:0]*/
+            ERROR_ADDRESS : 8, /*[15:8]*/
+            reserve0 : 15;     /*[31:16]*/
     };
 } smbf_nonwhitelist_t;
 
