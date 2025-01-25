@@ -82,6 +82,14 @@
 #define SPIF_INIT_CMD37               (0x138)
 #define SPIF_INIT_CMD38               (0x13c)
 #define SPIF_INIT_CMD39               (0x140)
+#define SPIF_BIT_MAP7                 (0x144)
+#define SPIF_BIT_MAP6                 (0x148)
+#define SPIF_BIT_MAP5                 (0x14c)
+#define SPIF_BIT_MAP4                 (0x150)
+#define SPIF_BIT_MAP3                 (0x154)
+#define SPIF_BIT_MAP2                 (0x158)
+#define SPIF_BIT_MAP1                 (0x15c)
+#define SPIF_BIT_MAP0                 (0x160)
 #define SPIF_SCK_SET                  (0x164)
 #define SPIF_SCK_FQC_HI               (0x168)
 #define SPIF_SCK_FQC_LO               (0x16c)
@@ -152,9 +160,10 @@ typedef union {
     uint32_t value;
     struct {
         uint32_t
-            CMD : 8,       /* [7:0] */
-            RESERVED : 23, /* [30:8] */
-            EN : 1;        /* [31] */
+            CMD : 8,         /* [7:0] */
+            DUMMY_CYCLE : 5, /* [12:8] */
+            reserved : 18,   /* [30:13] */
+            EN : 1;          /* [31] */
     };
 } spif_cmd_t;
 

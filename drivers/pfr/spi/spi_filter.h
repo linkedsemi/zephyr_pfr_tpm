@@ -19,6 +19,9 @@ extern "C" {
 
 #define SPIF_ADDR_PRIV_REG_NUN 512
 #define SPIF_ADDR_PRIV_BIT_NUN (SPIF_ADDR_PRIV_REG_NUN * 32)
+#define SPI_CMD_BITMAPF_LOG_SIZE_BIT  256
+#define SPIF_CMD_BITMAP_LOG_SIZE_BYTE 32
+#define SPI_CMD_BITMAPF_LOG_SIZE_U32  8
 
 struct priv_reg_info {
     uint32_t start_reg_off;
@@ -54,6 +57,7 @@ int spif_get_general_cmd_slot(const struct device *dev, uint8_t cmd, uint32_t st
 int spif_add_general_cmd(const struct device *dev, uint8_t cmd);
 int spif_remove_general_cmd(const struct device *dev, uint8_t cmd);
 void spif_dump_rw_addr_privilege_table(const struct device *dev);
+void spif_dump_cmd_bitmap_log(const struct device *dev, uint8_t bitmap[SPIF_CMD_BITMAP_LOG_SIZE_BYTE]);
 int spif_address_privilege_config(const struct device *dev,
                                   enum addr_priv_rw_select rw_select,
                                   enum addr_priv_op priv_op,

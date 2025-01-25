@@ -280,6 +280,17 @@ static void spif_allocated_area_parser(const struct device *dev,
     res->end_bit_off = 32;
 }
 
+void spif_dump_cmd_bitmap_log(const struct device *dev, uint8_t bitmap[SPIF_CMD_BITMAP_LOG_SIZE_BYTE])
+{
+    __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
+    __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
+
+    for (uint32_t i = 0; i < SPI_CMD_BITMAPF_LOG_SIZE_U32; i++) {
+        uint32_t val = sys_read32(dev_config->base + SPIF_BIT_MAP0 - (i * 4));
+        UNALIGNED_PUT(val, (uint32_t *)(bitmap + (i * 4)));
+    }
+}
+
 void spif_dump_rw_addr_privilege_table(const struct device *dev)
 {
     __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;

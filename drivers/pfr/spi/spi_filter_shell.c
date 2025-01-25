@@ -146,6 +146,20 @@ static int dump_rw_addr_priv_table(const struct shell *shell, size_t argc, char 
     return 0;
 }
 
+static int dump_cmd_bitmap_log(const struct shell *shell, size_t argc, char *argv[])
+{
+    if (!spif_device) {
+        shell_error(shell, "Please set the device first.");
+        return -ENODEV;
+    }
+
+    uint8_t bitmap[SPIF_CMD_BITMAP_LOG_SIZE_BYTE];
+    spif_dump_cmd_bitmap_log(spif_device, bitmap);
+    shell_hexdump(shell, bitmap, SPIF_CMD_BITMAP_LOG_SIZE_BYTE);
+
+    return 0;
+}
+
 static int read_addr_priv_table_config(const struct shell *shell, size_t argc, char *argv[])
 {
     int ret;
@@ -247,7 +261,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_spif_cmds,
 );
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_spif_addr,
-	SHELL_CMD_ARG(dump, NULL, "\"dump\"", dump_rw_addr_priv_table, 1, 0),
+    SHELL_CMD_ARG(dump, NULL, "\"dump\"", dump_rw_addr_priv_table, 1, 0),
+    SHELL_CMD_ARG(log, NULL, "\"log\"", dump_cmd_bitmap_log, 1, 0),
     SHELL_CMD_ARG(read, NULL, "<enable/disable> <addr> <len>",
         read_addr_priv_table_config, 4, 0),
     SHELL_CMD_ARG(write, NULL, "<enable/disable> <addr> <len>",
