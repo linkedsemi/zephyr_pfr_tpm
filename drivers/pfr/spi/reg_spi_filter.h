@@ -126,9 +126,23 @@ typedef union {
             ERROR_OVERFLOW : 1, /* [0] */
             ERROR : 1,          /* [1] */
             TARGET_ADDR : 1,    /* [2] */
-            reserved : 29;      /* [31:3] */
+            SCK_CHECK : 1,      /* [3] */
+            reserved : 28;      /* [31:4] */
     };
 } spif_intr_t;
+
+typedef union {
+    uint32_t value;
+    struct {
+        uint32_t
+            ERROR_OVERFLOW : 1, /* [0] */
+            ERROR : 1,          /* [1] */
+            TARGET_ADDR : 1,    /* [2] */
+            SCK_CHECK : 1,      /* [3] */
+            BITMAP : 1,         /* [3] */
+            reserved : 28;      /* [31:4] */
+    };
+} spif_intr_clr_t;
 
 typedef union {
     uint32_t value;
@@ -171,48 +185,48 @@ typedef union {
     uint32_t value;
     struct {
         uint32_t
-            MON_SCK_FQC : 12, /* [11:0] */
-            MON_SCK_DIV : 3,  /* [14:12] */
-            reserved : 17;    /* [31:15] */
+            SCK_FQC : 12,  /* [11:0] */
+            SCK_DIV : 3,   /* [14:12] */
+            reserved : 17; /* [31:15] */
     };
-} mon_sck_set_t;
+} spif_sck_set_t;
 
 typedef union {
     uint32_t value;
     struct {
         uint32_t
-            MON_SCK_FQC_HI : 12, /* [11:0] */
-            reserved : 20;       /* [31:12] */
+            SCK_FQC_HI : 12, /* [11:0] */
+            reserved : 20;   /* [31:12] */
     };
-} mon_sck_fqc_hi_t;
+} spif_sck_fqc_hi_t;
 
 typedef union {
     uint32_t value;
     struct {
         uint32_t
-            MON_SCK_FQC_LO : 12, /* [11:0] */
-            reserved : 20;       /* [31:12] */
+            SCK_FQC_LO : 12, /* [11:0] */
+            reserved : 20;   /* [31:12] */
     };
-} mon_sck_fqc_lo_t;
+} spif_sck_fqc_lo_t;
 
 typedef union {
     uint32_t value;
     struct {
         uint32_t
-            MON_READ_RADDR_REQ : 1, /* [0] */
-            MON_READ_WADDR_REQ : 1, /* [1] */
-            reserved : 30;          /* [31:2] */
+            READ_RADDR_REQ : 1, /* [0] */
+            READ_WADDR_REQ : 1, /* [1] */
+            reserved : 30;      /* [31:2] */
     };
-} mon_read_addr_req_t;
+} spif_read_addr_req_t;
 
 typedef union {
     uint32_t value;
     struct {
         uint32_t
-            mon_read_sram_addr : 9, /* [8:0] */
-            reserved : 23;          /* [31:9] */
+            READ_SRAM_ADDR : 9, /* [8:0] */
+            reserved : 23;      /* [31:9] */
     };
-} mon_read_sram_addr_t;
+} spif_read_sram_addr_t;
 
 enum cmd_table {
     IDX_CMD_PAGE_PROGRAM,

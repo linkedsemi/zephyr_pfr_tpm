@@ -58,7 +58,18 @@ static void linkedsemi_spi_filter_isr(const struct device *dev)
     sys_write32(intr_status.value, dev_config->base + SPIF_INTR_CLR);
     illegal_cmd = sys_read32(dev_config->base + SPIF_ILLEGAL_CMD);
     illegal_addr = sys_read32(dev_config->base + SPIF_ILLEGAL_ADDR);
-    LOG_DBG("linkedsemi_spi_filter_isr: %#x\n", intr_status.value);
+    if (intr_status.ERROR_OVERFLOW) {
+        LOG_DBG("ERROR_OVERFLOW\n");
+    }
+    if (intr_status.ERROR) {
+        LOG_DBG("ERROR\n");
+    }
+    if (intr_status.TARGET_ADDR) {
+        LOG_DBG("TARGET_ADDR\n");
+    }
+    if (intr_status.SCK_CHECK) {
+        LOG_DBG("SCK_CHECK\n");
+    }
     LOG_DBG("SPIF_ILLEGAL_CMD: %#x\n", illegal_cmd);
     LOG_DBG("SPIF_ILLEGAL_ADDR: %#x\n", illegal_addr);
 
@@ -214,16 +225,16 @@ static void spif_peek_rw_area(const struct device *dev, enum addr_priv_rw_select
 {
     __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
     __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
-    mon_read_addr_req_t mon_read_addr_req;
+    spif_read_addr_req_t spif_read_addr_req;
 
     if (rw_select == FLAG_ADDR_PRIV_READ_SELECT) {
-        mon_read_addr_req.MON_READ_RADDR_REQ = 1;
+        spif_read_addr_req.READ_RADDR_REQ = 1;
     } else {
-        mon_read_addr_req.MON_READ_WADDR_REQ = 1;
+        spif_read_addr_req.READ_WADDR_REQ = 1;
     }
 
     sys_write32(addr, dev_config->base + SPIF_READ_SRAM_ADDR);
-    sys_write32(mon_read_addr_req.value, dev_config->base + SPIF_READ_ADDR_REQ);
+    sys_write32(spif_read_addr_req.value, dev_config->base + SPIF_READ_ADDR_REQ);
     while(sys_read32(dev_config->base + SPIF_READ_ADDR_REQ)); /* wait for cs line idle */
     *data = sys_read32(dev_config->base + SPIF_READ_SRAM_DATA);
 }
@@ -630,6 +641,46 @@ void spif_reg_lock(const struct device *dev)
     sys_write32(spif_cfg.value, dev_config->base + SPIF_CFG);
 }
 
+void spif_clk_check_config(const struct device *dev,
+                            uint8_t div,
+                            uint16_t threshold_high_cycle,
+                            uint16_t threshold_low_cycle,
+                            bool enable_intr)
+{
+    __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
+    __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
+    spif_sck_set_t  spif_sck_set;
+    spif_sck_fqc_hi_t spif_sck_fqc_hi;
+    spif_sck_fqc_lo_t spif_sck_fqc_lo;
+    spif_intr_t intr_mask;
+
+    spif_sck_set.value = sys_read32(dev_config->base + SPIF_SCK_SET);
+    spif_sck_set.SCK_DIV = div;
+    sys_write32(spif_sck_set.value, dev_config->base + SPIF_SCK_SET);
+
+    spif_sck_fqc_hi.value = sys_read32(dev_config->base + SPIF_SCK_FQC_HI);
+    spif_sck_fqc_hi.SCK_FQC_HI = threshold_high_cycle;
+    sys_write32(spif_sck_fqc_hi.value, dev_config->base + SPIF_SCK_FQC_HI);
+
+    spif_sck_fqc_lo.value = sys_read32(dev_config->base + SPIF_SCK_FQC_LO);
+    spif_sck_fqc_lo.SCK_FQC_LO = threshold_low_cycle;
+    sys_write32(spif_sck_fqc_lo.value, dev_config->base + SPIF_SCK_FQC_LO);
+
+    intr_mask.value = sys_read32(dev_config->base + SPIF_INTR_MASK);
+    intr_mask.SCK_CHECK = enable_intr ? 1 : 0;
+    sys_write32(intr_mask.value, dev_config->base + SPIF_INTR_MASK);
+}
+
+uint16_t spif_clk_check_peek(const struct device *dev)
+{
+    __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
+    __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
+    spif_sck_set_t spif_sck_set;
+    spif_sck_set.value = sys_read32(dev_config->base + SPIF_SCK_SET);
+
+    return spif_sck_set.SCK_FQC;
+}
+
 static int linkedsemi_spi_filter_init(const struct device *dev)
 {
     __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
@@ -673,11 +724,11 @@ static int linkedsemi_spi_filter_init(const struct device *dev)
         .DMA_EN = 0,
     };
     sys_write32(spif_cfg.value, dev_config->base + SPIF_CFG);
-    spif_intr_t intr_mask = {
-        .ERROR_OVERFLOW = 1,
-        .ERROR = 1,
-        .TARGET_ADDR = 1,
-    };
+    spif_intr_t intr_mask;
+    intr_mask.value = sys_read32(dev_config->base + SPIF_INTR_MASK);
+    intr_mask.ERROR_OVERFLOW = 1;
+    intr_mask.ERROR = 1;
+    intr_mask.TARGET_ADDR = 1;
     sys_write32(intr_mask.value, dev_config->base + SPIF_INTR_MASK);
 
     dev_config->irq_config_func(dev);

@@ -11,14 +11,14 @@
 extern "C" {
 #endif
 
-#define SPIF_FIXED_CMD_TABLE_NUM  30
+#define SPIF_FIXED_CMD_TABLE_NUM   30
 #define SPIF_GENERAL_CMD_TABLE_NUM 40
-#define SPIF_CMD_TABLE_NUM        (SPIF_FIXED_CMD_TABLE_NUM + SPIF_GENERAL_CMD_TABLE_NUM)
+#define SPIF_CMD_TABLE_NUM         (SPIF_FIXED_CMD_TABLE_NUM + SPIF_GENERAL_CMD_TABLE_NUM)
 
 #define SPIF_ABS_ADDR(reg_off, bit_off) ((reg_off)*524288 + (bit_off)*16384)
 
-#define SPIF_ADDR_PRIV_REG_NUN 512
-#define SPIF_ADDR_PRIV_BIT_NUN (SPIF_ADDR_PRIV_REG_NUN * 32)
+#define SPIF_ADDR_PRIV_REG_NUN        512
+#define SPIF_ADDR_PRIV_BIT_NUN        (SPIF_ADDR_PRIV_REG_NUN * 32)
 #define SPI_CMD_BITMAPF_LOG_SIZE_BIT  256
 #define SPIF_CMD_BITMAP_LOG_SIZE_BYTE 32
 #define SPI_CMD_BITMAPF_LOG_SIZE_U32  8
@@ -66,6 +66,12 @@ int spif_address_privilege_config(const struct device *dev,
 void spif_filter_enable(const struct device *dev, bool enable);
 void spif_reg_unlock(const struct device *dev);
 void spif_reg_lock(const struct device *dev);
+void spif_clk_check_config(const struct device *dev,
+                           uint8_t div,
+                           uint16_t threshold_high_cycle,
+                           uint16_t threshold_low_cycle,
+                           bool enable_intr);
+uint16_t spif_clk_check_peek(const struct device *dev);
 
 /**
  * @}
