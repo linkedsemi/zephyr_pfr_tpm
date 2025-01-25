@@ -58,6 +58,7 @@ int spif_add_general_cmd(const struct device *dev, uint8_t cmd);
 int spif_remove_general_cmd(const struct device *dev, uint8_t cmd);
 void spif_dump_rw_addr_privilege_table(const struct device *dev);
 void spif_dump_cmd_bitmap_log(const struct device *dev, uint8_t bitmap[SPIF_CMD_BITMAP_LOG_SIZE_BYTE]);
+void spif_clear_cmd_bitmap_log(const struct device *dev);
 int spif_address_privilege_config(const struct device *dev,
                                   enum addr_priv_rw_select rw_select,
                                   enum addr_priv_op priv_op,

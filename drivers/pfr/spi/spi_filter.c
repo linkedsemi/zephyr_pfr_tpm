@@ -302,6 +302,15 @@ void spif_dump_cmd_bitmap_log(const struct device *dev, uint8_t bitmap[SPIF_CMD_
     }
 }
 
+void spif_clear_cmd_bitmap_log(const struct device *dev)
+{
+    __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
+    __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
+
+    spif_intr_clr_t spif_intr_clr = { .BITMAP = 1 };
+    sys_write32(spif_intr_clr.value, dev_config->base + SPIF_INTR_CLR);
+}
+
 void spif_dump_rw_addr_privilege_table(const struct device *dev)
 {
     __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
