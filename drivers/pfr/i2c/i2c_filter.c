@@ -205,8 +205,7 @@ static int linkedsemi_i2c_filter_init(const struct device *dev)
         int ret;
         ret = pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_DEFAULT);
         if (ret < 0) {
-            LOG_ERR("Could not configure ethernet pins");
-            return ret;
+            LOG_WRN("Could not configure pins");
         }
     }
 #endif

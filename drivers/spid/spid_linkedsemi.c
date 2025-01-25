@@ -94,11 +94,13 @@ static int spid_linkedsemi_init(const struct device *dev)
 {
     const struct spid_linkedsemi_config *cfg = dev->config;
 #if defined(CONFIG_PINCTRL)
-    int ret;
-    /* Configure dt provided device signals when available */
-    ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
-    if (ret < 0) {
-        return ret;
+    if (cfg->pcfg != NULL) {
+        int ret;
+        /* Configure dt provided device signals when available */
+        ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+        if (ret < 0) {
+            LOG_WRN("Could not configure pins");
+        }
     }
 #endif
 
