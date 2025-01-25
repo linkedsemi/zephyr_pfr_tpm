@@ -51,7 +51,7 @@ int linkedsemi_spif_register_callback(const struct device *dev,
                                       void *user_data);
 void spif_dump_cmd_table(const struct device *dev);
 int spif_get_cmd_slot(const struct device *dev, uint8_t cmd, uint32_t start_off);
-int spif_add_cmd(const struct device *dev, uint8_t cmd);
+int spif_add_cmd(const struct device *dev, uint8_t cmd, uint8_t dummy_cycle);
 int spif_remove_cmd(const struct device *dev, uint8_t cmd);
 int spif_get_general_cmd_slot(const struct device *dev, uint8_t cmd, uint32_t start_off);
 int spif_add_general_cmd(const struct device *dev, uint8_t cmd);

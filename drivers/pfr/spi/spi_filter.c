@@ -485,7 +485,7 @@ end:
     return ret;
 }
 
-int spif_add_cmd(const struct device *dev, uint8_t cmd)
+int spif_add_cmd(const struct device *dev, uint8_t cmd, uint8_t dummy_cycle)
 {
     __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
     __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
@@ -512,6 +512,7 @@ int spif_add_cmd(const struct device *dev, uint8_t cmd)
         if (dev_data->fixed_cmd_tab[off] == cmd) {
             spif_cmd_t spif_cmd;
             spif_cmd.CMD = cmd;
+            spif_cmd.DUMMY_CYCLE = dummy_cycle;
             spif_cmd.EN = 1;
             sys_write32(spif_cmd.value, table_base + idx * 4);
             goto end;

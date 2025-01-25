@@ -32,7 +32,7 @@ static int probe_parse_helper(const struct shell *shell, size_t *argc,
 }
 
 static int cmd_parse_helper(const struct shell *shell, size_t *argc,
-        char **argv[], uint8_t *cmd)
+        char **argv[], uint8_t *cmd, uint8_t *dummy_cycle)
 {
     char *endptr;
 
@@ -42,6 +42,9 @@ static int cmd_parse_helper(const struct shell *shell, size_t *argc,
     }
 
     *cmd = strtoul((*argv)[1], &endptr, 16);
+    if (*argc == 3) {
+        *dummy_cycle = strtoul((*argv)[2], &endptr, 16);
+    }
 
     return 0;
 }
@@ -96,17 +99,18 @@ static int add_cmd(const struct shell *shell, size_t argc, char *argv[])
 {
     int ret;
     uint8_t cmd = 0;
+    uint8_t dummy_cycle = 0;
 
     if (!spif_device) {
         shell_error(shell, "Please set the device first.");
         return -ENODEV;
     }
 
-    ret = cmd_parse_helper(shell, &argc, &argv, &cmd);
+    ret = cmd_parse_helper(shell, &argc, &argv, &cmd, &dummy_cycle);
     if (ret)
         goto end;
 
-    ret = spif_add_cmd(spif_device, cmd);
+    ret = spif_add_cmd(spif_device, cmd, dummy_cycle);
 
 end:
     return ret;
@@ -122,7 +126,7 @@ static int remove_cmd(const struct shell *shell, size_t argc, char *argv[])
         return -ENODEV;
     }
 
-    ret = cmd_parse_helper(shell, &argc, &argv, &cmd);
+    ret = cmd_parse_helper(shell, &argc, &argv, &cmd, NULL);
     if (ret)
         goto end;
 
