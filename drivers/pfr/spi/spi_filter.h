@@ -53,13 +53,15 @@ int spif_remove_cmd(const struct device *dev, uint8_t cmd);
 int spif_get_general_cmd_slot(const struct device *dev, uint8_t cmd, uint32_t start_off);
 int spif_add_general_cmd(const struct device *dev, uint8_t cmd);
 int spif_remove_general_cmd(const struct device *dev, uint8_t cmd);
-// void spif_dump_rw_addr_privilege_table(const struct device *dev);
+void spif_dump_rw_addr_privilege_table(const struct device *dev);
 int spif_address_privilege_config(const struct device *dev,
                                   enum addr_priv_rw_select rw_select,
                                   enum addr_priv_op priv_op,
                                   mm_reg_t addr,
                                   uint32_t len);
 void spif_filter_enable(const struct device *dev, bool enable);
+void spif_reg_unlock(const struct device *dev);
+void spif_reg_lock(const struct device *dev);
 
 /**
  * @}

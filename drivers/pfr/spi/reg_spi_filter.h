@@ -10,7 +10,8 @@
 #define SPIF_ILLEGAL_CMD              (0x14)
 #define SPIF_ILLEGAL_ADDR             (0x18)
 #define SPIF_TARGET_ADDR              (0x1c)
-#define SPIF_BCMD_RANGE               (0x20)
+#define SPIF_DMA_DATA                 (0x20)
+#define SPIF_BCMD_RANGE               (0x28)
 #define SPIF_PRG_CMD                  (0x2c)
 #define SPIF_PRG_QADDR_QDATA_CMD      (0x30)
 #define SPIF_ERASE_4KB_CMD            (0x34)
@@ -81,6 +82,12 @@
 #define SPIF_INIT_CMD37               (0x138)
 #define SPIF_INIT_CMD38               (0x13c)
 #define SPIF_INIT_CMD39               (0x140)
+#define SPIF_SCK_SET                  (0x164)
+#define SPIF_SCK_FQC_HI               (0x168)
+#define SPIF_SCK_FQC_LO               (0x16c)
+#define SPIF_READ_ADDR_REQ            (0x170)
+#define SPIF_READ_SRAM_ADDR           (0x174)
+#define SPIF_READ_SRAM_DATA           (0x178)
 #define SPIF_WRITE_ADDR_VALID_EN_ADDR (0x800)  /* 0x800-0xfff */
 #define SPIF_READ_ADDR_VALID_EN_ADDR  (0x1000) /* 0x1000-0x17ff */
 #define SPIF_ADDR_SIZE                (0x800)
@@ -94,10 +101,13 @@ typedef union {
         uint32_t
             EN : 1,                   /* [0] */
             OPERATION_MODE : 1,       /* [1] */
-            ALLOW_4BYTE_ADDR : 1,     /* [2] */
-            TARGET_ADDR_MODE_SEL : 1, /* [3] */
-            BOW_CMD_SEL : 1,          /* [4] */
-            reserved : 27;            /* [31:5] */
+            ADDR_3B_4B_FLAG : 1,      /* [2] */
+            ADDR_3B_4B_SEL : 1,       /* [3] */
+            TARGET_ADDR_MODE_SEL : 1, /* [4] */
+            BOW_CMD_SEL : 1,          /* [5] */
+            IP_LOCK : 1,              /* [6] */
+            DMA_EN : 1,               /* [7] */
+            reserved : 24;            /* [31:8] */
     };
 } spif_cfg_t;
 
@@ -134,7 +144,7 @@ typedef union {
     uint32_t value;
     struct {
         uint32_t
-            BCMD_RANGE : 4;  /* [3:0] */
+            BCMD_RANGE : 4; /* [3:0] */
     };
 } spif_bcmd_range_t;
 
@@ -148,6 +158,52 @@ typedef union {
     };
 } spif_cmd_t;
 
+typedef union {
+    uint32_t value;
+    struct {
+        uint32_t
+            MON_SCK_FQC : 12, /* [11:0] */
+            MON_SCK_DIV : 3,  /* [14:12] */
+            reserved : 17;    /* [31:15] */
+    };
+} mon_sck_set_t;
+
+typedef union {
+    uint32_t value;
+    struct {
+        uint32_t
+            MON_SCK_FQC_HI : 12, /* [11:0] */
+            reserved : 20;       /* [31:12] */
+    };
+} mon_sck_fqc_hi_t;
+
+typedef union {
+    uint32_t value;
+    struct {
+        uint32_t
+            MON_SCK_FQC_LO : 12, /* [11:0] */
+            reserved : 20;       /* [31:12] */
+    };
+} mon_sck_fqc_lo_t;
+
+typedef union {
+    uint32_t value;
+    struct {
+        uint32_t
+            MON_READ_RADDR_REQ : 1, /* [0] */
+            MON_READ_WADDR_REQ : 1, /* [1] */
+            reserved : 30;          /* [31:2] */
+    };
+} mon_read_addr_req_t;
+
+typedef union {
+    uint32_t value;
+    struct {
+        uint32_t
+            mon_read_sram_addr : 9, /* [8:0] */
+            reserved : 23;          /* [31:9] */
+    };
+} mon_read_sram_addr_t;
 
 enum cmd_table {
     IDX_CMD_PAGE_PROGRAM,
@@ -212,6 +268,5 @@ enum cmd_table {
 #define CMD_4BYTE_READ_DUAL_ADDR_DUAL_DATA            0xbc
 #define CMD_PROGRAM_QUAD_DATA                         0x32
 #define CMD_4BYTE_PROGRAM_QUAD_DATA                   0x34
-
 
 #endif /* REG_SPI_FILTER_H_ */

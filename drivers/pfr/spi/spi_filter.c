@@ -210,10 +210,28 @@ void spif_dump_cmd_table(const struct device *dev)
     release_spif_device(dev);
 }
 
-static void spif_mgnt_area_parser(const struct device *dev,
+static void spif_peek_rw_area(const struct device *dev, enum addr_priv_rw_select rw_select, uint32_t addr, uint32_t *data)
+{
+    __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
+    __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
+    mon_read_addr_req_t mon_read_addr_req;
+
+    if (rw_select == FLAG_ADDR_PRIV_READ_SELECT) {
+        mon_read_addr_req.MON_READ_RADDR_REQ = 1;
+    } else {
+        mon_read_addr_req.MON_READ_WADDR_REQ = 1;
+    }
+
+    sys_write32(addr, dev_config->base + SPIF_READ_SRAM_ADDR);
+    sys_write32(mon_read_addr_req.value, dev_config->base + SPIF_READ_ADDR_REQ);
+    while(sys_read32(dev_config->base + SPIF_READ_ADDR_REQ)); /* wait for cs line idle */
+    *data = sys_read32(dev_config->base + SPIF_READ_SRAM_DATA);
+}
+
+static void spif_allocated_area_parser(const struct device *dev,
                                       struct priv_reg_info start,
                                       struct priv_reg_info *res,
-                                      uint32_t *num_forbidden_blk,
+                                      uint32_t *num_allocated_blk,
                                       enum addr_priv_rw_select region)
 {
     __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
@@ -231,21 +249,21 @@ static void spif_mgnt_area_parser(const struct device *dev,
     }
 
     /* init search result */
-    *num_forbidden_blk = 0;
+    *num_allocated_blk = 0;
 
     while (reg_off < SPIF_ADDR_PRIV_REG_NUN) {
-        reg_val = sys_read32(priv_table_base + reg_off * 4);
+        spif_peek_rw_area(dev, region, reg_off, &reg_val);
         reg_val >>= bit_off;
         for (i = bit_off; i < 32; i++) {
-            if ((reg_val & 1) == 0) {
-                if (*num_forbidden_blk == 0) {
-                    /* get the first forbidden block */
+            if ((reg_val & 1) == 1) {
+                if (*num_allocated_blk == 0) {
+                    /* get the first allocated block */
                     res->start_reg_off = reg_off;
                     res->start_bit_off = i;
                 }
 
-                (*num_forbidden_blk)++;
-            } else if ((reg_val & 1) == 1 && *num_forbidden_blk != 0) {
+                (*num_allocated_blk)++;
+            } else if ((reg_val & 1) == 0 && *num_allocated_blk != 0) {
                 res->end_reg_off = reg_off;
                 res->end_bit_off = i;
                 return;
@@ -266,10 +284,10 @@ void spif_dump_rw_addr_privilege_table(const struct device *dev)
 {
     __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
     __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
-    uint32_t num_forbidden_blk = 0;
+    uint32_t num_allocated_blk = 0;
     struct priv_reg_info start;
     struct priv_reg_info res;
-    bool mgnt_en = false;
+    bool allocated_en = false;
     uint32_t rw;
 
     acquire_spif_device(dev);
@@ -277,22 +295,23 @@ void spif_dump_rw_addr_privilege_table(const struct device *dev)
     for (rw = 0; rw < 2; rw++) {
         memset(&start, 0x0, sizeof(struct priv_reg_info));
         memset(&res, 0x0, sizeof(struct priv_reg_info));
-        LOG_DBG("%s mgnt regions:\n", rw == 0 ? "read" : "write");
+        LOG_INF("%s allocated regions:\n", rw == 0 ? "read" : "write");
         do {
-            spif_mgnt_area_parser(dev, start, &res, &num_forbidden_blk, rw);
-            if (num_forbidden_blk != 0) {
-                mgnt_en = true;
-                LOG_DBG("[0x%08x - 0x%08x]\n",
+            spif_allocated_area_parser(dev, start, &res, &num_allocated_blk, rw);
+            if (num_allocated_blk != 0) {
+                allocated_en = true;
+                LOG_INF("[0x%08x - 0x%08x]\n",
                        SPIF_ABS_ADDR(res.start_reg_off, res.start_bit_off),
                        SPIF_ABS_ADDR(res.end_reg_off, res.end_bit_off));
                 start.start_reg_off = res.end_reg_off;
                 start.start_bit_off = res.end_bit_off;
             }
-        } while (num_forbidden_blk != 0);
+        } while (num_allocated_blk != 0);
 
-        if (!mgnt_en)
-            LOG_DBG("all regions are %s!\n", rw == 0 ? "readable" : "writable");
-        LOG_DBG("======END======\n\n");
+        if (!allocated_en) {
+            LOG_INF("all regions are free!\n");
+        }
+        LOG_INF("======END======\n\n");
     }
 
     release_spif_device(dev);
@@ -343,7 +362,7 @@ int spif_address_privilege_config(const struct device *dev,
         LOG_WRN("protected address(0x%08lx) and length(0x%08x) should be 16KB aligned",
                 addr,
                 len);
-        LOG_WRN("stricter mgnt regions will be applied. (force 16KB aligned)");
+        LOG_WRN("stricter allocated regions will be applied. (force 16KB aligned)");
         /* protect more region in order to align 16KB boundary */
         len = addr + len - (addr / KB(16)) * KB(16);
         addr = (addr / KB(16)) * KB(16);
@@ -375,26 +394,23 @@ int spif_address_privilege_config(const struct device *dev,
 
         if (bit_off == 0 && total_bit_num >= 32) {
             /* speed up for large area configuration */
-            if (priv_op == FLAG_ADDR_PRIV_ENABLE)
+            if (priv_op == FLAG_ADDR_PRIV_ENABLE) {
                 sys_write32(0xffffffff, priv_table_base + reg_off * 4);
-            else
+            } else {
                 sys_write32(0x0, priv_table_base + reg_off * 4);
+            }
 
             reg_off++;
             total_bit_num -= 32;
         } else {
-            reg_val = sys_read32(priv_table_base + reg_off * 4);
+            spif_peek_rw_area(dev, rw_select, reg_off, &reg_val);
             if (priv_op == FLAG_ADDR_PRIV_ENABLE) {
-                sys_write32(reg_val | BIT(bit_off),
-                            priv_table_base + reg_off * 4);
+                reg_val |= BIT(bit_off);
             } else {
-                sys_write32(reg_val & (~BIT(bit_off)),
-                            priv_table_base + reg_off * 4);
+                reg_val &= ~BIT(bit_off);
             }
-
-            LOG_DBG("reg: 0x%08lx, val: 0x%08x\n",
-                    priv_table_base + reg_off * 4,
-                    sys_read32(priv_table_base + reg_off * 4));
+            sys_write32(reg_val, priv_table_base + reg_off * 4);
+            LOG_DBG("reg: 0x%08lx, val: 0x%08x\n", priv_table_base + reg_off * 4, reg_val);
 
             bit_off++;
             total_bit_num--;
@@ -585,6 +601,24 @@ void spif_filter_enable(const struct device *dev, bool enable)
     release_spif_device(dev);
 }
 
+void spif_reg_unlock(const struct device *dev)
+{
+    __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
+    __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
+
+    spif_cfg_t spif_cfg = { .IP_LOCK = 1, };
+    sys_write32(spif_cfg.value, dev_config->base + SPIF_CFG);
+}
+
+void spif_reg_lock(const struct device *dev)
+{
+    __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
+    __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
+
+    spif_cfg_t spif_cfg = { .IP_LOCK = 0, };
+    sys_write32(spif_cfg.value, dev_config->base + SPIF_CFG);
+}
+
 static int linkedsemi_spi_filter_init(const struct device *dev)
 {
     __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
@@ -603,21 +637,29 @@ static int linkedsemi_spi_filter_init(const struct device *dev)
         }
     }
 #endif
+    spif_reg_unlock(dev);
+
+    for (uint32_t off = 0; off < SPIF_ADDR_SIZE; off+=4) {
+        sys_write32(0, dev_config->base + SPIF_WRITE_ADDR_VALID_EN_ADDR + off); /* memset WRITE_ADDR */
+        sys_write32(0, dev_config->base + SPIF_READ_ADDR_VALID_EN_ADDR + off); /* memset READ_ADDR */
+    }
     for (uint8_t i = 0; i < SPIF_FIXED_CMD_TABLE_NUM; i++) {
         mm_reg_t table_base = dev_config->base + SPIF_CMD_BASE;
         spif_cmd_t spif_cmd;
         spif_cmd.CMD = dev_data->fixed_cmd_tab[i];
         spif_cmd.EN = 0;
-        sys_write32(spif_cmd.value, table_base + i * 4);
+        sys_write32(spif_cmd.value, table_base + i * 4); /* init fixed table */
     }
     sys_write32(0xffffffff, dev_config->base + SPIF_TARGET_ADDR);
     sys_write32(0x7, dev_config->base + SPIF_BCMD_RANGE);
     spif_cfg_t spif_cfg = {
         .EN = 1,
         .OPERATION_MODE = 1,
-        .ALLOW_4BYTE_ADDR = 1,
+        .ADDR_3B_4B_SEL = 1,
         .TARGET_ADDR_MODE_SEL = dev_config->blacklist_en ? 1 : 0,
         .BOW_CMD_SEL = 0,
+        .IP_LOCK = 1,
+        .DMA_EN = 0,
     };
     sys_write32(spif_cfg.value, dev_config->base + SPIF_CFG);
     spif_intr_t intr_mask = {

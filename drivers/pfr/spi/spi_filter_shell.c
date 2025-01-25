@@ -13,6 +13,10 @@
 #include <soc.h>
 #include <zephyr/kernel.h>
 
+#define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(spi_filter_shell);
+
 static const struct device *spif_device;
 
 static int probe_parse_helper(const struct shell *shell, size_t *argc,
@@ -130,6 +134,18 @@ end:
     return ret;
 }
 
+static int dump_rw_addr_priv_table(const struct shell *shell, size_t argc, char *argv[])
+{
+    if (!spif_device) {
+        shell_error(shell, "Please set the device first.");
+        return -ENODEV;
+    }
+
+    spif_dump_rw_addr_privilege_table(spif_device);
+
+    return 0;
+}
+
 static int read_addr_priv_table_config(const struct shell *shell, size_t argc, char *argv[])
 {
     int ret;
@@ -231,6 +247,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_spif_cmds,
 );
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_spif_addr,
+	SHELL_CMD_ARG(dump, NULL, "\"dump\"", dump_rw_addr_priv_table, 1, 0),
     SHELL_CMD_ARG(read, NULL, "<enable/disable> <addr> <len>",
         read_addr_priv_table_config, 4, 0),
     SHELL_CMD_ARG(write, NULL, "<enable/disable> <addr> <len>",
