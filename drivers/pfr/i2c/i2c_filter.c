@@ -26,6 +26,7 @@ struct linkedsemi_i2c_filter_config {
 };
 
 struct linkedsemi_i2c_filter_data {
+    struct k_mutex lock;
     uint16_t scl_hold_time;
     i2c_filter_callback_t cb;
     void *user_data;
@@ -37,9 +38,13 @@ int linkedsemi_i2c_filter_config_scl_hold_time(const struct device *dev, uint16_
     __unused struct linkedsemi_i2c_filter_data *dev_data = dev->data;
     smbf_control0_reg_t smbf_control0_reg;
 
+    k_mutex_lock(&dev_data->lock, K_FOREVER);
+
     smbf_control0_reg.value = sys_read32(dev_config->base + SMBF_CONTROL0_REG);
     smbf_control0_reg.SCL_HOLD_TIME = scl_hold_time;
     sys_write32(smbf_control0_reg.value, dev_config->base + SMBF_CONTROL0_REG);
+
+    k_mutex_unlock(&dev_data->lock);
 
     return 0;
 }
@@ -98,6 +103,8 @@ int linkedsemi_i2c_filter_fill_bitmap(const struct device *dev,
         return -EINVAL;
     }
 
+    k_mutex_lock(&dev_data->lock, K_FOREVER);
+
     uint32_t offset = (idx >> 2) << 2;
     whitelist_address_t wht_addr;
     wht_addr.value = sys_read32(dev_config->base + WHITELIST_ADDRESS_3_0 + offset);
@@ -114,6 +121,8 @@ int linkedsemi_i2c_filter_fill_bitmap(const struct device *dev,
     uint32_t smbf_address_enable = sys_read32(dev_config->base + SMBF_ADDRESS_ENABLE);
     smbf_address_enable |= BIT(idx);
     sys_write32(smbf_address_enable, dev_config->base + SMBF_ADDRESS_ENABLE);
+
+    k_mutex_unlock(&dev_data->lock);
 
     return 0;
 }
@@ -134,6 +143,8 @@ int linkedsemi_i2c_filter_dump_bitmap(const struct device *dev,
         return -EINVAL;
     }
 
+    k_mutex_lock(&dev_data->lock, K_FOREVER);
+
     uint32_t offset = (idx >> 2) << 2;
     whitelist_address_t wht_addr;
     wht_addr.value = sys_read32(dev_config->base + WHITELIST_ADDRESS_3_0 + offset);
@@ -144,6 +155,8 @@ int linkedsemi_i2c_filter_dump_bitmap(const struct device *dev,
         mm_reg_t reg = (mm_reg_t)(WHITELIST_COMMAND_0 + i * 4);
         bitmap[i] = sys_read32(dev_config->base + reg);
     }
+
+    k_mutex_unlock(&dev_data->lock);
 
     return 0;
 }
@@ -162,6 +175,8 @@ int linkedsemi_i2c_filter_en(const struct device *dev,
         .reserve0 = 0,
     };
 
+    k_mutex_lock(&dev_data->lock, K_FOREVER);
+
     sys_write32(smbf_set.value, dev_config->base + SMBUS_FILTER_SET);
 
     if (clr_tbl) {
@@ -173,6 +188,8 @@ int linkedsemi_i2c_filter_en(const struct device *dev,
         }
     }
 
+    k_mutex_unlock(&dev_data->lock);
+
     return 0;
 }
 
@@ -180,6 +197,8 @@ static int linkedsemi_i2c_filter_init(const struct device *dev)
 {
     __unused const struct linkedsemi_i2c_filter_config *dev_config = dev->config;
     __unused struct linkedsemi_i2c_filter_data *dev_data = dev->data;
+
+    k_mutex_init(&dev_data->lock);
 
 #if defined(CONFIG_PINCTRL)
     if (dev_config->pcfg != NULL) {
