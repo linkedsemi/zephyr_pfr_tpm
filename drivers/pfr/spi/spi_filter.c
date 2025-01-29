@@ -225,11 +225,13 @@ static void spif_peek_rw_area(const struct device *dev, enum addr_priv_rw_select
 {
     __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
     __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
-    spif_read_addr_req_t spif_read_addr_req;
+    spif_read_addr_req_t spif_read_addr_req = {};
 
     if (rw_select == FLAG_ADDR_PRIV_READ_SELECT) {
         spif_read_addr_req.READ_RADDR_REQ = 1;
+        spif_read_addr_req.READ_WADDR_REQ = 0;
     } else {
+        spif_read_addr_req.READ_RADDR_REQ = 0;
         spif_read_addr_req.READ_WADDR_REQ = 1;
     }
 
