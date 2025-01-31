@@ -286,8 +286,8 @@ enum cmd_table {
 #define CMD_4BYTE_READ_QUAD_DATA                      0x6c
 #define CMD_4BYTE_READ_QUAD_ADDRESS_QUAD_DATA         0xec
 #define CMD_READ_DUAL_DATA                            0x3b
-#define CMD_READ_DUAL_ADDR_DUAL_DATA                  0x3c
-#define CMD_4BYTE_READ_DUAL_DATA                      0xbb
+#define CMD_READ_DUAL_ADDR_DUAL_DATA                  0xbb
+#define CMD_4BYTE_READ_DUAL_DATA                      0x3c
 #define CMD_4BYTE_READ_DUAL_ADDR_DUAL_DATA            0xbc
 #define CMD_PROGRAM_QUAD_DATA                         0x32
 #define CMD_4BYTE_PROGRAM_QUAD_DATA                   0x34

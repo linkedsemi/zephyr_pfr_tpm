@@ -85,10 +85,10 @@ properties:
       default: 0x3b
   cmd-read-dual-addr-dual-data:
       type: int
-      default: 0x3c
+      default: 0xbb
   cmd-4byte-read-dual-data:
       type: int
-      default: 0xbb
+      default: 0x3c
   cmd-4byte-read-dual-addr-dual-data:
       type: int
       default: 0xbc

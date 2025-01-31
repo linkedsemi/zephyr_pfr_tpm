@@ -68,7 +68,16 @@ static void linkedsemi_spi_filter_isr(const struct device *dev)
         LOG_DBG("TARGET_ADDR\n");
     }
     if (intr_status.SCK_CHECK) {
-        LOG_DBG("SCK_CHECK\n");
+        spif_sck_fqc_hi_t spif_sck_fqc_hi;
+        spif_sck_fqc_lo_t spif_sck_fqc_lo;
+        spif_sck_set_t spif_sck_set;
+        spif_sck_fqc_hi.value = sys_read32(dev_config->base + SPIF_SCK_FQC_HI);
+        spif_sck_fqc_lo.value = sys_read32(dev_config->base + SPIF_SCK_FQC_LO);
+        spif_sck_set.value = sys_read32(dev_config->base + SPIF_SCK_SET);
+        LOG_DBG("SCK_CHECK: expect [%#x, %#x] but got %#x\n",
+                                                    spif_sck_fqc_lo.SCK_FQC_LO,
+                                                    spif_sck_fqc_hi.SCK_FQC_HI,
+                                                    spif_sck_set.SCK_FQC);
     }
     LOG_DBG("SPIF_ILLEGAL_CMD: %#x\n", illegal_cmd);
     LOG_DBG("SPIF_ILLEGAL_ADDR: %#x\n", illegal_addr);
@@ -414,9 +423,9 @@ int spif_address_privilege_config(const struct device *dev,
     acquire_spif_device(dev);
 
     if (rw_select == FLAG_ADDR_PRIV_READ_SELECT) {
-        priv_table_base = dev_config->base + SPIF_ADDR_PRIV_TABLE_BASE + SPIF_ADDR_SIZE;
+        priv_table_base = dev_config->base + SPIF_READ_ADDR_VALID_EN_ADDR;
     } else {
-        priv_table_base = dev_config->base + SPIF_ADDR_PRIV_TABLE_BASE;
+        priv_table_base = dev_config->base + SPIF_WRITE_ADDR_VALID_EN_ADDR;
     }
 
     do {
@@ -720,6 +729,7 @@ static int linkedsemi_spi_filter_init(const struct device *dev)
         mm_reg_t table_base = dev_config->base + SPIF_CMD_BASE;
         spif_cmd_t spif_cmd;
         spif_cmd.CMD = dev_data->fixed_cmd_tab[i];
+        spif_cmd.DUMMY_CYCLE = 0;
         spif_cmd.EN = 0;
         sys_write32(spif_cmd.value, table_base + i * 4); /* init fixed table */
     }
