@@ -2,6 +2,14 @@
 #ifndef REG_SPI_FILTER_H_
 #define REG_SPI_FILTER_H_
 
+#define SPIFILTER1                    (0x40070000)
+#define SPIFILTER2                    (0x40072000)
+#define SPIFILTER3                    (0x40074000)
+#define SPIFILTER4                    (0x40076000)
+#define DMA_SPIFILTER1                (174)
+#define DMA_SPIFILTER2                (175)
+#define DMA_SPIFILTER3                (176)
+#define DMA_SPIFILTER4                (177)
 #define SPIF_CFG                      (0x00)
 #define SPIF_INTR_STT                 (0x04)
 #define SPIF_INTR_MASK                (0x08)
@@ -227,6 +235,18 @@ typedef union {
             reserved : 23;      /* [31:9] */
     };
 } spif_read_sram_addr_t;
+
+typedef union {
+    uint32_t value;
+    struct {
+        uint32_t
+            SPIF_ADDR_ERR : 1, /* [0] */
+            SPIF_CMD_ERR : 1, /* [1] */
+            SPIF_POR_ADDR : 1, /* [2] */
+            SPIF_ERROR_ADDR : 21, /* [23:3] */
+            SPIF_ERROR_CMD : 8; /* [31:24] */
+    };
+} spif_dma_data_t;
 
 enum cmd_table {
     IDX_CMD_PAGE_PROGRAM,

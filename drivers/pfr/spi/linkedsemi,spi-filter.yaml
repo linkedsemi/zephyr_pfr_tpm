@@ -98,3 +98,6 @@ properties:
   cmd-4byte-program-quad-data:
       type: int
       default: 0x34
+  dma-chan:
+      type: int
+      default: 0

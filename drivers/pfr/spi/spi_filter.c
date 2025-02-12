@@ -3,6 +3,11 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#if 0
+#if !defined(CONFIG_NOCACHE_MEMORY)
+#error "missing memory attribute for descriptors"
+#endif
+#endif
 
 #define DT_DRV_COMPAT linkedsemi_spi_filter
 
@@ -14,6 +19,7 @@
 #include <spi_filter.h>
 #include <reg_spi_filter.h>
 #include <zephyr/drivers/pinctrl.h>
+#include "ls_hal_dmacv3.h"
 
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -24,6 +30,8 @@ struct linkedsemi_spi_filter_config {
     const struct pinctrl_dev_config *pcfg;
     void (*irq_config_func)(const struct device *dev);
     bool blacklist_en;
+    uint8_t dma_chan;
+    uint8_t dma_handshake;
 };
 
 struct linkedsemi_spi_filter_data {
@@ -31,6 +39,7 @@ struct linkedsemi_spi_filter_data {
     uint8_t fixed_cmd_tab[SPIF_FIXED_CMD_TABLE_NUM];
     spif_callback_t cb;
     void *user_data;
+    uint32_t *dma_mem;
 };
 
 int linkedsemi_spif_register_callback(const struct device *dev,
@@ -51,13 +60,11 @@ static void linkedsemi_spi_filter_isr(const struct device *dev)
     __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
     __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
     spif_intr_t intr_status;
-    uint32_t illegal_cmd;
-    uint32_t illegal_addr;
+    spif_dma_data_t spif_dma_data;
 
     intr_status.value = sys_read32(dev_config->base + SPIF_INTR_STT);
     sys_write32(intr_status.value, dev_config->base + SPIF_INTR_CLR);
-    illegal_cmd = sys_read32(dev_config->base + SPIF_ILLEGAL_CMD);
-    illegal_addr = sys_read32(dev_config->base + SPIF_ILLEGAL_ADDR);
+    spif_dma_data.value = sys_read32(dev_config->base + SPIF_DMA_DATA);
     if (intr_status.ERROR_OVERFLOW) {
         LOG_DBG("ERROR_OVERFLOW\n");
     }
@@ -79,8 +86,11 @@ static void linkedsemi_spi_filter_isr(const struct device *dev)
                                                     spif_sck_fqc_hi.SCK_FQC_HI,
                                                     spif_sck_set.SCK_FQC);
     }
-    LOG_DBG("SPIF_ILLEGAL_CMD: %#x\n", illegal_cmd);
-    LOG_DBG("SPIF_ILLEGAL_ADDR: %#x\n", illegal_addr);
+    LOG_DBG("SPIF_ADDR_ERR: %#x\n", spif_dma_data.SPIF_ADDR_ERR);
+    LOG_DBG("SPIF_CMD_ERR: %#x\n", spif_dma_data.SPIF_CMD_ERR);
+    LOG_DBG("SPIF_POR_ADDR: %#x\n", spif_dma_data.SPIF_POR_ADDR);
+    LOG_DBG("SPIF_ERROR_ADDR: %#x\n", spif_dma_data.SPIF_ERROR_ADDR);
+    LOG_DBG("SPIF_ERROR_CMD: %#x\n", spif_dma_data.SPIF_ERROR_CMD);
 
     if (dev_data->cb) {
         dev_data->cb(dev, 0, dev_data->user_data, NULL);
@@ -169,42 +179,41 @@ int spif_get_cmd_slot(const struct device *dev, uint8_t cmd, uint32_t start_off)
     return -ENOSR;
 }
 
-static const uint8_t fix_cmd_desc[][46] = {
-    "cmd-page-program                             ",
-    "cmd-page-program-quad-address-quad-data      ",
-    "cmd-erase-4kb                                ",
-    "cmd-erase-32kb                               ",
-    "cmd-erase-64kb                               ",
-    "cmd-read                                     ",
-    "cmd-fast-read                                ",
-    "cmd-read-quad-data                           ",
-    "cmd-read-quad-address-quad-data              ",
-    "cmd-quad-spi-mode-enter                      ",
-    "cmd-quad-spi-mode-exit                       ",
-    "cmd-4byte-mode-enter                         ",
-    "cmd-4byte-mode-exit                          ",
-    "cmd-4byte-read-extended-address              ",
-    "cmd-4byte-write-extended-address             ",
-    "cmd-4byte-page-program                       ",
+static const uint8_t *fix_cmd_desc[] = {
+    "cmd-page-program",
+    "cmd-page-program-quad-address-quad-data",
+    "cmd-erase-4kb",
+    "cmd-erase-32kb",
+    "cmd-erase-64kb",
+    "cmd-read",
+    "cmd-fast-read",
+    "cmd-read-quad-data",
+    "cmd-read-quad-address-quad-data",
+    "cmd-quad-spi-mode-enter",
+    "cmd-quad-spi-mode-exit",
+    "cmd-4byte-mode-enter",
+    "cmd-4byte-mode-exit",
+    "cmd-4byte-read-extended-address",
+    "cmd-4byte-write-extended-address",
+    "cmd-4byte-page-program",
     "cmd-4byte-page-program-quad-address-quad-data",
-    "cmd-4byte-erase-4kb                          ",
-    "cmd-4byte-erase-32kb                         ",
-    "cmd-4byte-erase-64kb                         ",
-    "cmd-4byte-read                               ",
-    "cmd-4byte-fast-read                          ",
-    "cmd-4byte-read-quad-data                     ",
-    "cmd-4byte-read-quad-address-quad-data        ",
-    "cmd-read-dual-data                           ",
-    "cmd-read-dual-addr-dual-data                 ",
-    "cmd-4byte-read-dual-data                     ",
-    "cmd-4byte-read-dual-addr-dual-data           ",
-    "cmd-program-quad-data                        ",
-    "cmd-4byte-program-quad-data                  ",
-    "cmd-4byte-program-quad-data                  ",
+    "cmd-4byte-erase-4kb",
+    "cmd-4byte-erase-32kb",
+    "cmd-4byte-erase-64kb",
+    "cmd-4byte-read",
+    "cmd-4byte-fast-read",
+    "cmd-4byte-read-quad-data",
+    "cmd-4byte-read-quad-address-quad-data",
+    "cmd-read-dual-data",
+    "cmd-read-dual-addr-dual-data",
+    "cmd-4byte-read-dual-data",
+    "cmd-4byte-read-dual-addr-dual-data",
+    "cmd-program-quad-data",
+    "cmd-4byte-program-quad-data",
+    "cmd-4byte-program-quad-data",
 };
 
-static const uint8_t *general_cmd_desc =
-    "cmd-general                                  ";
+static const uint8_t *general_cmd_desc = "cmd-general";
 
 void spif_dump_cmd_table(const struct device *dev)
 {
@@ -219,10 +228,10 @@ void spif_dump_cmd_table(const struct device *dev)
         if (spif_cmd.value == 0)
             continue;
         if (i < SPIF_FIXED_CMD_TABLE_NUM) {
-            LOG_DBG("[%s]idx %02d: %s: 0x%02x: %s\n", dev->name, i, fix_cmd_desc[i],
+            LOG_DBG("[%s]idx %02d: %-46.46s: 0x%02x: %s\n", dev->name, i, fix_cmd_desc[i],
                 spif_cmd.CMD, spif_cmd.EN == 1 ? "enabled" : "disabled");
         } else {
-            LOG_DBG("[%s]idx %02d: %s: 0x%02x: %s\n", dev->name, i, general_cmd_desc,
+            LOG_DBG("[%s]idx %02d: %-46.46s: 0x%02x: %s\n", dev->name, i, general_cmd_desc,
                 spif_cmd.CMD, spif_cmd.EN == 1 ? "enabled" : "disabled");
         }
     }
@@ -668,6 +677,7 @@ void spif_clk_check_config(const struct device *dev,
                             uint16_t threshold_low_cycle,
                             bool enable_intr)
 {
+    __ASSERT_NO_MSG(threshold_high_cycle < threshold_low_cycle);
     __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
     __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
     spif_sck_set_t  spif_sck_set;
@@ -701,6 +711,75 @@ uint16_t spif_clk_check_peek(const struct device *dev)
 
     return spif_sck_set.SCK_FQC;
 }
+
+#if 0
+uint32_t *spif_log_dma_buf(const struct device *dev)
+{
+    __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
+    __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
+
+    return dev_data->dma_mem;
+}
+
+static void spif_dma_callback(DMA_Controller_HandleTypeDef *hdma, uint32_t param, uint8_t ch_idx, uint32_t *lli, bool tfr_end)
+{
+    if(tfr_end == false) {
+    }
+}
+
+DEF_DMA_CONTROLLER(dmac1_SSI_inst, DMAC1);
+
+int spif_dma_handshake_get(const struct device *dev)
+{
+    __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
+    __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
+
+    int ret = 0;
+    switch((uint32_t)dev_config->base) {
+        case SPIFILTER1: ret = DMA_SPIFILTER1; break;
+        case SPIFILTER2: ret = DMA_SPIFILTER2; break;
+        case SPIFILTER3: ret = DMA_SPIFILTER3; break;
+        case SPIFILTER4: ret = DMA_SPIFILTER4; break;
+        default: ret = -1; break;
+    }
+
+    return ret;
+}
+
+void spif_dma_config(const struct device *dev)
+{
+    __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
+    __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
+
+    memset(dev_data->dma_mem, 0, SPIF_LOG_RAM_TOTAL_SIZE);
+    DMA_CONTROLLER_INIT(dmac1_SSI_inst);
+
+    spif_intr_t intr_mask;
+    intr_mask.value = sys_read32(dev_config->base + SPIF_INTR_MASK);
+    intr_mask.ERROR_OVERFLOW = 0;
+    intr_mask.ERROR = 0;
+    intr_mask.TARGET_ADDR = 0;
+    sys_write32(intr_mask.value, dev_config->base + SPIF_INTR_MASK);
+    spif_cfg_t spif_cfg;
+    spif_cfg.value = sys_read32(dev_config->base + SPIF_CFG);
+    spif_cfg.DMA_EN = 1;
+    sys_write32(spif_cfg.value, dev_config->base + SPIF_CFG);
+
+    uint8_t data_width = TRANSFER_WIDTH_32BITS;
+    struct ch_reg cfg;
+    DMA_CHANNEL_CFG(cfg,
+        dev_config->dma_chan,
+        dev_config->base + SPIF_DMA_DATA,
+        (uint32_t)dev_data->dma_mem,
+        data_width,
+        SPIF_LOG_RAM_TOTAL_SIZE,
+        P2M,
+        0,
+        spif_dma_handshake_get(dev),
+        0,0,0,0);
+    HAL_DMA_Channel_Start_IT(&dmac1_SSI_inst, &cfg, spif_dma_callback, (uint32_t)dev);
+}
+#endif
 
 static int linkedsemi_spi_filter_init(const struct device *dev)
 {
@@ -769,9 +848,11 @@ static int linkedsemi_spi_filter_init(const struct device *dev)
         irq_enable(DT_INST_IRQN(inst));                                                                                                                                                                                              \
     }                                                                                                                                                                                                                                \
     PINCTRL_DT_INST_DEFINE(inst);                                                                                                                                                                                                    \
+    __nocache __aligned(4) uint8_t dma_mem_##inst[SPIF_LOG_RAM_TOTAL_SIZE];                                                                                                                                                          \
     static const struct linkedsemi_spi_filter_config linkedsemi_spi_filter_cfg_##inst = {                                                                                                                                            \
         .base = (mm_reg_t)DT_INST_REG_ADDR(inst),                                                                                                                                                                                    \
         .irq_config_func = linkedsemi_spi_filter_irq_config_func_##inst,                                                                                                                                                             \
+        .dma_chan = 0,                                                                                                                                                                                                               \
         IF_ENABLED(CONFIG_PINCTRL, (.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst), ))                                                                                                                                                 \
     };                                                                                                                                                                                                                               \
     static struct linkedsemi_spi_filter_data linkedsemi_spi_filter_data_##inst = {                                                                                                                                                   \
@@ -807,6 +888,7 @@ static int linkedsemi_spi_filter_init(const struct device *dev)
             IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_program_quad_data ), ([IDX_CMD_PROGRAM_QUAD_DATA] = DT_INST_PROP(inst, cmd_program_quad_data ), ))                                                                            \
             IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_program_quad_data ), ([IDX_CMD_4BYTE_PROGRAM_QUAD_DATA] = DT_INST_PROP(inst, cmd_4byte_program_quad_data ), ))                                                          \
         },                                                                                                                                                                                                                           \
+        .dma_mem = (uint32_t *)dma_mem_##inst,                                                                                                                                                                                       \
     };                                                                                                                                                                                                                               \
     DEVICE_DT_INST_DEFINE(inst,                                                                                                                                                                                                      \
                           linkedsemi_spi_filter_init,                                                                                                                                                                                \
