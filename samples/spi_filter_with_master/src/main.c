@@ -158,16 +158,31 @@ int main(void)
 #endif
 
 
-//cmd bitmap   10.
+//cmd bitmap
 #if 0
     test_general_cmd(spifilter);
 #endif
 
-//addr overflow   10.
+//addr overflow
 #if 0
     test_cmd_rd_addr_overflow(spifilter);
     test_cmd_wr_addr_overflow(spifilter);
 #endif
+
+// target_addr
+#if 0
+    spif_target_addr_config(spifilter, 0, FLAG_TARGET_ADDR_32BIT, true);
+    do {
+        g_cmd = CMD_FAST_READ;
+        uint8_t tx_data[] = {g_cmd, 0x0, 0x0, 0x0, 0x4, 0x5a, 0xf7};
+        printf("spif_add_cmd: %#x\n", g_cmd);
+        spif_add_cmd(spifilter, g_cmd, 0);
+        if (HAL_SSI_Transmit(&SsiHandle, tx_data, ARRAY_SIZE(tx_data)) != HAL_OK) {
+            while(1);
+        }
+    } while(0);
+#endif
+
     // spif_dump_cmd_table(spifilter);
     // spif_dump_rw_addr_privilege_table(spifilter);
 
