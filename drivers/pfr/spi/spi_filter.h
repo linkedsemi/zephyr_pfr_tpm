@@ -22,7 +22,7 @@ extern "C" {
 #define SPI_CMD_BITMAPF_LOG_SIZE_BIT  256
 #define SPIF_CMD_BITMAP_LOG_SIZE_BYTE 32
 #define SPI_CMD_BITMAPF_LOG_SIZE_U32  8
-#define SPIF_LOG_RAM_TOTAL_SIZE       2048
+#define SPIF_LOG_RAM_MAX_SIZE_U32     2047
 
 struct priv_reg_info {
     uint32_t start_reg_off;
@@ -74,7 +74,9 @@ void spif_clk_check_config(const struct device *dev,
                            uint16_t threshold_low_cycle,
                            bool enable_intr);
 uint16_t spif_clk_check_peek(const struct device *dev);
-void spif_dma_config(const struct device *dev);
+
+#include "ls_hal_dmacv3.h"
+void spif_dma_config(const struct device *dev, DMA_Controller_HandleTypeDef *dmac_inst);
 uint32_t *spif_log_dma_buf(const struct device *dev);
 
 /**

@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #if 0
-#if !defined(CONFIG_NOCACHE_MEMORY)
-#error "missing memory attribute for descriptors"
-#endif
+    #if !defined(CONFIG_NOCACHE_MEMORY)
+        #error "missing memory attribute for descriptors"
+    #endif
 #endif
 
 #define DT_DRV_COMPAT linkedsemi_spi_filter
@@ -19,7 +19,6 @@
 #include <spi_filter.h>
 #include <reg_spi_filter.h>
 #include <zephyr/drivers/pinctrl.h>
-#include "ls_hal_dmacv3.h"
 
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -40,6 +39,7 @@ struct linkedsemi_spi_filter_data {
     spif_callback_t cb;
     void *user_data;
     uint32_t *dma_mem;
+    uint16_t dma_log_cnt;
 };
 
 int linkedsemi_spif_register_callback(const struct device *dev,
@@ -60,11 +60,9 @@ static void linkedsemi_spi_filter_isr(const struct device *dev)
     __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
     __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
     spif_intr_t intr_status;
-    spif_dma_data_t spif_dma_data;
 
     intr_status.value = sys_read32(dev_config->base + SPIF_INTR_STT);
     sys_write32(intr_status.value, dev_config->base + SPIF_INTR_CLR);
-    spif_dma_data.value = sys_read32(dev_config->base + SPIF_DMA_DATA);
     if (intr_status.ERROR_OVERFLOW) {
         LOG_DBG("ERROR_OVERFLOW\n");
     }
@@ -82,15 +80,10 @@ static void linkedsemi_spi_filter_isr(const struct device *dev)
         spif_sck_fqc_lo.value = sys_read32(dev_config->base + SPIF_SCK_FQC_LO);
         spif_sck_set.value = sys_read32(dev_config->base + SPIF_SCK_SET);
         LOG_DBG("SCK_CHECK: expect [%#x, %#x] but got %#x\n",
-                                                    spif_sck_fqc_lo.SCK_FQC_LO,
-                                                    spif_sck_fqc_hi.SCK_FQC_HI,
-                                                    spif_sck_set.SCK_FQC);
+               spif_sck_fqc_lo.SCK_FQC_LO,
+               spif_sck_fqc_hi.SCK_FQC_HI,
+               spif_sck_set.SCK_FQC);
     }
-    LOG_DBG("SPIF_ADDR_ERR: %#x\n", spif_dma_data.SPIF_ADDR_ERR);
-    LOG_DBG("SPIF_CMD_ERR: %#x\n", spif_dma_data.SPIF_CMD_ERR);
-    LOG_DBG("SPIF_POR_ADDR: %#x\n", spif_dma_data.SPIF_POR_ADDR);
-    LOG_DBG("SPIF_ERROR_ADDR: %#x\n", spif_dma_data.SPIF_ERROR_ADDR);
-    LOG_DBG("SPIF_ERROR_CMD: %#x\n", spif_dma_data.SPIF_ERROR_CMD);
 
     if (dev_data->cb) {
         dev_data->cb(dev, 0, dev_data->user_data, NULL);
@@ -228,11 +221,9 @@ void spif_dump_cmd_table(const struct device *dev)
         if (spif_cmd.value == 0)
             continue;
         if (i < SPIF_FIXED_CMD_TABLE_NUM) {
-            LOG_DBG("[%s]idx %02d: %-46.46s: 0x%02x: %s\n", dev->name, i, fix_cmd_desc[i],
-                spif_cmd.CMD, spif_cmd.EN == 1 ? "enabled" : "disabled");
+            LOG_DBG("[%s]idx %02d: %-46.46s: 0x%02x: %s\n", dev->name, i, fix_cmd_desc[i], spif_cmd.CMD, spif_cmd.EN == 1 ? "enabled" : "disabled");
         } else {
-            LOG_DBG("[%s]idx %02d: %-46.46s: 0x%02x: %s\n", dev->name, i, general_cmd_desc,
-                spif_cmd.CMD, spif_cmd.EN == 1 ? "enabled" : "disabled");
+            LOG_DBG("[%s]idx %02d: %-46.46s: 0x%02x: %s\n", dev->name, i, general_cmd_desc, spif_cmd.CMD, spif_cmd.EN == 1 ? "enabled" : "disabled");
         }
     }
 
@@ -255,15 +246,15 @@ static void spif_peek_rw_area(const struct device *dev, enum addr_priv_rw_select
 
     sys_write32(addr, dev_config->base + SPIF_READ_SRAM_ADDR);
     sys_write32(spif_read_addr_req.value, dev_config->base + SPIF_READ_ADDR_REQ);
-    while(sys_read32(dev_config->base + SPIF_READ_ADDR_REQ)); /* wait for cs line idle */
+    while (sys_read32(dev_config->base + SPIF_READ_ADDR_REQ)); /* wait for cs line idle */
     *data = sys_read32(dev_config->base + SPIF_READ_SRAM_DATA);
 }
 
 static void spif_allocated_area_parser(const struct device *dev,
-                                      struct priv_reg_info start,
-                                      struct priv_reg_info *res,
-                                      uint32_t *num_allocated_blk,
-                                      enum addr_priv_rw_select region)
+                                       struct priv_reg_info start,
+                                       struct priv_reg_info *res,
+                                       uint32_t *num_allocated_blk,
+                                       enum addr_priv_rw_select region)
 {
     __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
     __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
@@ -346,12 +337,12 @@ void spif_dump_rw_addr_privilege_table(const struct device *dev)
     for (rw = 0; rw < 2; rw++) {
         memset(&start, 0x0, sizeof(struct priv_reg_info));
         memset(&res, 0x0, sizeof(struct priv_reg_info));
-        LOG_INF("%s allocated regions:\n", rw == 0 ? "read" : "write");
+        LOG_DBG("%s allocated regions:\n", rw == 0 ? "read" : "write");
         do {
             spif_allocated_area_parser(dev, start, &res, &num_allocated_blk, rw);
             if (num_allocated_blk != 0) {
                 allocated_en = true;
-                LOG_INF("[0x%08x - 0x%08x]\n",
+                LOG_DBG("[0x%08x - 0x%08x]\n",
                        SPIF_ABS_ADDR(res.start_reg_off, res.start_bit_off),
                        SPIF_ABS_ADDR(res.end_reg_off, res.end_bit_off));
                 start.start_reg_off = res.end_reg_off;
@@ -360,9 +351,9 @@ void spif_dump_rw_addr_privilege_table(const struct device *dev)
         } while (num_allocated_blk != 0);
 
         if (!allocated_en) {
-            LOG_INF("all regions are free!\n");
+            LOG_DBG("all regions are free!\n");
         }
-        LOG_INF("======END======\n\n");
+        LOG_DBG("======END======\n\n");
     }
 
     release_spif_device(dev);
@@ -672,15 +663,15 @@ void spif_reg_lock(const struct device *dev)
 }
 
 void spif_clk_check_config(const struct device *dev,
-                            uint8_t div,
-                            uint16_t threshold_high_cycle,
-                            uint16_t threshold_low_cycle,
-                            bool enable_intr)
+                           uint8_t div,
+                           uint16_t threshold_high_cycle,
+                           uint16_t threshold_low_cycle,
+                           bool enable_intr)
 {
     __ASSERT_NO_MSG(threshold_high_cycle < threshold_low_cycle);
     __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
     __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
-    spif_sck_set_t  spif_sck_set;
+    spif_sck_set_t spif_sck_set;
     spif_sck_fqc_hi_t spif_sck_fqc_hi;
     spif_sck_fqc_lo_t spif_sck_fqc_lo;
     spif_intr_t intr_mask;
@@ -712,7 +703,6 @@ uint16_t spif_clk_check_peek(const struct device *dev)
     return spif_sck_set.SCK_FQC;
 }
 
-#if 0
 uint32_t *spif_log_dma_buf(const struct device *dev)
 {
     __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
@@ -721,13 +711,55 @@ uint32_t *spif_log_dma_buf(const struct device *dev)
     return dev_data->dma_mem;
 }
 
-static void spif_dma_callback(DMA_Controller_HandleTypeDef *hdma, uint32_t param, uint8_t ch_idx, uint32_t *lli, bool tfr_end)
+uint16_t HAL_DMA_Controller_Peek_BLOCK_TS(DMA_Controller_HandleTypeDef *hdma, uint8_t ch_idx)
 {
-    if(tfr_end == false) {
-    }
+    volatile uint64_t *CTL = (void *)hdma->Instance->CH[ch_idx].CTL;
+    return (*CTL >> 32) & DMAC_BLOCK_TS_MASK;
 }
 
-DEF_DMA_CONTROLLER(dmac1_SSI_inst, DMAC1);
+static void spif_dma_callback(DMA_Controller_HandleTypeDef *hdma, uint32_t param, uint8_t ch_idx, uint32_t *lli, bool tfr_end)
+{
+    const struct device *dev = (const struct device *)param;
+    __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
+    __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
+    uint16_t block_ts = HAL_DMA_Controller_Peek_BLOCK_TS(hdma, ch_idx);
+
+    if (tfr_end == false) {
+        if (dev_data->dma_log_cnt < block_ts) {
+            for (uint16_t i = dev_data->dma_log_cnt; i < block_ts; i++) {
+                spif_dma_data_t *spif_dma_data = (spif_dma_data_t *)dev_data->dma_mem;
+                printk("dma log idx: %d\n", i);
+                printk("SPIF_ADDR_ERR: %#x\n", spif_dma_data[i].SPIF_ADDR_ERR);
+                printk("SPIF_CMD_ERR: %#x\n", spif_dma_data[i].SPIF_CMD_ERR);
+                printk("SPIF_POR_ADDR: %#x\n", spif_dma_data[i].SPIF_POR_ADDR);
+                printk("SPIF_ERROR_ADDR: %#x\n", spif_dma_data[i].SPIF_ERROR_ADDR);
+                printk("SPIF_ERROR_CMD: %#x\n", spif_dma_data[i].SPIF_ERROR_CMD);
+            }
+        } else {
+            for (uint16_t i = dev_data->dma_log_cnt; i < SPIF_LOG_RAM_MAX_SIZE_U32; i++) {
+                spif_dma_data_t *spif_dma_data = (spif_dma_data_t *)dev_data->dma_mem;
+                printk("dma log idx: %d\n", i);
+                printk("SPIF_ADDR_ERR: %#x\n", spif_dma_data[i].SPIF_ADDR_ERR);
+                printk("SPIF_CMD_ERR: %#x\n", spif_dma_data[i].SPIF_CMD_ERR);
+                printk("SPIF_POR_ADDR: %#x\n", spif_dma_data[i].SPIF_POR_ADDR);
+                printk("SPIF_ERROR_ADDR: %#x\n", spif_dma_data[i].SPIF_ERROR_ADDR);
+                printk("SPIF_ERROR_CMD: %#x\n", spif_dma_data[i].SPIF_ERROR_CMD);
+            }
+            for (uint16_t i = 0; i < block_ts; i++) {
+                spif_dma_data_t *spif_dma_data = (spif_dma_data_t *)dev_data->dma_mem;
+                printk("dma log idx: %d\n", i);
+                printk("SPIF_ADDR_ERR: %#x\n", spif_dma_data[i].SPIF_ADDR_ERR);
+                printk("SPIF_CMD_ERR: %#x\n", spif_dma_data[i].SPIF_CMD_ERR);
+                printk("SPIF_POR_ADDR: %#x\n", spif_dma_data[i].SPIF_POR_ADDR);
+                printk("SPIF_ERROR_ADDR: %#x\n", spif_dma_data[i].SPIF_ERROR_ADDR);
+                printk("SPIF_ERROR_CMD: %#x\n", spif_dma_data[i].SPIF_ERROR_CMD);
+            }
+        }
+        dev_data->dma_log_cnt = block_ts;
+    } else {
+        printk("log buffer full. reload.\n");
+    }
+}
 
 int spif_dma_handshake_get(const struct device *dev)
 {
@@ -735,31 +767,84 @@ int spif_dma_handshake_get(const struct device *dev)
     __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
 
     int ret = 0;
-    switch((uint32_t)dev_config->base) {
-        case SPIFILTER1: ret = DMA_SPIFILTER1; break;
-        case SPIFILTER2: ret = DMA_SPIFILTER2; break;
-        case SPIFILTER3: ret = DMA_SPIFILTER3; break;
-        case SPIFILTER4: ret = DMA_SPIFILTER4; break;
-        default: ret = -1; break;
+    switch ((uint32_t)dev_config->base) {
+    case SPIFILTER1: ret = DMA_SPIFILTER1; break;
+    case SPIFILTER2: ret = DMA_SPIFILTER2; break;
+    case SPIFILTER3: ret = DMA_SPIFILTER3; break;
+    case SPIFILTER4: ret = DMA_SPIFILTER4; break;
+    default: ret = -1; break;
     }
 
     return ret;
 }
 
-void spif_dma_config(const struct device *dev)
+#define DMA_CHANNEL_CFG_RELOAD(reg_struct, idx, src, dst, data_width, size, type, lli, hs, scatter_count, scatter_interval, gather_count, gather_interval)                 \
+    do {                                                                                                                                                                   \
+        _DMA_SAR_DAR_LLP_CTL_SET(reg_struct, idx, src, dst, data_width, BUSRT_TRANSACTION_1_ITEM, BUSRT_TRANSACTION_1_ITEM, size, type, lli, scatter_count, gather_count); \
+        reg_struct.cfg.reserved0 = 0;                                                                                                                                      \
+        reg_struct.cfg.ch_prior = idx;                                                                                                                                     \
+        reg_struct.cfg.ch_susp = 0;                                                                                                                                        \
+        reg_struct.cfg.fifo_empty = 0;                                                                                                                                     \
+        reg_struct.cfg.hs_sel_dst = 0;                                                                                                                                     \
+        reg_struct.cfg.hs_sel_src = 0;                                                                                                                                     \
+        reg_struct.cfg.lock_ch_l = 0;                                                                                                                                      \
+        reg_struct.cfg.lock_b_l = 0;                                                                                                                                       \
+        reg_struct.cfg.lock_ch = 0;                                                                                                                                        \
+        reg_struct.cfg.dst_hs_pol = 0;                                                                                                                                     \
+        reg_struct.cfg.src_hs_pol = 0;                                                                                                                                     \
+        reg_struct.cfg.max_abrst = 0;                                                                                                                                      \
+        reg_struct.cfg.reload_src = 1;                                                                                                                                     \
+        reg_struct.cfg.reload_dst = 1;                                                                                                                                     \
+        reg_struct.cfg.fcmode = 0;                                                                                                                                         \
+        reg_struct.cfg.fifo_mode = 1;                                                                                                                                      \
+        reg_struct.cfg.protctl = 1;                                                                                                                                        \
+        reg_struct.cfg.ds_upd_en = 0;                                                                                                                                      \
+        reg_struct.cfg.ss_upd_en = 0;                                                                                                                                      \
+        reg_struct.cfg.src_per = idx;                                                                                                                                      \
+        reg_struct.cfg.dst_per = idx;                                                                                                                                      \
+        reg_struct.cfg.reserved1 = 0;                                                                                                                                      \
+        reg_struct.sgr.interval = gather_interval;                                                                                                                         \
+        reg_struct.sgr.count = gather_count;                                                                                                                               \
+        reg_struct.dsr.interval = scatter_interval;                                                                                                                        \
+        reg_struct.dsr.count = scatter_count;                                                                                                                              \
+        reg_struct.ch_idx = idx;                                                                                                                                           \
+        reg_struct.handshake = hs;                                                                                                                                         \
+    } while (0)
+
+void spif_dma_channel_start_it(DMA_Controller_HandleTypeDef *hdma, struct ch_reg *reg_cfg, void (*callback)(DMA_Controller_HandleTypeDef *, uint32_t, uint8_t, uint32_t *, bool), uint32_t param)
+{
+    uint8_t ch_idx = reg_cfg->ch_idx;
+    hdma->channel_callback[ch_idx] = callback;
+    hdma->param[ch_idx] = param;
+    hdma->Instance->CH[ch_idx].SAR = reg_cfg->sar;
+    hdma->Instance->CH[ch_idx].DAR = reg_cfg->dar;
+    hdma->Instance->CH[ch_idx].LLP = reg_cfg->llp;
+    uint64_t *ctl = (uint64_t *)&reg_cfg->ctl;
+    volatile uint64_t *CTL = (void *)hdma->Instance->CH[ch_idx].CTL;
+    *CTL = *ctl;
+    uint64_t *cfg = (uint64_t *)&reg_cfg->cfg;
+    volatile uint64_t *CFG = (void *)hdma->Instance->CH[ch_idx].CFG;
+    *CFG = *cfg;
+    uint32_t *sgr = (uint32_t *)&reg_cfg->sgr;
+    hdma->Instance->CH[ch_idx].SGR = *sgr;
+    uint32_t *dsr = (uint32_t *)&reg_cfg->dsr;
+    hdma->Instance->CH[ch_idx].DSR = *dsr;
+    HAL_DMA_Channel_Handshake_Set(hdma, ch_idx, reg_cfg->handshake);
+    hdma->Instance->CLEARBLOCK = 1 << ch_idx;
+    hdma->Instance->CLEARTFR = 1 << ch_idx;
+    hdma->Instance->MASKBLOCK = 1 << 8 << ch_idx | 1 << ch_idx;
+    hdma->Instance->MASKTFR = 1 << 8 << ch_idx | 1 << ch_idx;
+    hdma->Instance->MASKDSTTRAN = 1 << 8 << ch_idx | 1 << ch_idx;
+    hdma->Instance->CHEN = 1 << 8 << ch_idx | 1 << ch_idx;
+}
+
+void spif_dma_config(const struct device *dev, DMA_Controller_HandleTypeDef *hdma_inst)
 {
     __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
     __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
 
-    memset(dev_data->dma_mem, 0, SPIF_LOG_RAM_TOTAL_SIZE);
-    DMA_CONTROLLER_INIT(dmac1_SSI_inst);
+    memset(dev_data->dma_mem, 0, SPIF_LOG_RAM_MAX_SIZE_U32 * sizeof(uint32_t));
 
-    spif_intr_t intr_mask;
-    intr_mask.value = sys_read32(dev_config->base + SPIF_INTR_MASK);
-    intr_mask.ERROR_OVERFLOW = 0;
-    intr_mask.ERROR = 0;
-    intr_mask.TARGET_ADDR = 0;
-    sys_write32(intr_mask.value, dev_config->base + SPIF_INTR_MASK);
     spif_cfg_t spif_cfg;
     spif_cfg.value = sys_read32(dev_config->base + SPIF_CFG);
     spif_cfg.DMA_EN = 1;
@@ -767,19 +852,21 @@ void spif_dma_config(const struct device *dev)
 
     uint8_t data_width = TRANSFER_WIDTH_32BITS;
     struct ch_reg cfg;
-    DMA_CHANNEL_CFG(cfg,
-        dev_config->dma_chan,
-        dev_config->base + SPIF_DMA_DATA,
-        (uint32_t)dev_data->dma_mem,
-        data_width,
-        SPIF_LOG_RAM_TOTAL_SIZE,
-        P2M,
-        0,
-        spif_dma_handshake_get(dev),
-        0,0,0,0);
-    HAL_DMA_Channel_Start_IT(&dmac1_SSI_inst, &cfg, spif_dma_callback, (uint32_t)dev);
+    DMA_CHANNEL_CFG_RELOAD(cfg,
+                           dev_config->dma_chan,
+                           dev_config->base + SPIF_DMA_DATA,
+                           (uint32_t)dev_data->dma_mem,
+                           data_width,
+                           SPIF_LOG_RAM_MAX_SIZE_U32,
+                           P2M,
+                           0,
+                           spif_dma_handshake_get(dev),
+                           0,
+                           0,
+                           0,
+                           0);
+    spif_dma_channel_start_it(hdma_inst, &cfg, spif_dma_callback, (uint32_t)dev);
 }
-#endif
 
 static int linkedsemi_spi_filter_init(const struct device *dev)
 {
@@ -800,9 +887,9 @@ static int linkedsemi_spi_filter_init(const struct device *dev)
 #endif
     spif_reg_unlock(dev);
 
-    for (uint32_t off = 0; off < SPIF_ADDR_SIZE; off+=4) {
+    for (uint32_t off = 0; off < SPIF_ADDR_SIZE; off += 4) {
         sys_write32(0, dev_config->base + SPIF_WRITE_ADDR_VALID_EN_ADDR + off); /* memset WRITE_ADDR */
-        sys_write32(0, dev_config->base + SPIF_READ_ADDR_VALID_EN_ADDR + off); /* memset READ_ADDR */
+        sys_write32(0, dev_config->base + SPIF_READ_ADDR_VALID_EN_ADDR + off);  /* memset READ_ADDR */
     }
     for (uint8_t i = 0; i < SPIF_FIXED_CMD_TABLE_NUM; i++) {
         mm_reg_t table_base = dev_config->base + SPIF_CMD_BASE;
@@ -818,12 +905,14 @@ static int linkedsemi_spi_filter_init(const struct device *dev)
         .EN = 1,
         .OPERATION_MODE = 1,
         .ADDR_3B_4B_SEL = 1,
-        .TARGET_ADDR_MODE_SEL = dev_config->blacklist_en ? 1 : 0,
-        .BOW_CMD_SEL = 0,
+        .TARGET_ADDR_MODE_SEL = 0,
+        .BOW_CMD_SEL = dev_config->blacklist_en ? 1 : 0,
         .IP_LOCK = 1,
         .DMA_EN = 0,
     };
     sys_write32(spif_cfg.value, dev_config->base + SPIF_CFG);
+    spif_address_privilege_config(dev, FLAG_ADDR_PRIV_WRITE_SELECT, FLAG_ADDR_PRIV_DISABLE, MB(0), MB(256));
+    spif_address_privilege_config(dev, FLAG_ADDR_PRIV_READ_SELECT, FLAG_ADDR_PRIV_DISABLE, MB(0), MB(256));
     spif_intr_t intr_mask;
     intr_mask.value = sys_read32(dev_config->base + SPIF_INTR_MASK);
     intr_mask.ERROR_OVERFLOW = 1;
@@ -848,7 +937,7 @@ static int linkedsemi_spi_filter_init(const struct device *dev)
         irq_enable(DT_INST_IRQN(inst));                                                                                                                                                                                              \
     }                                                                                                                                                                                                                                \
     PINCTRL_DT_INST_DEFINE(inst);                                                                                                                                                                                                    \
-    __nocache __aligned(4) uint8_t dma_mem_##inst[SPIF_LOG_RAM_TOTAL_SIZE];                                                                                                                                                          \
+    __nocache uint32_t dma_mem_##inst[SPIF_LOG_RAM_MAX_SIZE_U32];                                                                                                                                                                    \
     static const struct linkedsemi_spi_filter_config linkedsemi_spi_filter_cfg_##inst = {                                                                                                                                            \
         .base = (mm_reg_t)DT_INST_REG_ADDR(inst),                                                                                                                                                                                    \
         .irq_config_func = linkedsemi_spi_filter_irq_config_func_##inst,                                                                                                                                                             \
@@ -888,7 +977,8 @@ static int linkedsemi_spi_filter_init(const struct device *dev)
             IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_program_quad_data ), ([IDX_CMD_PROGRAM_QUAD_DATA] = DT_INST_PROP(inst, cmd_program_quad_data ), ))                                                                            \
             IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_program_quad_data ), ([IDX_CMD_4BYTE_PROGRAM_QUAD_DATA] = DT_INST_PROP(inst, cmd_4byte_program_quad_data ), ))                                                          \
         },                                                                                                                                                                                                                           \
-        .dma_mem = (uint32_t *)dma_mem_##inst,                                                                                                                                                                                       \
+        .dma_mem = dma_mem_##inst,                                                                                                                                                                                                   \
+        .dma_log_cnt = 0,                                                                                                                                                                                                            \
     };                                                                                                                                                                                                                               \
     DEVICE_DT_INST_DEFINE(inst,                                                                                                                                                                                                      \
                           linkedsemi_spi_filter_init,                                                                                                                                                                                \
