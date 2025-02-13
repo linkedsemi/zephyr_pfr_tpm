@@ -234,11 +234,11 @@
         input-enable;
     };
     /omit-if-no-ref/spif2_csn_pg10: spif2_csn_pg10 {
-        pinmux = <LS_PINMUX_SPIM2_CSN_FUNC4_PG10>;
+        pinmux = <LS_PINMUX_SPIM2_CSN_FUNC4_PG10>; //in
         input-enable;
     };
     /omit-if-no-ref/spif2_csn_pg11: spif2_csn_pg11 {
-        pinmux = <LS_PINMUX_SPIM2_CSN_FUNC4_PG11>;
+        pinmux = <LS_PINMUX_SPIM2_CSN_FUNC4_PG11>; //out
         input-enable;
     };
     /omit-if-no-ref/spif2_io3_pg12: spif2_io3_pg12 {
