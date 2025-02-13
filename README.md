@@ -126,6 +126,67 @@ modules/lib/pfr_tpm/samples/spi_filter_with_master
 ```
 spi master对spi filter发送波形，观察波形和spi filter上报中断
 ```
+- ip lock/unlock
+```
+spif_reg_lock()
+```
+```
+spif_reg_unlock()
+```
+- dump command table
+```
+spif_dump_cmd_table()
+```
+- dump read/write address table
+```
+spif_dump_rw_addr_privilege_table()
+```
+- dump bitmap log
+```
+spif_dump_cmd_bitmap_log()
+```
+- write
+
+| | spi | qpi |
+|-|-|-|
+| cmd only | `test_general_cmd()`<br>(except ENQPI) | `test_general_cmd_qpi()` {<br> test_enqpi()<br>test_general_cmd_qpi_main()<br>test_exqpi() <br>}<br>(except EXQPI) |
+| cmd + 3byte single line addr<br>`CMD_PAGE_PROGRAM` `02h` | `test_w_spicmd_saddr3b()`<br>(except EN4B) |
+| cmd + 4byte single line addr<br>`CMD_4BYTE_PAGE_PROGRAM` `12h` | `test_w_spicmd_saddr4b()` {<br> test_w_spi_en4b()<br>test_w_spicmd_saddr4b_main()<br>test_w_spi_ex4b() <br>}<br>(except EX4B) |
+| cmd + 3byte dual line addr | no write cmd support
+| cmd + 4byte dual line addr | no write cmd support
+| cmd + 3byte quad line addr<br>`CMD_PAGE_PROGRAM_QUAD_ADDRESS_QUAD_DATA` `38h` | `test_w_spicmd_qaddr3b()`<br>(except EN4B) | `test_w_qpi_3b` {<br> test_enqpi()<br>test_w_qpi_3b_main()<br>test_exqpi() <br>}<br>(except EN4B) |
+| cmd + 4byte quad line addr<br>`CMD_4BYTE_PAGE_PROGRAM_QUAD_ADDRESS_QUAD_DATA` `3eh` | `test_w_spicmd_qaddr4b()` {<br> test_w_spi_en4b()<br>test_w_spicmd_qaddr4b_main()<br>test_w_spi_ex4b() <br>}<br>(except EX4B) | `test_w_qpi_4b()` {<br> test_enqpi()<br>test_w_qpi_en4b()<br>test_w_qpi_4b_main()<br>test_w_qpi_ex4b()<br>test_exqpi() <br>}<br>(except EX4B) |
+|
+
+- read
+
+| | spi | qpi |
+|-|-|-|
+| cmd only(like write) | `test_general_cmd()`<br>(except ENQPI) | `test_general_cmd_qpi()` {<br> test_enqpi()<br>test_general_cmd_qpi_main()<br>test_exqpi() <br>}<br>(except EXQPI) |
+| cmd + 3byte single line addr<br>`CMD_FAST_READ` `0bh` | `test_r_spicmd_saddr3b()`<br>(except EN4B) |
+| cmd + 4byte single line addr<br>`CMD_4BYTE_FAST_READ` `0ch` | `test_r_spicmd_saddr4b()` {<br> test_r_spi_en4b()<br>test_r_spicmd_saddr4b_main()<br>test_r_spi_ex4b() <br>}<br>(except EX4B) |
+| cmd + 3byte dual line addr<br>`CMD_READ_DUAL_ADDR_DUAL_DATA` `bbh` | `test_r_spicmd_daddr3b()`<br>(except EN4B) |
+| cmd + 4byte dual line addr<br>`CMD_4BYTE_READ_DUAL_ADDR_DUAL_DATA` `bch` | `test_r_spicmd_daddr4b()` {<br> test_r_spi_en4b()<br>test_r_spicmd_daddr4b_main()<br>test_r_spi_ex4b() <br>}<br>(except EX4B) |
+| cmd + 3byte quad line addr<br>`CMD_READ_QUAD_ADDRESS_QUAD_DATA` `ebh` | `test_r_spicmd_qaddr3b()`<br>(except EN4B) | `test_r_qpi_3b` {<br> test_enqpi()<br>test_r_qpi_3b_main()<br>test_exqpi() <br>}<br>(except EN4B) |
+| cmd + 4byte quad line addr<br>`CMD_4BYTE_READ_QUAD_ADDRESS_QUAD_DATA` `ech` | `test_r_spicmd_qaddr4b()` {<br> test_r_spi_en4b()<br>test_r_spicmd_qaddr4b_main()<br>test_r_spi_ex4b() <br>}<br>(except EX4B) | `test_r_qpi_4b()` {<br> test_enqpi()<br>test_r_qpi_en4b()<br>test_r_qpi_4b_main()<br>test_r_qpi_ex4b()<br>test_exqpi() <br>}<br>(except EX4B) |
+|
+- dma log
+```
+spif_dma_config()
+```
+- dump dma log
+```
+spif_log_dma_buf()
+```
+- sck check
+```
+spif_clk_check_config()
+```
+- target address detect
+```
+spif_target_addr_config()
+```
+
 - board
 lsqsh_evb_cpu0: security zephyr
 lsqsh_evb_cpu1: application zephyr
