@@ -41,6 +41,11 @@ enum addr_priv_op {
     FLAG_ADDR_PRIV_DISABLE
 };
 
+enum target_addr_mode {
+    FLAG_TARGET_ADDR_32BIT,
+    FLAG_TARGET_ADDR_M19BIT,
+};
+
 typedef void (*spif_callback_t)(const struct device *dev,
                                 uint32_t callback_idx,
                                 void *user_data,
@@ -74,6 +79,7 @@ void spif_clk_check_config(const struct device *dev,
                            uint16_t threshold_low_cycle,
                            bool enable_intr);
 uint16_t spif_clk_check_peek(const struct device *dev);
+void spif_target_addr_config(const struct device *dev, uint32_t addr, enum target_addr_mode mode, bool enable_intr);
 
 #include "ls_hal_dmacv3.h"
 void spif_dma_config(const struct device *dev, DMA_Controller_HandleTypeDef *dmac_inst);
