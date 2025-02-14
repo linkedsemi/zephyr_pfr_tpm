@@ -930,8 +930,6 @@ static int linkedsemi_spi_filter_init(const struct device *dev)
         .DMA_EN = 0,
     };
     sys_write32(spif_cfg.value, dev_config->base + SPIF_CFG);
-    spif_address_privilege_config(dev, FLAG_ADDR_PRIV_WRITE_SELECT, FLAG_ADDR_PRIV_DISABLE, MB(0), MB(256));
-    spif_address_privilege_config(dev, FLAG_ADDR_PRIV_READ_SELECT, FLAG_ADDR_PRIV_DISABLE, MB(0), MB(256));
     spif_intr_t intr_mask;
     intr_mask.value = sys_read32(dev_config->base + SPIF_INTR_MASK);
     intr_mask.ERROR_OVERFLOW = 1;
