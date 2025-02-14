@@ -910,7 +910,7 @@ void spif_4byte_mode_config(const struct device *dev)
     sys_write32(spif_cfg.value, dev_config->base + SPIF_CFG);
 }
 
-uint16_t spif_addr_mode_peek(const struct device *dev)
+uint8_t spif_addr_mode_peek(const struct device *dev)
 {
     __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
     __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
