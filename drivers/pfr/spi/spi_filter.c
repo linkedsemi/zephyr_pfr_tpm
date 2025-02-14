@@ -923,7 +923,7 @@ static int linkedsemi_spi_filter_init(const struct device *dev)
     spif_cfg_t spif_cfg = {
         .EN = 1,
         .OPERATION_MODE = 1,
-        .ADDR_3B_4B_SEL = 1,
+        .ADDR_3B_4B_SEL = 0,
         .TARGET_ADDR_MODE_SEL = 0,
         .BOW_CMD_SEL = dev_config->blacklist_en ? 1 : 0,
         .IP_LOCK = 1,
