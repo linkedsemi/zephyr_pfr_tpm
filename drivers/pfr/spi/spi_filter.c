@@ -520,6 +520,7 @@ int spif_add_cmd(const struct device *dev, uint8_t cmd, uint8_t dummy_cycle)
         if (idx >= 0) {
             spif_cmd_t spif_cmd;
             spif_cmd.value = sys_read32(table_base + idx * 4);
+            spif_cmd.DUMMY_CYCLE = dummy_cycle;
             spif_cmd.EN = 1;
             sys_write32(spif_cmd.value, table_base + idx * 4);
             goto end;
