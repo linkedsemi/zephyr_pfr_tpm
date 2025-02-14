@@ -887,6 +887,28 @@ void spif_target_addr_config(const struct device *dev, uint32_t addr, enum targe
     sys_write32(intr_mask.value, dev_config->base + SPIF_INTR_MASK);
 }
 
+void spif_3byte_mode_config(const struct device *dev)
+{
+    __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
+    __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
+
+    spif_cfg_t spif_cfg;
+    spif_cfg.value = sys_read32(dev_config->base + SPIF_CFG);
+    spif_cfg.ADDR_3B_4B_SEL = 0,
+    sys_write32(spif_cfg.value, dev_config->base + SPIF_CFG);
+}
+
+void spif_4byte_mode_config(const struct device *dev)
+{
+    __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
+    __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
+
+    spif_cfg_t spif_cfg;
+    spif_cfg.value = sys_read32(dev_config->base + SPIF_CFG);
+    spif_cfg.ADDR_3B_4B_SEL = 1,
+    sys_write32(spif_cfg.value, dev_config->base + SPIF_CFG);
+}
+
 static int linkedsemi_spi_filter_init(const struct device *dev)
 {
     __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
