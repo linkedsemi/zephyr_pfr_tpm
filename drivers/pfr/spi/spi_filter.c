@@ -70,7 +70,8 @@ static void linkedsemi_spi_filter_isr(const struct device *dev)
         LOG_DBG("ERROR\n");
     }
     if (intr_status.TARGET_ADDR) {
-        LOG_DBG("TARGET_ADDR\n");
+        uint32_t addr = sys_read32(dev_config->base + SPIF_TARGET_ADDR);
+        LOG_DBG("TARGET_ADDR: %#x\n", addr);
     }
     if (intr_status.SCK_CHECK) {
         spif_sck_fqc_hi_t spif_sck_fqc_hi;
@@ -907,6 +908,16 @@ void spif_4byte_mode_config(const struct device *dev)
     spif_cfg.value = sys_read32(dev_config->base + SPIF_CFG);
     spif_cfg.ADDR_3B_4B_SEL = 1,
     sys_write32(spif_cfg.value, dev_config->base + SPIF_CFG);
+}
+
+uint16_t spif_addr_mode_peek(const struct device *dev)
+{
+    __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
+    __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
+
+    spif_cfg_t spif_cfg;
+    spif_cfg.value = sys_read32(dev_config->base + SPIF_CFG);
+    return spif_cfg.ADDR_3B_4B_FLAG;
 }
 
 static int linkedsemi_spi_filter_init(const struct device *dev)

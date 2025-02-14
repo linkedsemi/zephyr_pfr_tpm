@@ -82,6 +82,7 @@ uint16_t spif_clk_check_peek(const struct device *dev);
 void spif_target_addr_config(const struct device *dev, uint32_t addr, enum target_addr_mode mode, bool enable_intr);
 void spif_3byte_mode_config(const struct device *dev);
 void spif_4byte_mode_config(const struct device *dev);
+uint16_t spif_addr_mode_peek(const struct device *dev);
 
 #include "ls_hal_dmacv3.h"
 void spif_dma_config(const struct device *dev, DMA_Controller_HandleTypeDef *dmac_inst);
