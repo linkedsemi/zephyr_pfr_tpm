@@ -977,7 +977,6 @@ void test_cmd_rd_addr_overflow(const struct device *const spifilter)
 
 void test_target_addr(const struct device *const spifilter)
 {
-    const uint32_t flash_size = MB(16);
     spif_target_addr_config(spifilter, 0, FLAG_TARGET_ADDR_32BIT, true);
 
     spif_3byte_mode_config(spifilter);

@@ -19,7 +19,6 @@ void test_exqpi(const struct device *const spifilter)
 
     g_cnt_last = g_cnt;
     do {
-        uint8_t tx_data[] = {0xff};
         printf("spif_add_cmd: %#x\n", g_cmd);
         spif_add_cmd(spifilter, g_cmd, 0);
         if (HAL_SSI_QPI_Transmit(&SsiHandle, &g_cmd, 1) != HAL_OK) {
@@ -253,10 +252,29 @@ void test_general_cmd_qpi(const struct device *const spifilter)
     test_exqpi(spifilter);
 }
 
-void test_cmd_wr_addr_overflow(const struct device *const spifilter)
+void test_cmd_erase_addr_overflow(const struct device *const spifilter)
 {
     const uint32_t flash_size = MB(16);
-#if 0
+
+    g_cnt_last = g_cnt;
+    do { /* forbidden */
+        g_cmd = CMD_ERASE_32KB;
+        uint8_t tx_data[] = {g_cmd, 0x7f, 0xff, 0xf0, 0x4, 0x5a, 0xf7};
+        spif_address_privilege_config(spifilter, FLAG_ADDR_PRIV_WRITE_SELECT, FLAG_ADDR_PRIV_DISABLE, MB(0), flash_size);
+        spif_address_privilege_config(spifilter,
+                                    FLAG_ADDR_PRIV_WRITE_SELECT,
+                                    FLAG_ADDR_PRIV_ENABLE,
+                                    MB(0),
+                                    (flash_size >> 1) - KB(16));
+        printf("spif_add_cmd: %#x\n", g_cmd);
+        spif_add_cmd(spifilter, g_cmd, 0);
+        spif_dump_rw_addr_privilege_table(spifilter);
+        if (HAL_SSI_Transmit(&SsiHandle, tx_data, ARRAY_SIZE(tx_data)) != HAL_OK) {
+            while(1);
+        }
+    } while(0);
+    g_cnt_expect++;
+    __ASSERT_NO_MSG((g_cnt_expect == g_cnt) && (g_cnt == (g_cnt_last + 1)));
 
     g_cnt_last = g_cnt;
     do { /* forbidden */
@@ -275,7 +293,61 @@ void test_cmd_wr_addr_overflow(const struct device *const spifilter)
             while(1);
         }
     } while(0);
-#endif
+    g_cnt_expect++;
+    __ASSERT_NO_MSG((g_cnt_expect == g_cnt) && (g_cnt == (g_cnt_last + 1)));
+}
+
+void test_cmd_erase_addr_4b_overflow(const struct device *const spifilter)
+{
+    const uint32_t flash_size = MB(256);
+
+    g_cnt_last = g_cnt;
+    do { /* forbidden */
+        g_cmd = CMD_ERASE_32KB;
+        uint8_t tx_data[] = {g_cmd, 0x7, 0xff, 0xff, 0xf0, 0x4, 0x5a, 0xf7};
+        spif_address_privilege_config(spifilter, FLAG_ADDR_PRIV_WRITE_SELECT, FLAG_ADDR_PRIV_DISABLE, MB(0), flash_size);
+        spif_address_privilege_config(spifilter,
+                                    FLAG_ADDR_PRIV_WRITE_SELECT,
+                                    FLAG_ADDR_PRIV_ENABLE,
+                                    MB(0),
+                                    (flash_size >> 1) - KB(16));
+        printf("spif_add_cmd: %#x\n", g_cmd);
+        spif_add_cmd(spifilter, g_cmd, 0);
+        spif_dump_rw_addr_privilege_table(spifilter);
+        if (HAL_SSI_Transmit(&SsiHandle, tx_data, ARRAY_SIZE(tx_data)) != HAL_OK) {
+            while(1);
+        }
+    } while(0);
+    g_cnt_expect++;
+    __ASSERT_NO_MSG((g_cnt_expect == g_cnt) && (g_cnt == (g_cnt_last + 1)));
+
+    g_cnt_last = g_cnt;
+    do { /* forbidden */
+        g_cmd = CMD_ERASE_64KB;
+        uint8_t tx_data[] = {g_cmd, 0x7, 0xff, 0xff, 0xf0, 0x4, 0x5a, 0xf7};
+        spif_address_privilege_config(spifilter, FLAG_ADDR_PRIV_WRITE_SELECT, FLAG_ADDR_PRIV_DISABLE, MB(0), flash_size);
+        spif_address_privilege_config(spifilter,
+                                    FLAG_ADDR_PRIV_WRITE_SELECT,
+                                    FLAG_ADDR_PRIV_ENABLE,
+                                    MB(0),
+                                    (flash_size >> 1) - KB(16));
+        printf("spif_add_cmd: %#x\n", g_cmd);
+        spif_add_cmd(spifilter, g_cmd, 0);
+        spif_dump_rw_addr_privilege_table(spifilter);
+        if (HAL_SSI_Transmit(&SsiHandle, tx_data, ARRAY_SIZE(tx_data)) != HAL_OK) {
+            while(1);
+        }
+    } while(0);
+    g_cnt_expect++;
+    __ASSERT_NO_MSG((g_cnt_expect == g_cnt) && (g_cnt == (g_cnt_last + 1)));
+}
+
+void test_cmd_wr_addr_overflow(const struct device *const spifilter)
+{
+    const uint32_t flash_size = MB(16);
+
+    test_cmd_erase_addr_overflow(spifilter);
+    test_cmd_erase_addr_4b_overflow(spifilter);
 
     g_cnt_last = g_cnt;
     do { /* forbidden */
