@@ -11,7 +11,7 @@ properties:
   cmd-page-program:
       type: int
       default: 0x02
-  cmd-page-program-quad-address-quad-data:
+  cmd-page-program-quad-addr-quad-data:
       type: int
       default: 0x38
   cmd-erase-4kb:
@@ -32,7 +32,7 @@ properties:
   cmd-read-quad-data:
       type: int
       default: 0x6b
-  cmd-read-quad-address-quad-data:
+  cmd-read-quad-addr-quad-data:
       type: int
       default: 0xeb
   cmd-quad-spi-mode-enter:
@@ -47,16 +47,16 @@ properties:
   cmd-4byte-mode-exit:
       type: int
       default: 0xe9
-  cmd-4byte-read-extended-address:
+  cmd-4byte-read-extended-addr:
       type: int
       default: 0xc8
-  cmd-4byte-write-extended-address:
+  cmd-4byte-write-extended-addr:
       type: int
       default: 0xc5
   cmd-4byte-page-program:
       type: int
       default: 0x12
-  cmd-4byte-page-program-quad-address-quad-data:
+  cmd-4byte-page-program-quad-addr-quad-data:
       type: int
       default: 0x3e
   cmd-4byte-erase-4kb:
@@ -77,7 +77,7 @@ properties:
   cmd-4byte-read-quad-data:
       type: int
       default: 0x6c
-  cmd-4byte-read-quad-address-quad-data:
+  cmd-4byte-read-quad-addr-quad-data:
       type: int
       default: 0xec
   cmd-read-dual-data:
