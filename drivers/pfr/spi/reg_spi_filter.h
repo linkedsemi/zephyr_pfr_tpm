@@ -240,11 +240,11 @@ typedef union {
     uint32_t value;
     struct {
         uint32_t
-            SPIF_ADDR_ERR : 1, /* [0] */
-            SPIF_CMD_ERR : 1, /* [1] */
-            SPIF_POR_ADDR : 1, /* [2] */
-            SPIF_ERROR_ADDR : 21, /* [23:3] */
-            SPIF_ERROR_CMD : 8; /* [31:24] */
+            ADDR_ERR : 1, /* [0] */
+            CMD_ERR : 1, /* [1] */
+            POR_ADDR : 1, /* [2] */
+            ERROR_ADDR : 21, /* [23:3] */
+            ERROR_CMD : 8; /* [31:24] */
     };
 } spif_dma_data_t;
 

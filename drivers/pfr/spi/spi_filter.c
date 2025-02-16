@@ -415,8 +415,8 @@ int spif_address_privilege_config(const struct device *dev,
     reg_off = addr / KB(512);            /* 512K per register; */
     bit_off = (addr % KB(512)) / KB(16); /* (512K / 16K); */
     total_bit_num = spif_get_cross_block_num(addr, len);
-    LOG_DBG("addr: 0x%08lx, len: 0x%08x\n", addr, len);
-    LOG_DBG("reg_off: 0x%08x, bit_off: 0x%08x, total_bit_num: 0x%08x\n",
+    LOG_INF("addr: 0x%08lx, len: 0x%08x\n", addr, len);
+    LOG_INF("reg_off: 0x%08x, bit_off: 0x%08x, total_bit_num: 0x%08x\n",
             reg_off,
             bit_off,
             total_bit_num);
@@ -453,7 +453,7 @@ int spif_address_privilege_config(const struct device *dev,
                 reg_val &= ~BIT(bit_off);
             }
             sys_write32(reg_val, priv_table_base + reg_off * 4);
-            LOG_DBG("reg: 0x%08lx, val: 0x%08x\n", priv_table_base + reg_off * 4, reg_val);
+            LOG_INF("reg: 0x%08lx, val: 0x%08x\n", priv_table_base + reg_off * 4, reg_val);
 
             bit_off++;
             total_bit_num--;
@@ -705,18 +705,27 @@ uint16_t spif_clk_check_peek(const struct device *dev)
     return spif_sck_set.SCK_FQC;
 }
 
-uint32_t *spif_log_dma_buf(const struct device *dev)
+spif_dma_data_t *spif_log_dma_buf(const struct device *dev)
 {
     __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
     __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
 
-    return dev_data->dma_mem;
+    return (spif_dma_data_t *)dev_data->dma_mem;
 }
 
 uint16_t HAL_DMA_Controller_Peek_BLOCK_TS(DMA_Controller_HandleTypeDef *hdma, uint8_t ch_idx)
 {
     volatile uint64_t *CTL = (void *)hdma->Instance->CH[ch_idx].CTL;
     return (*CTL >> 32) & DMAC_BLOCK_TS_MASK;
+}
+
+static void spif_dma_data_print(spif_dma_data_t spif_dma_data)
+{
+    LOG_DBG("ADDR_ERR: %#x\n", spif_dma_data.ADDR_ERR);
+    LOG_DBG("CMD_ERR: %#x\n", spif_dma_data.CMD_ERR);
+    LOG_DBG("POR_ADDR: %#x\n", spif_dma_data.POR_ADDR);
+    LOG_DBG("ERROR_ADDR: %#x\n", spif_dma_data.ERROR_ADDR << 11);
+    LOG_DBG("ERROR_CMD: %#x\n", spif_dma_data.ERROR_CMD);
 }
 
 static void spif_dma_callback(DMA_Controller_HandleTypeDef *hdma, uint32_t param, uint8_t ch_idx, uint32_t *lli, bool tfr_end)
@@ -731,30 +740,18 @@ static void spif_dma_callback(DMA_Controller_HandleTypeDef *hdma, uint32_t param
             for (uint16_t i = dev_data->dma_log_cnt; i < block_ts; i++) {
                 spif_dma_data_t *spif_dma_data = (spif_dma_data_t *)dev_data->dma_mem;
                 LOG_DBG("dma log idx: %d\n", i);
-                LOG_DBG("SPIF_ADDR_ERR: %#x\n", spif_dma_data[i].SPIF_ADDR_ERR);
-                LOG_DBG("SPIF_CMD_ERR: %#x\n", spif_dma_data[i].SPIF_CMD_ERR);
-                LOG_DBG("SPIF_POR_ADDR: %#x\n", spif_dma_data[i].SPIF_POR_ADDR);
-                LOG_DBG("SPIF_ERROR_ADDR: %#x\n", spif_dma_data[i].SPIF_ERROR_ADDR);
-                LOG_DBG("SPIF_ERROR_CMD: %#x\n", spif_dma_data[i].SPIF_ERROR_CMD);
+                spif_dma_data_print(spif_dma_data[i]);
             }
         } else {
             for (uint16_t i = dev_data->dma_log_cnt; i < SPIF_LOG_RAM_MAX_SIZE_U32; i++) {
                 spif_dma_data_t *spif_dma_data = (spif_dma_data_t *)dev_data->dma_mem;
                 LOG_DBG("dma log idx: %d\n", i);
-                LOG_DBG("SPIF_ADDR_ERR: %#x\n", spif_dma_data[i].SPIF_ADDR_ERR);
-                LOG_DBG("SPIF_CMD_ERR: %#x\n", spif_dma_data[i].SPIF_CMD_ERR);
-                LOG_DBG("SPIF_POR_ADDR: %#x\n", spif_dma_data[i].SPIF_POR_ADDR);
-                LOG_DBG("SPIF_ERROR_ADDR: %#x\n", spif_dma_data[i].SPIF_ERROR_ADDR);
-                LOG_DBG("SPIF_ERROR_CMD: %#x\n", spif_dma_data[i].SPIF_ERROR_CMD);
+                spif_dma_data_print(spif_dma_data[i]);
             }
             for (uint16_t i = 0; i < block_ts; i++) {
                 spif_dma_data_t *spif_dma_data = (spif_dma_data_t *)dev_data->dma_mem;
                 LOG_DBG("dma log idx: %d\n", i);
-                LOG_DBG("SPIF_ADDR_ERR: %#x\n", spif_dma_data[i].SPIF_ADDR_ERR);
-                LOG_DBG("SPIF_CMD_ERR: %#x\n", spif_dma_data[i].SPIF_CMD_ERR);
-                LOG_DBG("SPIF_POR_ADDR: %#x\n", spif_dma_data[i].SPIF_POR_ADDR);
-                LOG_DBG("SPIF_ERROR_ADDR: %#x\n", spif_dma_data[i].SPIF_ERROR_ADDR);
-                LOG_DBG("SPIF_ERROR_CMD: %#x\n", spif_dma_data[i].SPIF_ERROR_CMD);
+                spif_dma_data_print(spif_dma_data[i]);
             }
         }
         dev_data->dma_log_cnt = block_ts;
