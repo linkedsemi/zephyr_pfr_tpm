@@ -250,14 +250,14 @@ typedef union {
 
 enum cmd_table {
     IDX_CMD_PAGE_PROGRAM,
-    IDX_CMD_PAGE_PROGRAM_QUAD_ADDRESS_QUAD_DATA,
+    IDX_CMD_PAGE_PROGRAM_QUAD_ADDR_QUAD_DATA,
     IDX_CMD_ERASE_4KB,
     IDX_CMD_ERASE_32KB,
     IDX_CMD_ERASE_64KB,
     IDX_CMD_READ,
     IDX_CMD_FAST_READ,
     IDX_CMD_READ_QUAD_DATA,
-    IDX_CMD_READ_QUAD_ADDRESS_QUAD_DATA,
+    IDX_CMD_READ_QUAD_ADDR_QUAD_DATA,
     IDX_CMD_QUAD_SPI_MODE_ENTER,
     IDX_CMD_QUAD_SPI_MODE_EXIT,
     IDX_CMD_4BYTE_MODE_ENTER,
@@ -265,14 +265,14 @@ enum cmd_table {
     IDX_CMD_4BYTE_READ_EXTENDED_ADDRESS,
     IDX_CMD_4BYTE_WRITE_EXTENDED_ADDRESS,
     IDX_CMD_4BYTE_PAGE_PROGRAM,
-    IDX_CMD_4BYTE_PAGE_PROGRAM_QUAD_ADDRESS_QUAD_DATA,
+    IDX_CMD_4BYTE_PAGE_PROGRAM_QUAD_ADDR_QUAD_DATA,
     IDX_CMD_4BYTE_ERASE_4KB,
     IDX_CMD_4BYTE_ERASE_32KB,
     IDX_CMD_4BYTE_ERASE_64KB,
     IDX_CMD_4BYTE_READ,
     IDX_CMD_4BYTE_FAST_READ,
     IDX_CMD_4BYTE_READ_QUAD_DATA,
-    IDX_CMD_4BYTE_READ_QUAD_ADDRESS_QUAD_DATA,
+    IDX_CMD_4BYTE_READ_QUAD_ADDR_QUAD_DATA,
     IDX_CMD_READ_DUAL_DATA,
     IDX_CMD_READ_DUAL_ADDR_DUAL_DATA,
     IDX_CMD_4BYTE_READ_DUAL_DATA,
@@ -282,14 +282,14 @@ enum cmd_table {
 };
 
 #define CMD_PAGE_PROGRAM                              0x02
-#define CMD_PAGE_PROGRAM_QUAD_ADDRESS_QUAD_DATA       0x38
+#define CMD_PAGE_PROGRAM_QUAD_ADDR_QUAD_DATA          0x38
 #define CMD_ERASE_4KB                                 0x20
 #define CMD_ERASE_32KB                                0x52
 #define CMD_ERASE_64KB                                0xd8
 #define CMD_READ                                      0x03
 #define CMD_FAST_READ                                 0x0b
 #define CMD_READ_QUAD_DATA                            0x6b
-#define CMD_READ_QUAD_ADDRESS_QUAD_DATA               0xeb
+#define CMD_READ_QUAD_ADDR_QUAD_DATA                  0xeb
 #define CMD_QUAD_SPI_MODE_ENTER                       0x35
 #define CMD_QUAD_SPI_MODE_EXIT                        0xf5
 #define CMD_4BYTE_MODE_ENTER                          0xb7
@@ -297,14 +297,14 @@ enum cmd_table {
 #define CMD_4BYTE_READ_EXTENDED_ADDRESS               0xc8
 #define CMD_4BYTE_WRITE_EXTENDED_ADDRESS              0xc5
 #define CMD_4BYTE_PAGE_PROGRAM                        0x12
-#define CMD_4BYTE_PAGE_PROGRAM_QUAD_ADDRESS_QUAD_DATA 0x3e
+#define CMD_4BYTE_PAGE_PROGRAM_QUAD_ADDR_QUAD_DATA    0x3e
 #define CMD_4BYTE_ERASE_4KB                           0x21
 #define CMD_4BYTE_ERASE_32KB                          0x5c
 #define CMD_4BYTE_ERASE_64KB                          0xdc
 #define CMD_4BYTE_READ                                0x13
 #define CMD_4BYTE_FAST_READ                           0x0c
 #define CMD_4BYTE_READ_QUAD_DATA                      0x6c
-#define CMD_4BYTE_READ_QUAD_ADDRESS_QUAD_DATA         0xec
+#define CMD_4BYTE_READ_QUAD_ADDR_QUAD_DATA            0xec
 #define CMD_READ_DUAL_DATA                            0x3b
 #define CMD_READ_DUAL_ADDR_DUAL_DATA                  0xbb
 #define CMD_4BYTE_READ_DUAL_DATA                      0x3c
