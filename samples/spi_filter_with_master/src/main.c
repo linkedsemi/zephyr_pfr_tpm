@@ -45,7 +45,7 @@ void spi_init(void)
 {
     pinmux_spi1_mst_init();
     SsiHandle.REG = (reg_ssi_t *)APP_DWSPI3_ADDR;
-    SsiHandle.Init.clk_div = 128;
+    SsiHandle.Init.clk_div = 500;
     SsiHandle.Init.rxsample_dly = 0;
     SsiHandle.Init.ctrl.cph = SCLK_Toggle_In_Middle;
     SsiHandle.Init.ctrl.cpol = Inactive_Low;
@@ -63,6 +63,8 @@ void spi_init(void)
 }
 
 uint32_t g_cnt = 0;
+uint32_t g_cnt_expect = 0;
+uint32_t g_cnt_last = 0;
 uint8_t g_cmd = 0;
 uint8_t g_test_cmd = 0;
 static void spif_callback(const struct device *dev,
@@ -90,36 +92,28 @@ int main(void)
         return -1;
     }
     spi_init();
-    // spif_dump_cmd_table(spifilter);
-    // spif_dump_rw_addr_privilege_table(spifilter);
 
 //sck check
     spif_clk_check_config(spifilter, 0, 2, BIT(12) - 1, true);
 
 //dma log
-#if 0
+#if 1
     DMA_CONTROLLER_INIT(hdma_inst);
     spif_dma_config(spifilter, &hdma_inst);
-    test_general_cmd(spifilter);
-    uint32_t *log_dma_buf = spif_log_dma_buf(spifilter);
-    printf("log_dma_buf: %#x\n", log_dma_buf[0]);
-    printf("log_dma_buf: %#x\n", log_dma_buf[1]);
-    printf("log_dma_buf: %#x\n", log_dma_buf[2]);
-    printf("log_dma_buf: %#x\n", log_dma_buf[3]);
-    //...
 #endif
 
-#if 0
+#if 1
     test_general_cmd(spifilter);
     test_general_cmd_qpi(spifilter);
 #endif
 
-#if 0
+#if 1
 //stand spi
 // send FFh to disabled qpi
     test_w_spicmd_saddr3b(spifilter);// Page Program PP 02h 3 0 1+ program selected page
     test_w_spicmd_saddr4b(spifilter);// Page Program 4byte address PP4B 12h 4 0 1+ program selected page
 
+#if DUPLICATED
 //dual mode
 // send FFh to disabled qpi
     // test_w_spicmd_saddr3b_ddata(spifilter); // duplicated
@@ -127,6 +121,7 @@ int main(void)
 
     // test_w_spicmd_daddr3b(spifilter); //TBD RO CMD xxx
     // test_w_spicmd_daddr4b(spifilter); //TBD RO CMD xxx
+#endif
 
 //quad mode
 // send QPIEN
@@ -138,14 +133,14 @@ int main(void)
     test_w_qpi_4b(spifilter); //TBD Page Program 4byte address PP4B 12h 4 0 1+ program selected page
 #endif
 
-    // test_r_addr_dump(spifilter);
-    // test_r_spicmd_daddr3b(spifilter);
-#if 0
+#if 1
     test_r_spicmd_saddr3b(spifilter);
     test_r_spicmd_saddr4b(spifilter);
 
+#if DUPLICATED
     // test_r_spicmd_saddr3b_ddata(spifilter); // duplicated
     // test_r_spicmd_saddr4b_ddata(spifilter); // duplicated
+#endif
 
     test_r_spicmd_daddr3b(spifilter);
     test_r_spicmd_daddr4b(spifilter);
@@ -157,34 +152,26 @@ int main(void)
     test_r_qpi_4b(spifilter);
 #endif
 
-
-//cmd bitmap
-#if 0
-    test_general_cmd(spifilter);
-#endif
-
 //addr overflow
-#if 0
+#if 1
     test_cmd_rd_addr_overflow(spifilter);
     test_cmd_wr_addr_overflow(spifilter);
 #endif
 
 // target_addr
-#if 0
-    spif_target_addr_config(spifilter, 0, FLAG_TARGET_ADDR_32BIT, true);
-    do {
-        g_cmd = CMD_FAST_READ;
-        uint8_t tx_data[] = {g_cmd, 0x0, 0x0, 0x0, 0x4, 0x5a, 0xf7};
-        printf("spif_add_cmd: %#x\n", g_cmd);
-        spif_add_cmd(spifilter, g_cmd, 0);
-        if (HAL_SSI_Transmit(&SsiHandle, tx_data, ARRAY_SIZE(tx_data)) != HAL_OK) {
-            while(1);
-        }
-    } while(0);
+#if 1
+    test_target_addr(spifilter);
 #endif
 
-    // spif_dump_cmd_table(spifilter);
-    // spif_dump_rw_addr_privilege_table(spifilter);
+#if 1
+    test_general_cmd(spifilter);
+    spif_dma_data_t *log_dma_buf = spif_log_dma_buf(spifilter);
+    printf("log_dma_buf: %#8.8x  ADDR_ERR: %#x  CMD_ERR: %#x  POR_ADDR: %#x  ERROR_ADDR: %#x  ERROR_CMD: %#x\n", log_dma_buf[0].value, log_dma_buf[0].ADDR_ERR, log_dma_buf[0].CMD_ERR, log_dma_buf[0].POR_ADDR, log_dma_buf[0].ERROR_ADDR << 11, log_dma_buf[0].ERROR_CMD);
+    printf("log_dma_buf: %#8.8x  ADDR_ERR: %#x  CMD_ERR: %#x  POR_ADDR: %#x  ERROR_ADDR: %#x  ERROR_CMD: %#x\n", log_dma_buf[1].value, log_dma_buf[1].ADDR_ERR, log_dma_buf[1].CMD_ERR, log_dma_buf[1].POR_ADDR, log_dma_buf[1].ERROR_ADDR << 11, log_dma_buf[1].ERROR_CMD);
+    printf("log_dma_buf: %#8.8x  ADDR_ERR: %#x  CMD_ERR: %#x  POR_ADDR: %#x  ERROR_ADDR: %#x  ERROR_CMD: %#x\n", log_dma_buf[2].value, log_dma_buf[2].ADDR_ERR, log_dma_buf[2].CMD_ERR, log_dma_buf[2].POR_ADDR, log_dma_buf[2].ERROR_ADDR << 11, log_dma_buf[2].ERROR_CMD);
+    printf("log_dma_buf: %#8.8x  ADDR_ERR: %#x  CMD_ERR: %#x  POR_ADDR: %#x  ERROR_ADDR: %#x  ERROR_CMD: %#x\n", log_dma_buf[3].value, log_dma_buf[3].ADDR_ERR, log_dma_buf[3].CMD_ERR, log_dma_buf[3].POR_ADDR, log_dma_buf[3].ERROR_ADDR << 11, log_dma_buf[3].ERROR_CMD);
+    //...
+#endif
 
     printf("g_cnt: %d\n", g_cnt);
     printf("done\n");
