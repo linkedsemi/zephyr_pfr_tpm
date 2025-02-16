@@ -428,7 +428,7 @@ void test_w_spicmd_saddr3b(const struct device *const spifilter)
     __ASSERT_NO_MSG((g_cnt_expect == g_cnt) && (g_cnt == g_cnt_last));
 }
 
-void test_w_spicmd_saddr4b_main(const struct device *const spifilter)
+void test_w_spicmd_saddr4b_by_cmd(const struct device *const spifilter)
 {
     const uint32_t flash_size = MB(256);
 
@@ -538,6 +538,116 @@ void test_w_spicmd_saddr4b_main(const struct device *const spifilter)
     __ASSERT_NO_MSG((g_cnt_expect == g_cnt) && (g_cnt == g_cnt_last));
 }
 
+void test_w_spicmd_saddr4b_main(const struct device *const spifilter)
+{
+    const uint32_t flash_size = MB(256);
+
+    g_cnt_last = g_cnt;
+    do { /* forbidden */
+        g_cmd = CMD_PAGE_PROGRAM;
+        uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
+        spif_address_privilege_config(spifilter, FLAG_ADDR_PRIV_WRITE_SELECT, FLAG_ADDR_PRIV_DISABLE, MB(0), flash_size);
+        printf("spif_add_cmd: %#x\n", g_cmd);
+        spif_add_cmd(spifilter, g_cmd, 0);
+        if (HAL_SSI_Transmit(&SsiHandle, tx_data, ARRAY_SIZE(tx_data)) != HAL_OK) {
+            while(1);
+        }
+    } while(0);
+    g_cnt_expect++;
+    __ASSERT_NO_MSG((g_cnt_expect == g_cnt) && (g_cnt == (g_cnt_last + 1)));
+
+    g_cnt_last = g_cnt;
+    do { /* pass */
+        g_cmd = CMD_PAGE_PROGRAM;
+        uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
+        spif_address_privilege_config(spifilter,
+                                    FLAG_ADDR_PRIV_WRITE_SELECT,
+                                    FLAG_ADDR_PRIV_ENABLE,
+                                    MB(0),
+                                    flash_size);
+        printf("spif_add_cmd: %#x\n", g_cmd);
+        spif_add_cmd(spifilter, g_cmd, 0);
+        if (HAL_SSI_Transmit(&SsiHandle, tx_data, ARRAY_SIZE(tx_data)) != HAL_OK) {
+            while(1);
+        }
+    } while(0);
+    __ASSERT_NO_MSG((g_cnt_expect == g_cnt) && (g_cnt == g_cnt_last));
+
+    g_cnt_last = g_cnt;
+    do { /* forbidden */
+        g_cmd = CMD_PAGE_PROGRAM;
+        uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
+        spif_address_privilege_config(spifilter, FLAG_ADDR_PRIV_WRITE_SELECT, FLAG_ADDR_PRIV_DISABLE, MB(0), flash_size);
+        spif_address_privilege_config(spifilter,
+                                    FLAG_ADDR_PRIV_WRITE_SELECT,
+                                    FLAG_ADDR_PRIV_ENABLE,
+                                    MB(128),
+                                    flash_size);
+        printf("spif_add_cmd: %#x\n", g_cmd);
+        spif_add_cmd(spifilter, g_cmd, 0);
+        if (HAL_SSI_Transmit(&SsiHandle, tx_data, ARRAY_SIZE(tx_data)) != HAL_OK) {
+            while(1);
+        }
+    } while(0);
+    g_cnt_expect++;
+    __ASSERT_NO_MSG((g_cnt_expect == g_cnt) && (g_cnt == (g_cnt_last + 1)));
+
+    g_cnt_last = g_cnt;
+    do { /* pass */
+        g_cmd = CMD_PAGE_PROGRAM;
+        uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
+        spif_address_privilege_config(spifilter, FLAG_ADDR_PRIV_WRITE_SELECT, FLAG_ADDR_PRIV_DISABLE, MB(0), flash_size);
+        spif_address_privilege_config(spifilter,
+                                    FLAG_ADDR_PRIV_WRITE_SELECT,
+                                    FLAG_ADDR_PRIV_ENABLE,
+                                    MB(0),
+                                    MB(128));
+        printf("spif_add_cmd: %#x\n", g_cmd);
+        spif_add_cmd(spifilter, g_cmd, 0);
+        if (HAL_SSI_Transmit(&SsiHandle, tx_data, ARRAY_SIZE(tx_data)) != HAL_OK) {
+            while(1);
+        }
+    } while(0);
+    __ASSERT_NO_MSG((g_cnt_expect == g_cnt) && (g_cnt == g_cnt_last));
+
+    g_cnt_last = g_cnt;
+    do { /* forbidden */
+        g_cmd = CMD_PAGE_PROGRAM;
+        uint8_t tx_data[] = {g_cmd, 0x7, 0x2, 0x3, 0x4, 0x5a, 0xf7};
+        spif_address_privilege_config(spifilter, FLAG_ADDR_PRIV_WRITE_SELECT, FLAG_ADDR_PRIV_DISABLE, MB(0), flash_size);
+        spif_address_privilege_config(spifilter,
+                                    FLAG_ADDR_PRIV_WRITE_SELECT,
+                                    FLAG_ADDR_PRIV_ENABLE,
+                                    MB(128),
+                                    flash_size);
+        printf("spif_add_cmd: %#x\n", g_cmd);
+        spif_add_cmd(spifilter, g_cmd, 0);
+        if (HAL_SSI_Transmit(&SsiHandle, tx_data, ARRAY_SIZE(tx_data)) != HAL_OK) {
+            while(1);
+        }
+    } while(0);
+    g_cnt_expect++;
+    __ASSERT_NO_MSG((g_cnt_expect == g_cnt) && (g_cnt == (g_cnt_last + 1)));
+
+    g_cnt_last = g_cnt;
+    do { /* pass */
+        g_cmd = CMD_PAGE_PROGRAM;
+        uint8_t tx_data[] = {g_cmd, 0x7, 0x2, 0x3, 0x4, 0x5a, 0xf7};
+        spif_address_privilege_config(spifilter, FLAG_ADDR_PRIV_WRITE_SELECT, FLAG_ADDR_PRIV_DISABLE, MB(0), flash_size);
+        spif_address_privilege_config(spifilter,
+                                    FLAG_ADDR_PRIV_WRITE_SELECT,
+                                    FLAG_ADDR_PRIV_ENABLE,
+                                    MB(0),
+                                    MB(128));
+        printf("spif_add_cmd: %#x\n", g_cmd);
+        spif_add_cmd(spifilter, g_cmd, 0);
+        if (HAL_SSI_Transmit(&SsiHandle, tx_data, ARRAY_SIZE(tx_data)) != HAL_OK) {
+            while(1);
+        }
+    } while(0);
+    __ASSERT_NO_MSG((g_cnt_expect == g_cnt) && (g_cnt == g_cnt_last));
+}
+
 void test_w_spicmd_saddr4b(const struct device *const spifilter)
 {
     test_spi_en4b(spifilter);
@@ -581,6 +691,48 @@ void test_w_spicmd_qaddr3b(const struct device *const spifilter)
         spif_add_cmd(spifilter, g_cmd, 0);
         if (HAL_SSI_Quad_Qaddr_Transmit(&SsiHandle, addr, Addr_Width_24_bits, g_cmd, 0,
                                         tx_data, ARRAY_SIZE(tx_data)) != HAL_OK) {
+            while(1);
+        }
+    } while(0);
+    __ASSERT_NO_MSG((g_cnt_expect == g_cnt) && (g_cnt == g_cnt_last));
+}
+
+void test_w_spicmd_qaddr4b_by_cmd(const struct device *const spifilter)
+{
+    const uint32_t flash_size = MB(256);
+
+    g_cnt_last = g_cnt;
+    do { /* forbidden */
+        g_cmd = CMD_4BYTE_PAGE_PROGRAM_QUAD_ADDR_QUAD_DATA;
+        // uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
+        uint8_t tx_data[] = {0x4, 0x5a, 0xf7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd};
+        uint64_t addr = 0x01020304;
+        spif_address_privilege_config(spifilter, FLAG_ADDR_PRIV_WRITE_SELECT, FLAG_ADDR_PRIV_DISABLE, MB(0), flash_size);
+        printf("spif_add_cmd: %#x\n", g_cmd);
+        spif_add_cmd(spifilter, g_cmd, 0);
+        if (HAL_SSI_Quad_Qaddr_Transmit(&SsiHandle, addr, Addr_Width_32_bits, g_cmd, 0,
+                                            tx_data, ARRAY_SIZE(tx_data)) != HAL_OK) {
+            while(1);
+        }
+    } while(0);
+    g_cnt_expect++;
+    __ASSERT_NO_MSG((g_cnt_expect == g_cnt) && (g_cnt == (g_cnt_last + 1)));
+
+    g_cnt_last = g_cnt;
+    do { /* pass */
+        g_cmd = CMD_4BYTE_PAGE_PROGRAM_QUAD_ADDR_QUAD_DATA;
+        // uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
+        uint8_t tx_data[] = {0x4, 0x5a, 0xf7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd};
+        uint64_t addr = 0x01020304;
+        spif_address_privilege_config(spifilter,
+                                    FLAG_ADDR_PRIV_WRITE_SELECT,
+                                    FLAG_ADDR_PRIV_ENABLE,
+                                    MB(0),
+                                    flash_size);
+        printf("spif_add_cmd: %#x\n", g_cmd);
+        spif_add_cmd(spifilter, g_cmd, 0);
+        if (HAL_SSI_Quad_Qaddr_Transmit(&SsiHandle, addr, Addr_Width_32_bits, g_cmd, 0,
+                                            tx_data, ARRAY_SIZE(tx_data)) != HAL_OK) {
             while(1);
         }
     } while(0);
@@ -673,7 +825,7 @@ void test_w_qpi_3b_main(const struct device *const spifilter)
     __ASSERT_NO_MSG((g_cnt_expect == g_cnt) && (g_cnt == g_cnt_last));
 }
 
-void test_w_qpi_4b_main(const struct device *const spifilter)
+void test_w_qpi_4b_by_cmd(const struct device *const spifilter)
 {
     const uint32_t flash_size = MB(256);
 
@@ -696,6 +848,46 @@ void test_w_qpi_4b_main(const struct device *const spifilter)
     g_cnt_last = g_cnt;
     do { /* pass */
         g_cmd = CMD_4BYTE_PAGE_PROGRAM;
+        uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
+        // uint8_t tx_data[] = {0x4, 0x5a, 0xf7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd};
+        // uint64_t addr = 0x01020304;
+        spif_address_privilege_config(spifilter,
+                                    FLAG_ADDR_PRIV_WRITE_SELECT,
+                                    FLAG_ADDR_PRIV_ENABLE,
+                                    MB(0),
+                                    flash_size);
+        printf("spif_add_cmd: %#x\n", g_cmd);
+        spif_add_cmd(spifilter, g_cmd, 0);
+        if (HAL_SSI_QPI_Transmit(&SsiHandle, tx_data, ARRAY_SIZE(tx_data)) != HAL_OK) {
+            while(1);
+        }
+    } while(0);
+    __ASSERT_NO_MSG((g_cnt_expect == g_cnt) && (g_cnt == g_cnt_last));
+}
+
+void test_w_qpi_4b_main(const struct device *const spifilter)
+{
+    const uint32_t flash_size = MB(256);
+
+    g_cnt_last = g_cnt;
+    do { /* forbidden */
+        g_cmd = CMD_PAGE_PROGRAM;
+        uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
+        // uint8_t tx_data[] = {0x4, 0x5a, 0xf7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd};
+        // uint64_t addr = 0x01020304;
+        spif_address_privilege_config(spifilter, FLAG_ADDR_PRIV_WRITE_SELECT, FLAG_ADDR_PRIV_DISABLE, MB(0), flash_size);
+        printf("spif_add_cmd: %#x\n", g_cmd);
+        spif_add_cmd(spifilter, g_cmd, 0);
+        if (HAL_SSI_QPI_Transmit(&SsiHandle, tx_data, ARRAY_SIZE(tx_data)) != HAL_OK) {
+            while(1);
+        }
+    } while(0);
+    g_cnt_expect++;
+    __ASSERT_NO_MSG((g_cnt_expect == g_cnt) && (g_cnt == (g_cnt_last + 1)));
+
+    g_cnt_last = g_cnt;
+    do { /* pass */
+        g_cmd = CMD_PAGE_PROGRAM;
         uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
         // uint8_t tx_data[] = {0x4, 0x5a, 0xf7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd};
         // uint64_t addr = 0x01020304;
