@@ -614,7 +614,7 @@ void test_r_spicmd_qaddr4b_main(const struct device *const spifilter)
 
     g_cnt_last = g_cnt;
     do { /* forbidden */
-        g_cmd = CMD_4BYTE_READ_QUAD_ADDRESS_QUAD_DATA;
+        g_cmd = CMD_4BYTE_READ_QUAD_ADDR_QUAD_DATA;
         // uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
         uint8_t tx_data[] = {0x4, 0x5a, 0xf7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd};
         uint64_t addr = 0x01020304;
@@ -632,7 +632,7 @@ void test_r_spicmd_qaddr4b_main(const struct device *const spifilter)
 
     g_cnt_last = g_cnt;
     do { /* pass */
-        g_cmd = CMD_4BYTE_READ_QUAD_ADDRESS_QUAD_DATA;
+        g_cmd = CMD_4BYTE_READ_QUAD_ADDR_QUAD_DATA;
         // uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
         uint8_t tx_data[] = {0x4, 0x5a, 0xf7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd};
         uint64_t addr = 0x01020304;
@@ -666,7 +666,7 @@ void test_r_qpi_3b_main(const struct device *const spifilter)
 
     g_cnt_last = g_cnt;
     do { /* forbidden */
-        g_cmd = CMD_READ_QUAD_ADDRESS_QUAD_DATA;
+        g_cmd = CMD_READ_QUAD_ADDR_QUAD_DATA;
         uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
         spif_address_privilege_config(spifilter, FLAG_ADDR_PRIV_READ_SELECT, FLAG_ADDR_PRIV_DISABLE, MB(0), flash_size);
         printf("spif_add_cmd: %#x\n", g_cmd);
@@ -680,7 +680,7 @@ void test_r_qpi_3b_main(const struct device *const spifilter)
 
     g_cnt_last = g_cnt;
     do { /* pass */
-        g_cmd = CMD_READ_QUAD_ADDRESS_QUAD_DATA;
+        g_cmd = CMD_READ_QUAD_ADDR_QUAD_DATA;
         uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
         spif_address_privilege_config(spifilter,
                                     FLAG_ADDR_PRIV_READ_SELECT,
@@ -702,7 +702,7 @@ void test_r_qpi_4b_main(const struct device *const spifilter)
 
     g_cnt_last = g_cnt;
     do { /* forbidden */
-        g_cmd = CMD_4BYTE_READ_QUAD_ADDRESS_QUAD_DATA;
+        g_cmd = CMD_4BYTE_READ_QUAD_ADDR_QUAD_DATA;
         uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
         // uint8_t tx_data[] = {0x4, 0x5a, 0xf7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd};
         // uint64_t addr = 0x01020304;
@@ -718,7 +718,7 @@ void test_r_qpi_4b_main(const struct device *const spifilter)
 
     g_cnt_last = g_cnt;
     do { /* pass */
-        g_cmd = CMD_4BYTE_READ_QUAD_ADDRESS_QUAD_DATA;
+        g_cmd = CMD_4BYTE_READ_QUAD_ADDR_QUAD_DATA;
         uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
         // uint8_t tx_data[] = {0x4, 0x5a, 0xf7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd};
         // uint64_t addr = 0x01020304;
