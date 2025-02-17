@@ -142,6 +142,7 @@ int main(void)
 #endif
 
     test_r_spicmd_daddr3b(spifilter);
+    test_r_spicmd_daddr4b_by_en4b(spifilter);
     test_r_spicmd_daddr4b_by_cmd(spifilter);
 
     test_r_spicmd_qaddr3b(spifilter);
@@ -150,6 +151,7 @@ int main(void)
 
     test_r_qpi_3b(spifilter);
     test_r_qpi_4b_by_en4b(spifilter);
+    test_r_qpi_4b_by_cmd(spifilter);
 #endif
 
 //addr overflow

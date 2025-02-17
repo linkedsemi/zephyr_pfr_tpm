@@ -594,7 +594,53 @@ void test_r_spicmd_daddr4b_by_cmd(const struct device *const spifilter)
         }
     } while(0);
     __ASSERT_NO_MSG((g_cnt_expect == g_cnt) && (g_cnt == g_cnt_last));
+}
 
+void test_r_spicmd_daddr4b_main(const struct device *const spifilter)
+{
+    const uint32_t flash_size = MB(256);
+
+    g_cnt_last = g_cnt;
+    do {/* forbidden */
+        g_cmd = CMD_READ_DUAL_ADDR_DUAL_DATA;
+        // uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
+        uint8_t tx_data[] = {0x4, 0x5a, 0xf7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd};
+        uint64_t addr = 0x01020304;
+        spif_memset_addr_whitelist(spifilter, 0);
+        printf("spif_add_cmd: %#x\n", g_cmd);
+        spif_add_cmd(spifilter, g_cmd, 8);
+        if (HAL_SSI_Dual_Daddr_Transmit(&SsiHandle, addr, Addr_Width_32_bits, g_cmd, 0, tx_data, ARRAY_SIZE(tx_data)) != HAL_OK) {
+            while(1);
+        }
+    } while(0);
+    g_cnt_expect++;
+    __ASSERT_NO_MSG((g_cnt_expect == g_cnt) && (g_cnt == (g_cnt_last + 1)));
+
+    g_cnt_last = g_cnt;
+    do {/* pass */
+        g_cmd = CMD_READ_DUAL_ADDR_DUAL_DATA;
+        // uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
+        uint8_t tx_data[] = {0x4, 0x5a, 0xf7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd};
+        uint64_t addr = 0x01020304;
+        spif_address_privilege_config(spifilter,
+                                    FLAG_ADDR_PRIV_READ_SELECT,
+                                    FLAG_ADDR_PRIV_ENABLE,
+                                    MB(0),
+                                    flash_size);
+        printf("spif_add_cmd: %#x\n", g_cmd);
+        spif_add_cmd(spifilter, g_cmd, 8);
+        if (HAL_SSI_Dual_Daddr_Transmit(&SsiHandle, addr, Addr_Width_32_bits, g_cmd, 0, tx_data, ARRAY_SIZE(tx_data)) != HAL_OK) {
+            while(1);
+        }
+    } while(0);
+    __ASSERT_NO_MSG((g_cnt_expect == g_cnt) && (g_cnt == g_cnt_last));
+}
+
+void test_r_spicmd_daddr4b_by_en4b(const struct device *const spifilter)
+{
+    test_spi_en4b(spifilter);
+    test_r_spicmd_daddr4b_main(spifilter);
+    test_spi_ex4b(spifilter);
 }
 
 #if 0
