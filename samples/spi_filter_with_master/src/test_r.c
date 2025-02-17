@@ -330,7 +330,7 @@ void test_r_spicmd_saddr4b_main(const struct device *const spifilter)
     __ASSERT_NO_MSG((g_cnt_expect == g_cnt) && (g_cnt == g_cnt_last));
 }
 
-void test_r_spicmd_saddr4b(const struct device *const spifilter)
+void test_r_spicmd_saddr4b_by_en4b(const struct device *const spifilter)
 {
     test_spi_en4b(spifilter);
     test_r_spicmd_saddr4b_main(spifilter);
@@ -801,7 +801,7 @@ void test_r_spicmd_qaddr4b_main(const struct device *const spifilter)
     __ASSERT_NO_MSG((g_cnt_expect == g_cnt) && (g_cnt == g_cnt_last));
 }
 
-void test_r_spicmd_qaddr4b(const struct device *const spifilter)
+void test_r_spicmd_qaddr4b_by_en4b(const struct device *const spifilter)
 {
     test_spi_en4b(spifilter);
     test_r_spicmd_qaddr4b_main(spifilter);
@@ -931,7 +931,7 @@ void test_r_qpi_3b(const struct device *const spifilter)
     test_exqpi(spifilter);
 }
 
-void test_r_qpi_4b(const struct device *const spifilter)
+void test_r_qpi_4b_by_en4b(const struct device *const spifilter)
 {
     test_enqpi(spifilter);
     test_qpi_en4b(spifilter);

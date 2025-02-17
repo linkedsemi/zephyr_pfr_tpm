@@ -106,7 +106,7 @@ int main(void)
 //stand spi
 // send FFh to disabled qpi
     test_w_spicmd_saddr3b(spifilter);// Page Program PP 02h 3 0 1+ program selected page
-    test_w_spicmd_saddr4b(spifilter);// Page Program 4byte address PP4B 12h 4 0 1+ program selected page
+    test_w_spicmd_saddr4b_by_en4b(spifilter);// Page Program 4byte address PP4B 12h 4 0 1+ program selected page
     test_w_spicmd_saddr4b_by_cmd(spifilter);// Page Program 4byte address PP4B 12h 4 0 1+ program selected page
 
 #if DUPLICATED
@@ -123,17 +123,17 @@ int main(void)
 // send QPIEN
 // EN4B
     test_w_spicmd_qaddr3b(spifilter); // Quad-in page program QIPP C2h 3 0 1+ quad input to program selected page
-    test_w_spicmd_qaddr4b(spifilter); // Quad-in page program 4byte address QIPP4B 3Eh 4 0 1+ quad input to program selected page
+    test_w_spicmd_qaddr4b_by_en4b(spifilter); // Quad-in page program 4byte address QIPP4B 3Eh 4 0 1+ quad input to program selected page
     test_w_spicmd_qaddr4b_by_cmd(spifilter); // Quad-in page program 4byte address QIPP4B 3Eh 4 0 1+ quad input to program selected page
 
     test_w_qpi_3b(spifilter); // Page Program PP 02h 3 0 1+ program selected page
-    test_w_qpi_4b(spifilter); // Page Program 4byte address PP4B 12h 4 0 1+ program selected page
+    test_w_qpi_4b_by_en4b(spifilter); // Page Program 4byte address PP4B 12h 4 0 1+ program selected page
     test_w_qpi_4b_by_cmd(spifilter); // Page Program 4byte address PP4B 12h 4 0 1+ program selected page
 #endif
 
 #if 1
     test_r_spicmd_saddr3b(spifilter);
-    test_r_spicmd_saddr4b(spifilter);
+    test_r_spicmd_saddr4b_by_en4b(spifilter);
     test_r_spicmd_saddr4b_by_cmd(spifilter);
 
 #if DUPLICATED
@@ -145,11 +145,11 @@ int main(void)
     test_r_spicmd_daddr4b_by_cmd(spifilter);
 
     test_r_spicmd_qaddr3b(spifilter);
-    test_r_spicmd_qaddr4b(spifilter);
+    test_r_spicmd_qaddr4b_by_en4b(spifilter);
     test_r_spicmd_qaddr4b_by_cmd(spifilter);
 
     test_r_qpi_3b(spifilter);
-    test_r_qpi_4b(spifilter);
+    test_r_qpi_4b_by_en4b(spifilter);
 #endif
 
 //addr overflow
