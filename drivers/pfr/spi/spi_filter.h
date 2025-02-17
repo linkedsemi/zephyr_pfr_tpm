@@ -86,9 +86,9 @@ void spif_3byte_mode_config(const struct device *dev);
 void spif_4byte_mode_config(const struct device *dev);
 uint8_t spif_addr_mode_peek(const struct device *dev);
 spif_dma_data_t *spif_log_dma_buf(const struct device *dev);
-void spif_addr_privilege_clear_all(const struct device *dev);
-void spif_read_addr_privilege_clear_all(const struct device *dev);
-void spif_write_addr_privilege_clear_all(const struct device *dev);
+void spif_memset_addr_whitelist(const struct device *dev, uint8_t num);
+void spif_memset_read_addr_whitelist(const struct device *dev, uint8_t num);
+void spif_memset_write_addr_whitelist(const struct device *dev, uint8_t num);
 
 #include "ls_hal_dmacv3.h"
 void spif_dma_config(const struct device *dev, DMA_Controller_HandleTypeDef *dmac_inst);

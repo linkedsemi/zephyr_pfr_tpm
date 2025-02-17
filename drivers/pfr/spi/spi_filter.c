@@ -466,34 +466,59 @@ end:
     return ret;
 }
 
-void spif_addr_privilege_clear_all(const struct device *dev)
+void spif_memset_addr_whitelist(const struct device *dev, uint8_t num)
 {
     __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
     __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
 
-    for (uint32_t off = 0; off < SPIF_ADDR_SIZE; off += 4) {
-        sys_write32(0, dev_config->base + SPIF_WRITE_ADDR_VALID_EN_ADDR + off); /* memset WRITE_ADDR */
-        sys_write32(0, dev_config->base + SPIF_READ_ADDR_VALID_EN_ADDR + off);  /* memset READ_ADDR */
+    if (num == 0) {
+        for (uint32_t off = 0; off < SPIF_ADDR_SIZE; off += 4) {
+            sys_write32(0, dev_config->base + SPIF_WRITE_ADDR_VALID_EN_ADDR + off); /* memset WRITE_ADDR */
+            sys_write32(0, dev_config->base + SPIF_READ_ADDR_VALID_EN_ADDR + off);  /* memset READ_ADDR */
+        }
+    } else if (num == 1) {
+        for (uint32_t off = 0; off < SPIF_ADDR_SIZE; off += 4) {
+            sys_write32(0xffffffff, dev_config->base + SPIF_WRITE_ADDR_VALID_EN_ADDR + off); /* memset WRITE_ADDR */
+            sys_write32(0xffffffff, dev_config->base + SPIF_READ_ADDR_VALID_EN_ADDR + off);  /* memset READ_ADDR */
+        }
+    } else {
+        LOG_ERR("num should be 0 or 1");
     }
 }
 
-void spif_read_addr_privilege_clear_all(const struct device *dev)
+void spif_memset_read_addr_whitelist(const struct device *dev, uint8_t num)
 {
     __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
     __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
 
-    for (uint32_t off = 0; off < SPIF_ADDR_SIZE; off += 4) {
-        sys_write32(0, dev_config->base + SPIF_READ_ADDR_VALID_EN_ADDR + off);  /* memset READ_ADDR */
+    if (num == 0) {
+        for (uint32_t off = 0; off < SPIF_ADDR_SIZE; off += 4) {
+            sys_write32(0, dev_config->base + SPIF_READ_ADDR_VALID_EN_ADDR + off);  /* memset READ_ADDR */
+        }
+    } else if (num == 1) {
+        for (uint32_t off = 0; off < SPIF_ADDR_SIZE; off += 4) {
+            sys_write32(0xffffffff, dev_config->base + SPIF_READ_ADDR_VALID_EN_ADDR + off);  /* memset READ_ADDR */
+        }
+    } else {
+        LOG_ERR("num should be 0 or 1");
     }
 }
 
-void spif_write_addr_privilege_clear_all(const struct device *dev)
+void spif_memset_write_addr_whitelist(const struct device *dev, uint8_t num)
 {
     __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
     __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
 
-    for (uint32_t off = 0; off < SPIF_ADDR_SIZE; off += 4) {
-        sys_write32(0, dev_config->base + SPIF_WRITE_ADDR_VALID_EN_ADDR + off); /* memset WRITE_ADDR */
+    if (num == 0) {
+        for (uint32_t off = 0; off < SPIF_ADDR_SIZE; off += 4) {
+            sys_write32(0, dev_config->base + SPIF_WRITE_ADDR_VALID_EN_ADDR + off); /* memset WRITE_ADDR */
+        }
+    } else if (num == 1) {
+        for (uint32_t off = 0; off < SPIF_ADDR_SIZE; off += 4) {
+            sys_write32(0xffffffff, dev_config->base + SPIF_WRITE_ADDR_VALID_EN_ADDR + off); /* memset WRITE_ADDR */
+        }
+    } else {
+        LOG_ERR("num should be 0 or 1");
     }
 }
 
