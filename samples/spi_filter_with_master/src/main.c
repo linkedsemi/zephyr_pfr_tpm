@@ -103,11 +103,6 @@ int main(void)
 #endif
 
 #if 1
-    test_general_cmd(spifilter);
-    test_general_cmd_qpi(spifilter);
-#endif
-
-#if 1
 //stand spi
 // send FFh to disabled qpi
     test_w_spicmd_saddr3b(spifilter);// Page Program PP 02h 3 0 1+ program selected page
@@ -176,6 +171,8 @@ int main(void)
     printf("log_dma_buf: %#8.8x  ADDR_ERR: %#x  CMD_ERR: %#x  POR_ADDR: %#x  ERROR_ADDR: %#x  ERROR_CMD: %#x\n", log_dma_buf[2].value, log_dma_buf[2].ADDR_ERR, log_dma_buf[2].CMD_ERR, log_dma_buf[2].POR_ADDR, log_dma_buf[2].ERROR_ADDR << 11, log_dma_buf[2].ERROR_CMD);
     printf("log_dma_buf: %#8.8x  ADDR_ERR: %#x  CMD_ERR: %#x  POR_ADDR: %#x  ERROR_ADDR: %#x  ERROR_CMD: %#x\n", log_dma_buf[3].value, log_dma_buf[3].ADDR_ERR, log_dma_buf[3].CMD_ERR, log_dma_buf[3].POR_ADDR, log_dma_buf[3].ERROR_ADDR << 11, log_dma_buf[3].ERROR_CMD);
     //...
+
+    test_general_cmd_qpi(spifilter);
 #endif
 
     printf("g_cnt: %d\n", g_cnt);
