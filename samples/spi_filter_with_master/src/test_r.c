@@ -8,7 +8,7 @@ void test_r_spicmd_saddr3b(const struct device *const spifilter)
     do { /* forbidden */
         g_cmd = CMD_FAST_READ;
         uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
-        spif_addr_privilege_clear_all(spifilter);
+        spif_memset_addr_whitelist(spifilter, 0);
         printf("spif_add_cmd: %#x\n", g_cmd);
         spif_add_cmd(spifilter, g_cmd, 8);
         if (HAL_SSI_Transmit(&SsiHandle, tx_data, ARRAY_SIZE(tx_data)) != HAL_OK) {
@@ -39,7 +39,7 @@ void test_r_spicmd_saddr3b(const struct device *const spifilter)
     do { /* forbidden */
         g_cmd = CMD_FAST_READ;
         uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
-        spif_addr_privilege_clear_all(spifilter);
+        spif_memset_addr_whitelist(spifilter, 0);
         spif_address_privilege_config(spifilter,
                                     FLAG_ADDR_PRIV_READ_SELECT,
                                     FLAG_ADDR_PRIV_ENABLE,
@@ -58,7 +58,7 @@ void test_r_spicmd_saddr3b(const struct device *const spifilter)
     do { /* pass */
         g_cmd = CMD_FAST_READ;
         uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
-        spif_addr_privilege_clear_all(spifilter);
+        spif_memset_addr_whitelist(spifilter, 0);
         spif_address_privilege_config(spifilter,
                                     FLAG_ADDR_PRIV_READ_SELECT,
                                     FLAG_ADDR_PRIV_ENABLE,
@@ -76,7 +76,7 @@ void test_r_spicmd_saddr3b(const struct device *const spifilter)
     do { /* forbidden */
         g_cmd = CMD_FAST_READ;
         uint8_t tx_data[] = {g_cmd, 0x7, 0x2, 0x3, 0x4, 0x5a, 0xf7};
-        spif_addr_privilege_clear_all(spifilter);
+        spif_memset_addr_whitelist(spifilter, 0);
         spif_address_privilege_config(spifilter,
                                     FLAG_ADDR_PRIV_READ_SELECT,
                                     FLAG_ADDR_PRIV_ENABLE,
@@ -95,7 +95,7 @@ void test_r_spicmd_saddr3b(const struct device *const spifilter)
     do { /* pass */
         g_cmd = CMD_FAST_READ;
         uint8_t tx_data[] = {g_cmd, 0x7, 0x2, 0x3, 0x4, 0x5a, 0xf7};
-        spif_addr_privilege_clear_all(spifilter);
+        spif_memset_addr_whitelist(spifilter, 0);
         spif_address_privilege_config(spifilter,
                                     FLAG_ADDR_PRIV_READ_SELECT,
                                     FLAG_ADDR_PRIV_ENABLE,
@@ -118,7 +118,7 @@ void test_r_spicmd_saddr4b_by_cmd(const struct device *const spifilter)
     do { /* forbidden */
         g_cmd = CMD_4BYTE_FAST_READ;
         uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
-        spif_addr_privilege_clear_all(spifilter);
+        spif_memset_addr_whitelist(spifilter, 0);
         printf("spif_add_cmd: %#x\n", g_cmd);
         spif_add_cmd(spifilter, g_cmd, 8);
         if (HAL_SSI_Transmit(&SsiHandle, tx_data, ARRAY_SIZE(tx_data)) != HAL_OK) {
@@ -149,7 +149,7 @@ void test_r_spicmd_saddr4b_by_cmd(const struct device *const spifilter)
     do { /* forbidden */
         g_cmd = CMD_4BYTE_FAST_READ;
         uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
-        spif_addr_privilege_clear_all(spifilter);
+        spif_memset_addr_whitelist(spifilter, 0);
         spif_address_privilege_config(spifilter,
                                     FLAG_ADDR_PRIV_READ_SELECT,
                                     FLAG_ADDR_PRIV_ENABLE,
@@ -168,7 +168,7 @@ void test_r_spicmd_saddr4b_by_cmd(const struct device *const spifilter)
     do { /* pass */
         g_cmd = CMD_4BYTE_FAST_READ;
         uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
-        spif_addr_privilege_clear_all(spifilter);
+        spif_memset_addr_whitelist(spifilter, 0);
         spif_address_privilege_config(spifilter,
                                     FLAG_ADDR_PRIV_READ_SELECT,
                                     FLAG_ADDR_PRIV_ENABLE,
@@ -186,7 +186,7 @@ void test_r_spicmd_saddr4b_by_cmd(const struct device *const spifilter)
     do { /* forbidden */
         g_cmd = CMD_4BYTE_FAST_READ;
         uint8_t tx_data[] = {g_cmd, 0x7, 0x2, 0x3, 0x4, 0x5a, 0xf7};
-        spif_addr_privilege_clear_all(spifilter);
+        spif_memset_addr_whitelist(spifilter, 0);
         spif_address_privilege_config(spifilter,
                                     FLAG_ADDR_PRIV_READ_SELECT,
                                     FLAG_ADDR_PRIV_ENABLE,
@@ -205,7 +205,7 @@ void test_r_spicmd_saddr4b_by_cmd(const struct device *const spifilter)
     do { /* pass */
         g_cmd = CMD_4BYTE_FAST_READ;
         uint8_t tx_data[] = {g_cmd, 0x7, 0x2, 0x3, 0x4, 0x5a, 0xf7};
-        spif_addr_privilege_clear_all(spifilter);
+        spif_memset_addr_whitelist(spifilter, 0);
         spif_address_privilege_config(spifilter,
                                     FLAG_ADDR_PRIV_READ_SELECT,
                                     FLAG_ADDR_PRIV_ENABLE,
@@ -228,7 +228,7 @@ void test_r_spicmd_saddr4b_main(const struct device *const spifilter)
     do { /* forbidden */
         g_cmd = CMD_FAST_READ;
         uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
-        spif_addr_privilege_clear_all(spifilter);
+        spif_memset_addr_whitelist(spifilter, 0);
         printf("spif_add_cmd: %#x\n", g_cmd);
         spif_add_cmd(spifilter, g_cmd, 8);
         if (HAL_SSI_Transmit(&SsiHandle, tx_data, ARRAY_SIZE(tx_data)) != HAL_OK) {
@@ -259,7 +259,7 @@ void test_r_spicmd_saddr4b_main(const struct device *const spifilter)
     do { /* forbidden */
         g_cmd = CMD_FAST_READ;
         uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
-        spif_addr_privilege_clear_all(spifilter);
+        spif_memset_addr_whitelist(spifilter, 0);
         spif_address_privilege_config(spifilter,
                                     FLAG_ADDR_PRIV_READ_SELECT,
                                     FLAG_ADDR_PRIV_ENABLE,
@@ -278,7 +278,7 @@ void test_r_spicmd_saddr4b_main(const struct device *const spifilter)
     do { /* pass */
         g_cmd = CMD_FAST_READ;
         uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
-        spif_addr_privilege_clear_all(spifilter);
+        spif_memset_addr_whitelist(spifilter, 0);
         spif_address_privilege_config(spifilter,
                                     FLAG_ADDR_PRIV_READ_SELECT,
                                     FLAG_ADDR_PRIV_ENABLE,
@@ -296,7 +296,7 @@ void test_r_spicmd_saddr4b_main(const struct device *const spifilter)
     do { /* forbidden */
         g_cmd = CMD_FAST_READ;
         uint8_t tx_data[] = {g_cmd, 0x7, 0x2, 0x3, 0x4, 0x5a, 0xf7};
-        spif_addr_privilege_clear_all(spifilter);
+        spif_memset_addr_whitelist(spifilter, 0);
         spif_address_privilege_config(spifilter,
                                     FLAG_ADDR_PRIV_READ_SELECT,
                                     FLAG_ADDR_PRIV_ENABLE,
@@ -315,7 +315,7 @@ void test_r_spicmd_saddr4b_main(const struct device *const spifilter)
     do { /* pass */
         g_cmd = CMD_FAST_READ;
         uint8_t tx_data[] = {g_cmd, 0x7, 0x2, 0x3, 0x4, 0x5a, 0xf7};
-        spif_addr_privilege_clear_all(spifilter);
+        spif_memset_addr_whitelist(spifilter, 0);
         spif_address_privilege_config(spifilter,
                                     FLAG_ADDR_PRIV_READ_SELECT,
                                     FLAG_ADDR_PRIV_ENABLE,
@@ -347,7 +347,7 @@ void test_r_spicmd_saddr3b_ddata(const struct device *const spifilter)
         // uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
         uint8_t tx_data[] = {0x4, 0x5a, 0xf7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd};
         uint64_t addr = 0x010203;
-        spif_addr_privilege_clear_all(spifilter);
+        spif_memset_addr_whitelist(spifilter, 0);
         printf("spif_add_cmd: %#x\n", g_cmd);
         spif_add_cmd(spifilter, g_cmd, 8);
         if (HAL_SSI_Dual_Ddata_Transmit(&SsiHandle, addr, Addr_Width_24_bits, g_cmd, 0, tx_data, ARRAY_SIZE(tx_data)) != HAL_OK) {
@@ -383,7 +383,7 @@ void test_r_spicmd_saddr4b_ddata(const struct device *const spifilter)
         // uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
         uint8_t tx_data[] = {0x4, 0x5a, 0xf7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd};
         uint64_t addr = 0x01020304;
-        spif_addr_privilege_clear_all(spifilter);
+        spif_memset_addr_whitelist(spifilter, 0);
         printf("spif_add_cmd: %#x\n", g_cmd);
         spif_add_cmd(spifilter, g_cmd, 8);
         if (HAL_SSI_Dual_Ddata_Transmit(&SsiHandle, addr, Addr_Width_32_bits, g_cmd, 0, tx_data, ARRAY_SIZE(tx_data)) != HAL_OK) {
@@ -477,7 +477,7 @@ void test_r_spicmd_daddr3b(const struct device *const spifilter)
         // uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
         uint8_t tx_data[] = {0x4, 0x5a, 0xf7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd};
         uint64_t addr = 0x010203;
-        spif_addr_privilege_clear_all(spifilter);
+        spif_memset_addr_whitelist(spifilter, 0);
         printf("spif_add_cmd: %#x\n", g_cmd);
         spif_add_cmd(spifilter, g_cmd, 8);
         // spif_dump_cmd_table(spifilter);io_toggle_pin(PA01);
@@ -517,7 +517,7 @@ void test_r_spicmd_daddr3b(const struct device *const spifilter)
         // uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
         uint8_t tx_data[] = {0x4, 0x5a, 0xf7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd};
         uint64_t addr = 0x010203;
-        spif_addr_privilege_clear_all(spifilter);
+        spif_memset_addr_whitelist(spifilter, 0);
         spif_address_privilege_config(spifilter,
                                     FLAG_ADDR_PRIV_READ_SELECT,
                                     FLAG_ADDR_PRIV_ENABLE,
@@ -542,7 +542,7 @@ void test_r_spicmd_daddr3b(const struct device *const spifilter)
         // uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
         uint8_t tx_data[] = {0x4, 0x5a, 0xf7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd};
         uint64_t addr = 0x010203;
-        spif_addr_privilege_clear_all(spifilter);
+        spif_memset_addr_whitelist(spifilter, 0);
         spif_address_privilege_config(spifilter,
                                     FLAG_ADDR_PRIV_READ_SELECT,
                                     FLAG_ADDR_PRIV_ENABLE,
@@ -571,7 +571,7 @@ void test_r_spicmd_daddr4b_by_cmd(const struct device *const spifilter)
         // uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
         uint8_t tx_data[] = {0x4, 0x5a, 0xf7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd};
         uint64_t addr = 0x01020304;
-        spif_addr_privilege_clear_all(spifilter);
+        spif_memset_addr_whitelist(spifilter, 0);
         printf("spif_add_cmd: %#x\n", g_cmd);
         spif_add_cmd(spifilter, g_cmd, 8);
         if (HAL_SSI_Dual_Daddr_Transmit(&SsiHandle, addr, Addr_Width_32_bits, g_cmd, 0, tx_data, ARRAY_SIZE(tx_data)) != HAL_OK) {
@@ -612,7 +612,7 @@ void test_r_spicmd_saddr3b_qdata(const struct device *const spifilter)
         // uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
         uint8_t tx_data[] = {0x4, 0x5a, 0xf7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd};
         uint64_t addr = 0x010203;
-        spif_addr_privilege_clear_all(spifilter);
+        spif_memset_addr_whitelist(spifilter, 0);
         printf("spif_add_cmd: %#x\n", g_cmd);
         spif_add_cmd(spifilter, g_cmd, 8);
         if (HAL_SSI_Quad_Qdata_Transmit(&SsiHandle, addr, Addr_Width_24_bits, g_cmd, 0, tx_data, ARRAY_SIZE(tx_data)) != HAL_OK) {
@@ -648,7 +648,7 @@ void test_r_spicmd_saddr4b_qdata(const struct device *const spifilter)
         // uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
         uint8_t tx_data[] = {0x4, 0x5a, 0xf7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd};
         uint64_t addr = 0x01020304;
-        spif_addr_privilege_clear_all(spifilter);
+        spif_memset_addr_whitelist(spifilter, 0);
         printf("spif_add_cmd: %#x\n", g_cmd);
         spif_add_cmd(spifilter, g_cmd, 8);
         if (HAL_SSI_Quad_Qdata_Transmit(&SsiHandle, addr, Addr_Width_32_bits, g_cmd, 0, tx_data, ARRAY_SIZE(tx_data)) != HAL_OK) {
@@ -686,7 +686,7 @@ void test_r_spicmd_qaddr3b(const struct device *const spifilter)
         // uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
         uint8_t tx_data[] = {0x4, 0x5a, 0xf7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd};
         uint64_t addr = 0x010203;
-        spif_addr_privilege_clear_all(spifilter);
+        spif_memset_addr_whitelist(spifilter, 0);
         printf("spif_add_cmd: %#x\n", g_cmd);
         spif_add_cmd(spifilter, g_cmd, 8);
         if (HAL_SSI_Quad_Qaddr_Transmit(&SsiHandle, addr, Addr_Width_24_bits, g_cmd, 0,
@@ -728,7 +728,7 @@ void test_r_spicmd_qaddr4b_by_cmd(const struct device *const spifilter)
         // uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
         uint8_t tx_data[] = {0x4, 0x5a, 0xf7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd};
         uint64_t addr = 0x01020304;
-        spif_addr_privilege_clear_all(spifilter);
+        spif_memset_addr_whitelist(spifilter, 0);
         printf("spif_add_cmd: %#x\n", g_cmd);
         spif_add_cmd(spifilter, g_cmd, 8);
         // spif_dump_rw_addr_privilege_table(spifilter);
@@ -772,7 +772,7 @@ void test_r_spicmd_qaddr4b_main(const struct device *const spifilter)
         // uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
         uint8_t tx_data[] = {0x4, 0x5a, 0xf7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd};
         uint64_t addr = 0x01020304;
-        spif_addr_privilege_clear_all(spifilter);
+        spif_memset_addr_whitelist(spifilter, 0);
         printf("spif_add_cmd: %#x\n", g_cmd);
         spif_add_cmd(spifilter, g_cmd, 8);
         // spif_dump_rw_addr_privilege_table(spifilter);
@@ -822,7 +822,7 @@ void test_r_qpi_3b_main(const struct device *const spifilter)
     do { /* forbidden */
         g_cmd = CMD_READ_QUAD_ADDR_QUAD_DATA;
         uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
-        spif_addr_privilege_clear_all(spifilter);
+        spif_memset_addr_whitelist(spifilter, 0);
         printf("spif_add_cmd: %#x\n", g_cmd);
         spif_add_cmd(spifilter, g_cmd, 8);
         if (HAL_SSI_QPI_Transmit(&SsiHandle, tx_data, ARRAY_SIZE(tx_data)) != HAL_OK) {
@@ -860,7 +860,7 @@ void test_r_qpi_4b_by_cmd(const struct device *const spifilter)
         uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
         // uint8_t tx_data[] = {0x4, 0x5a, 0xf7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd};
         // uint64_t addr = 0x01020304;
-        spif_addr_privilege_clear_all(spifilter);
+        spif_memset_addr_whitelist(spifilter, 0);
         printf("spif_add_cmd: %#x\n", g_cmd);
         spif_add_cmd(spifilter, g_cmd, 8);
         if (HAL_SSI_QPI_Transmit(&SsiHandle, tx_data, ARRAY_SIZE(tx_data)) != HAL_OK) {
@@ -900,7 +900,7 @@ void test_r_qpi_4b_main(const struct device *const spifilter)
         uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
         // uint8_t tx_data[] = {0x4, 0x5a, 0xf7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd};
         // uint64_t addr = 0x01020304;
-        spif_addr_privilege_clear_all(spifilter);
+        spif_memset_addr_whitelist(spifilter, 0);
         printf("spif_add_cmd: %#x\n", g_cmd);
         spif_add_cmd(spifilter, g_cmd, 8);
         if (HAL_SSI_QPI_Transmit(&SsiHandle, tx_data, ARRAY_SIZE(tx_data)) != HAL_OK) {
@@ -956,7 +956,7 @@ void test_cmd_rd_addr_overflow(const struct device *const spifilter)
             g_cmd = CMD_FAST_READ;
             uint8_t tx_data[1 + 3 + 1 + 1 + 4] = {g_cmd, 0x7f, 0xff, 0xff, 0x0, 0x5a, 0xf7};
             // uint8_t tx_data[1 + 3 + 1 + 7 + 10] = {g_cmd, 0x7f, 0xff, 0xf7, 0x0, 0x5a, 0xf7};
-            spif_addr_privilege_clear_all(spifilter);
+            spif_memset_addr_whitelist(spifilter, 0);
             spif_address_privilege_config(spifilter,
                                         FLAG_ADDR_PRIV_READ_SELECT,
                                         FLAG_ADDR_PRIV_ENABLE,
