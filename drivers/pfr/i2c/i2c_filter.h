@@ -40,6 +40,8 @@ int linkedsemi_i2c_filter_en(const struct device *dev,
                              bool wlist_en,
                              bool clr_tbl);
 
+int linkedsemi_i2c_filter_cold_reset(const struct device *dev);
+
 /**
  * @}
  */

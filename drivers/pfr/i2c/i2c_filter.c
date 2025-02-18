@@ -193,12 +193,10 @@ int linkedsemi_i2c_filter_en(const struct device *dev,
     return 0;
 }
 
-static int linkedsemi_i2c_filter_init(const struct device *dev)
+int linkedsemi_i2c_filter_cold_reset(const struct device *dev)
 {
     __unused const struct linkedsemi_i2c_filter_config *dev_config = dev->config;
     __unused struct linkedsemi_i2c_filter_data *dev_data = dev->data;
-
-    k_mutex_init(&dev_data->lock);
 
 #if defined(CONFIG_PINCTRL)
     if (dev_config->pcfg != NULL) {
@@ -219,6 +217,16 @@ static int linkedsemi_i2c_filter_init(const struct device *dev)
 
     linkedsemi_i2c_filter_en(dev, false, false, true);
     linkedsemi_i2c_filter_config_scl_hold_time(dev, dev_data->scl_hold_time);
+
+    return 0;
+}
+
+static int linkedsemi_i2c_filter_init(const struct device *dev)
+{
+    __unused const struct linkedsemi_i2c_filter_config *dev_config = dev->config;
+    __unused struct linkedsemi_i2c_filter_data *dev_data = dev->data;
+
+    k_mutex_init(&dev_data->lock);
 
     dev_config->irq_config_func(dev);
 
