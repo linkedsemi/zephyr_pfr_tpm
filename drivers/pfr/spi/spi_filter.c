@@ -973,13 +973,10 @@ uint8_t spif_addr_mode_peek(const struct device *dev)
     return spif_cfg.ADDR_3B_4B_FLAG;
 }
 
-static int linkedsemi_spi_filter_init(const struct device *dev)
+int linkedsemi_spi_filter_cold_reset(const struct device *dev)
 {
     __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
     __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
-
-    if (IS_ENABLED(CONFIG_MULTITHREADING))
-        k_sem_init(&dev_data->sem_spif, 1, 1);
 
 #if defined(CONFIG_PINCTRL)
     if (dev_config->pcfg != NULL) {
@@ -1022,6 +1019,17 @@ static int linkedsemi_spi_filter_init(const struct device *dev)
     intr_mask.ERROR = 1;
     intr_mask.TARGET_ADDR = 0;
     sys_write32(intr_mask.value, dev_config->base + SPIF_INTR_MASK);
+
+    return 0;
+}
+
+static int linkedsemi_spi_filter_init(const struct device *dev)
+{
+    __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
+    __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
+
+    if (IS_ENABLED(CONFIG_MULTITHREADING))
+        k_sem_init(&dev_data->sem_spif, 1, 1);
 
     dev_config->irq_config_func(dev);
 
