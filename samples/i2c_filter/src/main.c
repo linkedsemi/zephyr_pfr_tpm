@@ -21,6 +21,7 @@ int main(void)
     uint8_t addr = 0x50;
     uint8_t dump_addr = 0;
     uint8_t bit = 8;
+    linkedsemi_i2c_filter_cold_reset(i2cfilter);
     sys_bitfield_set_bit((mem_addr_t)bitmap, bit);
     linkedsemi_i2c_filter_fill_bitmap(i2cfilter, index, addr, bitmap);
     linkedsemi_i2c_filter_dump_bitmap(i2cfilter, index, &dump_addr, dump_bitmap);

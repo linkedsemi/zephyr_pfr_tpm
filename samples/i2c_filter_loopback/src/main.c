@@ -110,6 +110,7 @@ int main(void)
         printf("Failed to register i2c target driver\n");
         return 0;
     }
+    linkedsemi_i2c_filter_cold_reset(i2cfilter);
 #if 0
 uint8_t bit = 0;
 uint16_t len = 2;

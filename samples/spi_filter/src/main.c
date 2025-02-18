@@ -19,7 +19,7 @@
 int main(void)
 {
     const struct device *const spifilter = DEVICE_DT_GET(DT_ALIAS(spifilter));
-
+    linkedsemi_spi_filter_cold_reset(spifilter);
     spif_dump_cmd_table(spifilter);
     spif_dump_rw_addr_privilege_table(spifilter);
     spif_add_cmd(spifilter, CMD_READ);

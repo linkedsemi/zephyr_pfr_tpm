@@ -93,6 +93,8 @@ int main(void)
     }
     spi_init();
 
+    linkedsemi_spi_filter_cold_reset(spifilter);
+
 //sck check
     spif_clk_check_config(spifilter, 0, 2, BIT(12) - 1, true);
 
