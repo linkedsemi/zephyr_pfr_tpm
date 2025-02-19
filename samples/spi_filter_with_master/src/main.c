@@ -103,7 +103,6 @@ int main(void)
     DMA_CONTROLLER_INIT(hdma_inst);
     spif_dma_config(spifilter, &hdma_inst);
 #endif
-
 #if 1
 //stand spi
 // send FFh to disabled qpi

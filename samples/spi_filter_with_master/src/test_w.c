@@ -286,6 +286,7 @@ void test_w_spicmd_saddr3b(const struct device *const spifilter)
     do { /* pass */
         g_cmd = CMD_PAGE_PROGRAM;
         uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
+        spif_memset_addr_whitelist(spifilter, 0);
         spif_address_privilege_config(spifilter,
                                     FLAG_ADDR_PRIV_WRITE_SELECT,
                                     FLAG_ADDR_PRIV_ENABLE,
@@ -396,6 +397,7 @@ void test_w_spicmd_saddr4b_by_cmd(const struct device *const spifilter)
     do { /* pass */
         g_cmd = CMD_4BYTE_PAGE_PROGRAM;
         uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
+        spif_memset_addr_whitelist(spifilter, 0);
         spif_address_privilege_config(spifilter,
                                     FLAG_ADDR_PRIV_WRITE_SELECT,
                                     FLAG_ADDR_PRIV_ENABLE,
@@ -506,6 +508,7 @@ void test_w_spicmd_saddr4b_main(const struct device *const spifilter)
     do { /* pass */
         g_cmd = CMD_PAGE_PROGRAM;
         uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
+        spif_memset_addr_whitelist(spifilter, 0);
         spif_address_privilege_config(spifilter,
                                     FLAG_ADDR_PRIV_WRITE_SELECT,
                                     FLAG_ADDR_PRIV_ENABLE,
@@ -671,6 +674,7 @@ void test_w_spicmd_qaddr4b_by_cmd(const struct device *const spifilter)
         // uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
         uint8_t tx_data[] = {0x4, 0x5a, 0xf7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd};
         uint64_t addr = 0x01020304;
+        spif_memset_addr_whitelist(spifilter, 0);
         spif_address_privilege_config(spifilter,
                                     FLAG_ADDR_PRIV_WRITE_SELECT,
                                     FLAG_ADDR_PRIV_ENABLE,
@@ -713,6 +717,7 @@ void test_w_spicmd_qaddr4b_main(const struct device *const spifilter)
         // uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
         uint8_t tx_data[] = {0x4, 0x5a, 0xf7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd};
         uint64_t addr = 0x01020304;
+        spif_memset_addr_whitelist(spifilter, 0);
         spif_address_privilege_config(spifilter,
                                     FLAG_ADDR_PRIV_WRITE_SELECT,
                                     FLAG_ADDR_PRIV_ENABLE,
@@ -757,6 +762,7 @@ void test_w_qpi_3b_main(const struct device *const spifilter)
     do { /* pass */
         g_cmd = CMD_PAGE_PROGRAM;
         uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
+        spif_memset_addr_whitelist(spifilter, 0);
         spif_address_privilege_config(spifilter,
                                     FLAG_ADDR_PRIV_WRITE_SELECT,
                                     FLAG_ADDR_PRIV_ENABLE,
@@ -771,7 +777,7 @@ void test_w_qpi_3b_main(const struct device *const spifilter)
     __ASSERT_NO_MSG((g_cnt_expect == g_cnt) && (g_cnt == g_cnt_last));
 }
 
-void test_w_qpi_4b_by_cmd(const struct device *const spifilter)
+void test_w_qpi_4b_by_cmd_main(const struct device *const spifilter)
 {
     const uint32_t flash_size = MB(256);
 
@@ -797,6 +803,7 @@ void test_w_qpi_4b_by_cmd(const struct device *const spifilter)
         uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
         // uint8_t tx_data[] = {0x4, 0x5a, 0xf7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd};
         // uint64_t addr = 0x01020304;
+        spif_memset_addr_whitelist(spifilter, 0);
         spif_address_privilege_config(spifilter,
                                     FLAG_ADDR_PRIV_WRITE_SELECT,
                                     FLAG_ADDR_PRIV_ENABLE,
@@ -837,6 +844,7 @@ void test_w_qpi_4b_main(const struct device *const spifilter)
         uint8_t tx_data[] = {g_cmd, 0x1, 0x2, 0x3, 0x4, 0x5a, 0xf7};
         // uint8_t tx_data[] = {0x4, 0x5a, 0xf7, 0x8, 0x9, 0xa, 0xb, 0xc, 0xd};
         // uint64_t addr = 0x01020304;
+        spif_memset_addr_whitelist(spifilter, 0);
         spif_address_privilege_config(spifilter,
                                     FLAG_ADDR_PRIV_WRITE_SELECT,
                                     FLAG_ADDR_PRIV_ENABLE,
@@ -864,6 +872,13 @@ void test_w_qpi_4b_by_en4b(const struct device *const spifilter)
     test_qpi_en4b(spifilter);
     test_w_qpi_4b_main(spifilter);
     test_qpi_ex4b(spifilter);
+    test_exqpi(spifilter);
+}
+
+void test_w_qpi_4b_by_cmd(const struct device *const spifilter)
+{
+    test_enqpi(spifilter);
+    test_w_qpi_4b_by_cmd_main(spifilter);
     test_exqpi(spifilter);
 }
 
