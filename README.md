@@ -12,6 +12,7 @@
 ## usage
 1. git clone project with name `pfr_tpm`
 ```
+cd /data/work/modules/lib/
 git clone https://github.com/linkedsemi/zephyr_pfr_tpm.git pfr_tpm
 ```
 2. modify zephyr/west.yml
@@ -35,7 +36,7 @@ index 7b26860a91c..c1be0ddb8fd 100644
 3. install *.yaml to zephyr/dts/bindings/misc
 ```
 cd modules/lib/pfr_tpm
-bash install.sh modules/lib/pfr_tpm zephyr
+bash install.sh /data/work/modules/lib/pfr_tpm /data/work/zephyr
 ```
 
 4. build
