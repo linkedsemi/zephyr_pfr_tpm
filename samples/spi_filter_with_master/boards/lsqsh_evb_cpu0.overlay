@@ -337,7 +337,7 @@
                  &spif1_io2_pg06
                  &spif1_io2_pg07>;
     pinctrl-names = "default";
-    status = "disabled";
+    status = "okay";
 };
 
 &spifilter2 {
@@ -371,7 +371,7 @@
                  &spif3_io2_pf10
                  &spif3_io2_pf11>;
     pinctrl-names = "default";
-    status = "disabled";
+    status = "okay";
 };
 
 &spifilter4 {
@@ -388,7 +388,7 @@
                  &spif4_csn_ph14
                  &spif4_csn_ph15>;
     pinctrl-names = "default";
-    status = "disabled";
+    status = "okay";
 };
 
 &spi1 {

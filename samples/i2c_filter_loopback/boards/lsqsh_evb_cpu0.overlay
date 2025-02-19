@@ -152,7 +152,7 @@
                 &i2cfilter1_sdai_pq02
                 &i2cfilter1_scli_pn12>;
     pinctrl-names = "default";
-    status = "disabled";
+    status = "okay";
 };
 
 &i2cfilter2 {
@@ -161,7 +161,7 @@
                 &i2cfilter2_sclo_pn14
                 &i2cfilter2_sdao_pn13>;
     pinctrl-names = "default";
-    status = "disabled";
+    status = "okay";
 };
 
 &i2cfilter3 {
@@ -179,7 +179,7 @@
                 &i2cfilter4_sdai_pq04
                 &i2cfilter4_scli_pq13>;
     pinctrl-names = "default";
-    status = "disabled";
+    status = "okay";
 };
 
 &i2c2 {

@@ -264,6 +264,7 @@
     };
     /omit-if-no-ref/i2cfilter1_sclo_pb11: i2cfilter1_sclo_pb11 {
         pinmux = <LS_PINMUX_SMBF1_SCLO_FUNC3_PB11>;
+        input-enable;
     };
     /omit-if-no-ref/i2cfilter1_sdai_pq02: i2cfilter1_sdai_pq02 {
         pinmux = <LS_PINMUX_SMBF1_SDAI_FUNC3_PQ02>;
@@ -280,6 +281,7 @@
     };
     /omit-if-no-ref/i2cfilter2_sclo_pn14: i2cfilter2_sclo_pn14 {
         pinmux = <LS_PINMUX_SMBF2_SCLO_FUNC3_PN14>;
+        input-enable;
     };
     /omit-if-no-ref/i2cfilter2_sdai_pn11: i2cfilter2_sdai_pn11 {
         pinmux = <LS_PINMUX_SMBF2_SDAI_FUNC3_PN11>;
@@ -296,6 +298,7 @@
     };
     /omit-if-no-ref/i2cfilter3_sclo_pb15: i2cfilter3_sclo_pb15 {
         pinmux = <LS_PINMUX_SMBF3_SCLO_FUNC4_PB15>;
+        input-enable;
     };
     /omit-if-no-ref/i2cfilter3_sdai_pb12: i2cfilter3_sdai_pb12 {
         pinmux = <LS_PINMUX_SMBF3_SDAI_FUNC4_PB12>;
@@ -312,6 +315,7 @@
     };
     /omit-if-no-ref/i2cfilter4_sclo_pq05: i2cfilter4_sclo_pq05 {
         pinmux = <LS_PINMUX_SMBF4_SCLO_FUNC3_PQ05>;
+        input-enable;
     };
     /omit-if-no-ref/i2cfilter4_sdai_pq04: i2cfilter4_sdai_pq04 {
         pinmux = <LS_PINMUX_SMBF4_SDAI_FUNC3_PQ04>;
@@ -329,7 +333,7 @@
                 &i2cfilter1_sdai_pq02
                 &i2cfilter1_scli_pn12>;
     pinctrl-names = "default";
-    status = "disabled";
+    status = "okay";
 };
 
 &i2cfilter2 {
@@ -347,7 +351,7 @@
                 &i2cfilter3_sdai_pb12
                 &i2cfilter3_scli_pb13>;
     pinctrl-names = "default";
-    status = "disabled";
+    status = "okay";
 };
 
 &i2cfilter4 {
@@ -356,5 +360,5 @@
                 &i2cfilter4_sdai_pq04
                 &i2cfilter4_scli_pq13>;
     pinctrl-names = "default";
-    status = "disabled";
+    status = "okay";
 };
