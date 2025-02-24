@@ -74,10 +74,10 @@ static void linkedsemi_i2c_filter_isr(const struct device *dev)
     smbf_nonwhitelist.value = sys_read32(dev_config->base + SMBF_NONWHITELIST);
 
     if (intr_status.ADDRESS_BEYOND_WHITELIST) {
-        printk("address beyond whitelist: i2c@%#x\n", smbf_nonwhitelist.ERROR_ADDRESS);
+        LOG_DBG("address beyond whitelist: i2c@%#x\n", smbf_nonwhitelist.ERROR_ADDRESS);
     }
     if (intr_status.COMMAND_BEYOND_WHITELIST) {
-        printk("command beyond whitelist: i2c@%#x cmd@%#x\n",
+        LOG_DBG("command beyond whitelist: i2c@%#x cmd@%#x\n",
                                                     smbf_nonwhitelist.ERROR_ADDRESS,
                                                     smbf_nonwhitelist.ERROR_COMMAND);
     }
@@ -104,6 +104,22 @@ int linkedsemi_i2c_filter_fill_bitmap(const struct device *dev,
     }
 
     k_mutex_lock(&dev_data->lock, K_FOREVER);
+
+    for (uint8_t reg_idx = 0; reg_idx < 4; reg_idx++) {
+        whitelist_address_t wht_addr;
+        wht_addr.value = sys_read32(dev_config->base + WHITELIST_ADDRESS_3_0 + (reg_idx * 0x4));
+        for (uint8_t addr_idx = 0; addr_idx < 4; addr_idx++) {
+            uint8_t it_idx = (reg_idx * 0x4) + addr_idx;
+            if ((wht_addr.field[addr_idx].WHITELIST_ADDRESS == addr) && (it_idx != idx)) {
+                uint32_t smbf_address_enable = sys_read32(dev_config->base + SMBF_ADDRESS_ENABLE);
+                if (smbf_address_enable & BIT(it_idx)) {
+                    LOG_ERR("operation fail: addr[%#x] is duplicated with channel %d", addr, it_idx);
+                    k_mutex_unlock(&dev_data->lock);
+                    return -EINVAL;
+                }
+            }
+        }
+    }
 
     uint32_t offset = (idx >> 2) << 2;
     whitelist_address_t wht_addr;
