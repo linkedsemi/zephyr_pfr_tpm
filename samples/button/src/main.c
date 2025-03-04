@@ -16,8 +16,6 @@
 #include <zephyr/sys/printk.h>
 #include <inttypes.h>
 
-#include "ls_soc_gpio.h"
-
 #define SLEEP_TIME_MS	1
 
 /*
@@ -47,14 +45,6 @@ void button_pressed(const struct device *dev, struct gpio_callback *cb,
 int main(void)
 {
 	int ret;
-
-    // io_cfg_input(PT15);
-    // // io_cfg_opendrain(PT15);
-    // // io_clr_pin(PT15PN13);
-    // // while(1);
-    // while(1) {
-	// 	printk("PT15: %#x\n", io_get_input_val(PT15));
-    // }
 
 	if (!gpio_is_ready_dt(&button)) {
 		printk("Error: button device %s is not ready\n",
