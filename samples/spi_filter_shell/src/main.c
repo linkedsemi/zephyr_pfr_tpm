@@ -22,7 +22,7 @@
 
 int main(void)
 {
-    const struct device *const spifilter = DEVICE_DT_GET(DT_ALIAS(spifilter));
+    const struct device *const spifilter = DEVICE_DT_GET(DT_ALIAS(spif));
     linkedsemi_spi_filter_cold_reset(spifilter);
 
     return 0;

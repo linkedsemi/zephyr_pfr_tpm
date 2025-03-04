@@ -1,70 +1,15 @@
-#include "../../../include/pfr_tpm_pinctrl.h"
+#include "../../../include/lsqsh_pinctrl_pfr_tpm.dtsi"
+
 / {
-    
     aliases {
-        spid = &spid2;
-    };
-
-    soc {
-        spid1: spid@4000c000 {
-            compatible = "linkedsemi,spid";
-            reg = <0x4000c000 0x2000>;
-            interrupts = <56 3>, <57 3>;
-            interrupt-names = "main", "sysc";
-            status = "disabled";
-        };
-
-        spid2: spid@4000e000 {
-            compatible = "linkedsemi,spid";
-            reg = <0x4000e000 0x2000>;
-            interrupts = <58 3>, <59 3>;
-            interrupt-names = "main", "sysc";
-            status = "disabled";
-        };
+        spid = &tpm_spis2;
     };
 };
 
-&pinctrl {
-    /omit-if-no-ref/spid1_nss_pc00: spid1_nss_pc00 {
-        pinmux = <LS_PINMUX_TPM_SPIS1_CSN_FUNC4_PC02>;
-        input-enable;
-    };
-    /omit-if-no-ref/spid1_sck_pc01: spid1_sck_pc01 {
-        pinmux = <LS_PINMUX_TPM_SPIS1_SCK_FUNC4_PC03>;
-        input-enable;
-    };
-    /omit-if-no-ref/spid1_mosi_pc02: spid1_mosi_pc02 {
-        pinmux = <LS_PINMUX_TPM_SPIS1_MOSI_FUNC4_PC00>;
-        input-enable;
-    };
-    /omit-if-no-ref/spid1_miso_pc03: spid1_miso_pc03 {
-        pinmux = <LS_PINMUX_TPM_SPIS1_MISO_FUNC4_PC01>;
-        input-enable;
-    };
-
-    /omit-if-no-ref/spid2_nss_pe04: spid2_nss_pe04 {
-        pinmux = <LS_PINMUX_TPM_SPIS2_CSN_FUNC4_PE04>;
-        input-enable;
-    };
-    /omit-if-no-ref/spid2_sck_pe05: spid2_sck_pe05 {
-        pinmux = <LS_PINMUX_TPM_SPIS2_SCK_FUNC4_PE05>;
-        input-enable;
-    };
-    /omit-if-no-ref/spid2_mosi_pe06: spid2_mosi_pe06 {
-        pinmux = <LS_PINMUX_TPM_SPIS2_MOSI_FUNC4_PE06>;
-        input-enable;
-    };
-    /omit-if-no-ref/spid2_miso_pe07: spid2_miso_pe07 {
-        pinmux = <LS_PINMUX_TPM_SPIS2_MISO_FUNC4_PE07>;
-        input-enable;
-    };
+&tpm_spis1 {
+    status = "okay";
 };
 
-&spid2 {
-    pinctrl-0 = <&spid2_nss_pe04
-                &spid2_sck_pe05
-                &spid2_mosi_pe06
-                &spid2_miso_pe07>;
-    pinctrl-names = "default";
+&tpm_spis2 {
     status = "okay";
 };

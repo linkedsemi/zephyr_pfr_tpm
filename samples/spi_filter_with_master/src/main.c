@@ -26,17 +26,17 @@
 
 void pinmux_spi1_mst_init(void)
 {
-    pinmux_cfg_pin_func_alt(SPI1_MST_CLK_FUNC3_PG01_PIN, SPI1_MST_CLK_FUNC3_PG01_FUNC, 0);
-    pinmux_cfg_pin_func_alt(SPI1_MST_CSN_FUNC3_PG03_PIN, SPI1_MST_CSN_FUNC3_PG03_FUNC, 0);
+    pinmux_cfg_pin_func_alt(SPI1_MST_CLK_FUNC3_PG00_PIN, SPI1_MST_CLK_FUNC3_PG00_FUNC, 0);
+    pinmux_cfg_pin_func_alt(SPI1_MST_CSN_FUNC3_PI08_PIN, SPI1_MST_CSN_FUNC3_PI08_FUNC, 0);
     pinmux_cfg_pin_func_alt(SPI1_MST_IO0_FUNC3_PF15_PIN, SPI1_MST_IO0_FUNC3_PF15_FUNC, 0);
     pinmux_cfg_pin_func_alt(SPI1_MST_IO1_FUNC3_PF13_PIN, SPI1_MST_IO1_FUNC3_PF13_FUNC, 0);
-    pinmux_cfg_pin_func_alt(SPI1_MST_IO2_FUNC3_PG07_PIN, SPI1_MST_IO2_FUNC3_PG07_FUNC, 0);
-    pinmux_cfg_pin_func_alt(SPI1_MST_IO3_FUNC3_PG05_PIN, SPI1_MST_IO3_FUNC3_PG05_FUNC, 0);
+    pinmux_cfg_pin_func_alt(SPI1_MST_IO2_FUNC3_PH01_PIN, SPI1_MST_IO2_FUNC3_PH01_FUNC, 0);
+    pinmux_cfg_pin_func_alt(SPI1_MST_IO3_FUNC3_PH03_PIN, SPI1_MST_IO3_FUNC3_PH03_FUNC, 0);
 
     io_cfg_input(SPI1_MST_IO0_FUNC3_PF15_PIN);
     io_cfg_input(SPI1_MST_IO1_FUNC3_PF13_PIN);
-    io_cfg_input(SPI1_MST_IO2_FUNC3_PG07_PIN);
-    io_cfg_input(SPI1_MST_IO3_FUNC3_PG05_PIN);
+    io_cfg_input(SPI1_MST_IO2_FUNC3_PH01_PIN);
+    io_cfg_input(SPI1_MST_IO3_FUNC3_PH03_PIN);
 }
 
 SSI_HandleTypeDef SsiHandle = {0};
@@ -86,7 +86,7 @@ static void spif_callback(const struct device *dev,
 DEF_DMA_CONTROLLER(hdma_inst, DMAC1);
 int main(void)
 {
-    const struct device *const spifilter = DEVICE_DT_GET(DT_ALIAS(spifilter));
+    const struct device *const spifilter = DEVICE_DT_GET(DT_ALIAS(spif));
     int ret = linkedsemi_spif_register_callback(spifilter, 0, spif_callback, NULL);
     if (ret) {
         return -1;
