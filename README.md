@@ -41,8 +41,8 @@ bash install.sh /data/work/modules/lib/pfr_tpm /data/work/zephyr
 
 4. build
 ```
-cd /data/hunter/zephyr/zephyr_linkedsemi_rgmii_new_fpga_tpm
-west build -b lsqsh_evb@runbmc_v3_2os/lsqsh/cpu0 -p always modules/lib/pfr_tpm/samples/spid
+cd /data/work
+west build -b lsqsh_evb@2os/lsqsh/cpu1 -p always modules/lib/pfr_tpm/samples/spid
 ```
 ## Zephyr BSP
 #### spid(tpm spi slave)
@@ -66,7 +66,7 @@ lsqsh_evb_cpu0: security zephyr
 lsqsh_evb_cpu1: application zephyr
 - build sample
 ```
-west build -b lsqsh_evb@runbmc_v3_2os/lsqsh/cpu0 -p always modules/lib/pfr_tpm/samples/spid/
+west build -b lsqsh_evb@2os/lsqsh/cpu1 -p always modules/lib/pfr_tpm/samples/spid/
 ```
 #### i2c filter
 - driver
@@ -96,11 +96,11 @@ lsqsh_evb_cpu0: security zephyr
 lsqsh_evb_cpu1: application zephyr
 - build sample 1
 ```
-west build -b lsqsh_evb@runbmc_v3_2os/lsqsh/cpu0 -p always modules/lib/pfr_tpm/samples/i2c_filter/
+west build -b lsqsh_evb@2os/lsqsh/cpu1 -p always modules/lib/pfr_tpm/samples/i2c_filter/
 ```
 - build sample 2
 ```
-west build -b lsqsh_evb@runbmc_v3_2os/lsqsh/cpu0 -p always modules/lib/pfr_tpm/samples/i2c_filter_loopback/
+west build -b lsqsh_evb@2os/lsqsh/cpu1 -p always modules/lib/pfr_tpm/samples/i2c_filter_loopback/
 ```
 #### spi filter(spi monitor)
 - driver
@@ -193,9 +193,9 @@ lsqsh_evb_cpu0: security zephyr
 lsqsh_evb_cpu1: application zephyr
 - build sample 1
 ```
-west build -b lsqsh_evb@runbmc_v3_2os/lsqsh/cpu0 -p always modules/lib/pfr_tpm/samples/spi_filter/
+west build -b lsqsh_evb@2os/lsqsh/cpu1 -p always modules/lib/pfr_tpm/samples/spi_filter/
 ```
 - build sample 2
 ```
-west build -b lsqsh_evb@runbmc_v3_2os/lsqsh/cpu0 -p always modules/lib/pfr_tpm/samples/spi_filter_with_master/
+west build -b lsqsh_evb@2os/lsqsh/cpu1 -p always modules/lib/pfr_tpm/samples/spi_filter_with_master/
 ```
