@@ -784,14 +784,14 @@ static void spif_dma_data_print(spif_dma_data_t spif_dma_data)
     LOG_DBG("ERROR_CMD: %#x\n", spif_dma_data.ERROR_CMD);
 }
 
-static void spif_dma_callback(DMA_Controller_HandleTypeDef *hdma, uint32_t param, uint8_t ch_idx, uint32_t *lli, bool tfr_end)
+static void spif_dma_callback(DMA_Controller_HandleTypeDef *hdma, uint32_t param, uint8_t ch_idx, uint32_t *lli, bool tfr_end, uint32_t status_int)
 {
     const struct device *dev = (const struct device *)param;
     __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
     __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
     uint16_t block_ts = HAL_DMA_Controller_Peek_BLOCK_TS(hdma, ch_idx);
 
-    if (tfr_end == false) {
+    if(status_int & DMAC_DSTT_MASK) {
         if (dev_data->dma_log_cnt < block_ts) {
             for (uint16_t i = dev_data->dma_log_cnt; i < block_ts; i++) {
                 spif_dma_data_t *spif_dma_data = (spif_dma_data_t *)dev_data->dma_mem;
@@ -811,7 +811,8 @@ static void spif_dma_callback(DMA_Controller_HandleTypeDef *hdma, uint32_t param
             }
         }
         dev_data->dma_log_cnt = block_ts;
-    } else {
+    }
+    if (tfr_end == true) {
         LOG_DBG("log buffer full. reload.\n");
     }
 }
@@ -866,7 +867,7 @@ int spif_dma_handshake_get(const struct device *dev)
         reg_struct.handshake = hs;                                                                                                                                         \
     } while (0)
 
-void spif_dma_channel_start_it(DMA_Controller_HandleTypeDef *hdma, struct ch_reg *reg_cfg, void (*callback)(DMA_Controller_HandleTypeDef *, uint32_t, uint8_t, uint32_t *, bool), uint32_t param)
+void spif_dma_channel_start_it(DMA_Controller_HandleTypeDef *hdma, struct ch_reg *reg_cfg, void (*callback)(DMA_Controller_HandleTypeDef *, uint32_t, uint8_t, uint32_t *, bool, uint32_t), uint32_t param)
 {
     uint8_t ch_idx = reg_cfg->ch_idx;
     hdma->channel_callback[ch_idx] = callback;
