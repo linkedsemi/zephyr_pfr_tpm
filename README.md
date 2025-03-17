@@ -62,8 +62,8 @@ west build -b lsqsh_evb@2os/lsqsh/cpu1 -p always modules/lib/pfr_tpm/samples/spi
 启动slave程序等待master下发指令
 ```
 - board
-lsqsh_evb_cpu0: security zephyr
-lsqsh_evb_cpu1: application zephyr
+lsqsh_evb_cpu1: security zephyr
+lsqsh_evb_cpu2: application zephyr
 - build sample
 ```
 west build -b lsqsh_evb@2os/lsqsh/cpu1 -p always modules/lib/pfr_tpm/samples/spid/
@@ -92,8 +92,8 @@ modules/lib/pfr_tpm/samples/i2c_filter_loopback
 i2c master对i2c filter发送波形，i2c slave负责ack让master流程走下去，观察波形和i2c filter上报中断
 ```
 - board
-lsqsh_evb_cpu0: security zephyr
-lsqsh_evb_cpu1: application zephyr
+lsqsh_evb_cpu1: security zephyr
+lsqsh_evb_cpu2: application zephyr
 - build sample 1
 ```
 west build -b lsqsh_evb@2os/lsqsh/cpu1 -p always modules/lib/pfr_tpm/samples/i2c_filter/
@@ -189,8 +189,8 @@ spif_target_addr_config()
 ```
 
 - board
-lsqsh_evb_cpu0: security zephyr
-lsqsh_evb_cpu1: application zephyr
+lsqsh_evb_cpu1: security zephyr
+lsqsh_evb_cpu2: application zephyr
 - build sample 1
 ```
 west build -b lsqsh_evb@2os/lsqsh/cpu1 -p always modules/lib/pfr_tpm/samples/spi_filter/
