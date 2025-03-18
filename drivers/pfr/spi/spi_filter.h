@@ -64,6 +64,8 @@ int spif_remove_cmd(const struct device *dev, uint8_t cmd);
 int spif_get_general_cmd_slot(const struct device *dev, uint8_t cmd, uint32_t start_off);
 int spif_add_general_cmd(const struct device *dev, uint8_t cmd);
 int spif_remove_general_cmd(const struct device *dev, uint8_t cmd);
+void spif_set_cmd_by_idx(const struct device *dev, uint8_t cmd, uint8_t dummy_cycle, uint8_t idx);
+void spif_remove_cmd_by_idx(const struct device *dev, uint8_t cmd, uint8_t dummy_cycle, uint8_t idx);
 void spif_dump_rw_addr_privilege_table(const struct device *dev);
 void spif_dump_cmd_bitmap_log(const struct device *dev, uint8_t bitmap[SPIF_CMD_BITMAP_LOG_SIZE_BYTE]);
 void spif_clear_cmd_bitmap_log(const struct device *dev);
@@ -85,6 +87,12 @@ void spif_target_addr_config(const struct device *dev, uint32_t addr, enum targe
 void spif_3byte_mode_config(const struct device *dev);
 void spif_4byte_mode_config(const struct device *dev);
 uint8_t spif_addr_mode_peek(const struct device *dev);
+/**
+ * @brief set filter mode or monitor mode
+ *
+ * @param filter_en true: filter mode | false: monitor mode
+ */
+void spif_operation_mode_config(const struct device *dev, bool filter_en);
 spif_dma_data_t *spif_log_dma_buf(const struct device *dev);
 void spif_memset_addr_whitelist(const struct device *dev, uint8_t num);
 void spif_memset_read_addr_whitelist(const struct device *dev, uint8_t num);

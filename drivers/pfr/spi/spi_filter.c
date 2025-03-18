@@ -614,6 +614,25 @@ end:
     return ret;
 }
 
+void spif_set_cmd_by_idx(const struct device *dev, uint8_t cmd, uint8_t dummy_cycle, uint8_t idx)
+{
+    __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
+    __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
+    mm_reg_t table_base = dev_config->base + SPIF_CMD_BASE;
+
+    acquire_spif_device(dev);
+
+    spif_cmd_t spif_cmd;
+    spif_cmd.value = sys_read32(table_base + idx * 4);
+    spif_cmd.DUMMY_CYCLE = dummy_cycle;
+    spif_cmd.CMD = cmd;
+    sys_write32(spif_cmd.value, table_base + idx * 4);
+
+    release_spif_device(dev);
+
+    return;
+}
+
 int spif_remove_general_cmd(const struct device *dev, uint8_t cmd)
 {
     __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
@@ -685,6 +704,24 @@ end:
     release_spif_device(dev);
 
     return ret;
+}
+
+void spif_remove_cmd_by_idx(const struct device *dev, uint8_t cmd, uint8_t dummy_cycle, uint8_t idx)
+{
+    __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
+    __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
+    mm_reg_t table_base = dev_config->base + SPIF_CMD_BASE;
+
+    acquire_spif_device(dev);
+
+    spif_cmd_t spif_cmd;
+    spif_cmd.value = sys_read32(table_base + idx * 4);
+    spif_cmd.EN = 0;
+    sys_write32(spif_cmd.value, table_base + idx * 4);
+
+    release_spif_device(dev);
+
+    return;
 }
 
 void spif_filter_enable(const struct device *dev, bool enable)
@@ -972,6 +1009,17 @@ uint8_t spif_addr_mode_peek(const struct device *dev)
     spif_cfg_t spif_cfg;
     spif_cfg.value = sys_read32(dev_config->base + SPIF_CFG);
     return spif_cfg.ADDR_3B_4B_FLAG;
+}
+
+void spif_operation_mode_config(const struct device *dev, bool filter_en)
+{
+    __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
+    __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
+
+    spif_cfg_t spif_cfg;
+    spif_cfg.value = sys_read32(dev_config->base + SPIF_CFG);
+    spif_cfg.OPERATION_MODE = filter_en;
+    sys_write32(spif_cfg.value, dev_config->base + SPIF_CFG);
 }
 
 int linkedsemi_spi_filter_cold_reset(const struct device *dev)
