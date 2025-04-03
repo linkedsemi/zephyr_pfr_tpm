@@ -798,23 +798,10 @@ uint16_t spif_clk_check_peek(const struct device *dev)
     return spif_sck_set.SCK_FQC;
 }
 
-static void spif_dma_data_remove_useless_field(spif_dma_data_t *spif_dma_data)
-{
-    if (spif_dma_data->CMD_ERR) {
-        spif_dma_data->ADDR_ERR = 0;
-        spif_dma_data->ERROR_ADDR = 0;
-    }
-}
-
 spif_dma_data_t *spif_log_dma_buf(const struct device *dev)
 {
     __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
     __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
-
-    for (uint16_t i = 0; i < SPIF_LOG_RAM_MAX_SIZE_U32; i++) {
-        spif_dma_data_t *spif_dma_data = (spif_dma_data_t *)dev_data->dma_mem;
-        spif_dma_data_remove_useless_field(&spif_dma_data[i]);
-    }
 
     return (spif_dma_data_t *)dev_data->dma_mem;
 }
@@ -846,20 +833,17 @@ static void spif_dma_callback(DMA_Controller_HandleTypeDef *hdma, uint32_t param
             for (uint16_t i = dev_data->dma_log_cnt; i < block_ts; i++) {
                 spif_dma_data_t *spif_dma_data = (spif_dma_data_t *)dev_data->dma_mem;
                 LOG_DBG("dma log idx: %d\n", i);
-                spif_dma_data_remove_useless_field(&spif_dma_data[i]);
                 spif_dma_data_print(spif_dma_data[i]);
             }
         } else {
             for (uint16_t i = dev_data->dma_log_cnt; i < SPIF_LOG_RAM_MAX_SIZE_U32; i++) {
                 spif_dma_data_t *spif_dma_data = (spif_dma_data_t *)dev_data->dma_mem;
                 LOG_DBG("dma log idx: %d\n", i);
-                spif_dma_data_remove_useless_field(&spif_dma_data[i]);
                 spif_dma_data_print(spif_dma_data[i]);
             }
             for (uint16_t i = 0; i < block_ts; i++) {
                 spif_dma_data_t *spif_dma_data = (spif_dma_data_t *)dev_data->dma_mem;
                 LOG_DBG("dma log idx: %d\n", i);
-                spif_dma_data_remove_useless_field(&spif_dma_data[i]);
                 spif_dma_data_print(spif_dma_data[i]);
             }
         }
