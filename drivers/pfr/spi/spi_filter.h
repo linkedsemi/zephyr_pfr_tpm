@@ -58,14 +58,18 @@ int linkedsemi_spif_register_callback(const struct device *dev,
                                       spif_callback_t cb,
                                       void *user_data);
 void spif_dump_cmd_table(const struct device *dev);
+int spif_add_cmd(const struct device *dev, uint8_t cmd);
+int spif_add_cmd_with_dummy(const struct device *dev, uint8_t cmd, uint8_t dummy_cycle);
+void spif_set_cmd_by_idx(const struct device *dev, uint8_t cmd, uint8_t idx);
+void spif_set_dummy_by_idx(const struct device *dev, uint8_t dummy_cycle, uint8_t idx);
+void spif_get_cmd_by_idx(const struct device *dev, uint8_t *cmd, uint8_t idx);
+void spif_get_dummy_by_idx(const struct device *dev, uint8_t *dummy_cycle, uint8_t idx);
 int spif_get_cmd_slot(const struct device *dev, uint8_t cmd, uint32_t start_off);
-int spif_add_cmd(const struct device *dev, uint8_t cmd, uint8_t dummy_cycle);
 int spif_remove_cmd(const struct device *dev, uint8_t cmd);
 int spif_get_general_cmd_slot(const struct device *dev, uint8_t cmd, uint32_t start_off);
 int spif_add_general_cmd(const struct device *dev, uint8_t cmd);
 int spif_remove_general_cmd(const struct device *dev, uint8_t cmd);
-void spif_set_cmd_by_idx(const struct device *dev, uint8_t cmd, uint8_t dummy_cycle, uint8_t idx);
-void spif_remove_cmd_by_idx(const struct device *dev, uint8_t cmd, uint8_t dummy_cycle, uint8_t idx);
+void spif_remove_cmd_by_idx(const struct device *dev, uint8_t cmd, uint8_t idx);
 void spif_dump_rw_addr_privilege_table(const struct device *dev);
 void spif_dump_cmd_bitmap_log(const struct device *dev, uint8_t bitmap[SPIF_CMD_BITMAP_LOG_SIZE_BYTE]);
 void spif_clear_cmd_bitmap_log(const struct device *dev);
@@ -97,6 +101,7 @@ spif_dma_data_t *spif_log_dma_buf(const struct device *dev);
 void spif_memset_addr_whitelist(const struct device *dev, uint8_t num);
 void spif_memset_read_addr_whitelist(const struct device *dev, uint8_t num);
 void spif_memset_write_addr_whitelist(const struct device *dev, uint8_t num);
+int spif_set_pinctrl_state(const struct device *dev, uint8_t pinctrl_state);
 int linkedsemi_spi_filter_cold_reset(const struct device *dev);
 
 #include "ls_hal_dmacv3.h"

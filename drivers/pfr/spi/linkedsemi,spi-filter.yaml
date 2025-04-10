@@ -98,6 +98,96 @@ properties:
   cmd-4byte-program-quad-data:
       type: int
       default: 0x34
+  cmd-page-program-dummy:
+      type: int
+      default: 0
+  cmd-page-program-quad-addr-quad-data-dummy:
+      type: int
+      default: 0
+  cmd-erase-4kb-dummy:
+      type: int
+      default: 0
+  cmd-erase-32kb-dummy:
+      type: int
+      default: 0
+  cmd-erase-64kb-dummy:
+      type: int
+      default: 0
+  cmd-read-dummy:
+      type: int
+      default: 0
+  cmd-fast-read-dummy:
+      type: int
+      default: 8
+  cmd-read-quad-data-dummy:
+      type: int
+      default: 8
+  cmd-read-quad-addr-quad-data-dummy:
+      type: int
+      default: 6
+  cmd-quad-spi-mode-enter-dummy:
+      type: int
+      default: 0
+  cmd-quad-spi-mode-exit-dummy:
+      type: int
+      default: 0
+  cmd-4byte-mode-enter-dummy:
+      type: int
+      default: 0
+  cmd-4byte-mode-exit-dummy:
+      type: int
+      default: 0
+  cmd-4byte-read-extended-addr-dummy:
+      type: int
+      default: 0
+  cmd-4byte-write-extended-addr-dummy:
+      type: int
+      default: 0
+  cmd-4byte-page-program-dummy:
+      type: int
+      default: 0
+  cmd-4byte-page-program-quad-addr-quad-data-dummy:
+      type: int
+      default: 0
+  cmd-4byte-erase-4kb-dummy:
+      type: int
+      default: 0
+  cmd-4byte-erase-32kb-dummy:
+      type: int
+      default: 0
+  cmd-4byte-erase-64kb-dummy:
+      type: int
+      default: 0
+  cmd-4byte-read-dummy:
+      type: int
+      default: 0
+  cmd-4byte-fast-read-dummy:
+      type: int
+      default: 8
+  cmd-4byte-read-quad-data-dummy:
+      type: int
+      default: 8
+  cmd-4byte-read-quad-addr-quad-data-dummy:
+      type: int
+      default: 6
+  cmd-read-dual-data-dummy:
+      type: int
+      default: 8
+  cmd-read-dual-addr-dual-data-dummy:
+      type: int
+      default: 4
+  cmd-4byte-read-dual-data-dummy:
+      type: int
+      default: 8
+  cmd-4byte-read-dual-addr-dual-data-dummy:
+      type: int
+      default: 4
+  cmd-program-quad-data-dummy:
+      type: int
+      default: 0
+  cmd-4byte-program-quad-data-dummy:
+      type: int
+      default: 0
   dma-chan:
       type: int
       default: 0

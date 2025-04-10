@@ -36,6 +36,7 @@ struct linkedsemi_spi_filter_config {
 struct linkedsemi_spi_filter_data {
     struct k_sem sem_spif;
     uint8_t fixed_cmd_tab[SPIF_FIXED_CMD_TABLE_NUM];
+    uint8_t fixed_cmd_dummy_tab[SPIF_FIXED_CMD_TABLE_NUM];
     spif_callback_t cb;
     void *user_data;
     uint32_t *dma_mem;
@@ -562,7 +563,57 @@ end:
     return ret;
 }
 
-int spif_add_cmd(const struct device *dev, uint8_t cmd, uint8_t dummy_cycle)
+int spif_add_cmd(const struct device *dev, uint8_t cmd)
+{
+    __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
+    __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
+    int ret = 0;
+    mm_reg_t table_base = dev_config->base + SPIF_CMD_BASE;
+    int idx;
+
+    acquire_spif_device(dev);
+
+    for (uint8_t off = 0; off < SPIF_CMD_TABLE_NUM; off++) {
+        idx = spif_get_cmd_slot(dev, cmd, off);
+        if (idx >= 0) {
+            spif_cmd_t spif_cmd;
+            spif_cmd.value = sys_read32(table_base + idx * 4);
+            spif_cmd.EN = 1;
+            sys_write32(spif_cmd.value, table_base + idx * 4);
+            goto end;
+        } else {
+            break;
+        }
+    }
+
+    for (uint8_t off = 0; off < SPIF_FIXED_CMD_TABLE_NUM; off++) {
+        if (dev_data->fixed_cmd_tab[off] == cmd) {
+            spif_cmd_t spif_cmd;
+            spif_cmd.CMD = cmd;
+            spif_cmd.EN = 1;
+            sys_write32(spif_cmd.value, table_base + idx * 4);
+            goto end;
+        }
+    }
+
+    idx = spif_get_empty_cmd_slot(dev);
+    if (idx < 0) {
+        LOG_ERR("No more space for new cmd");
+        ret = -ENOSR;
+        goto end;
+    }
+    spif_cmd_t spif_cmd;
+    spif_cmd.CMD = cmd;
+    spif_cmd.EN = 1;
+    sys_write32(spif_cmd.value, table_base + idx * 4);
+
+end:
+    release_spif_device(dev);
+
+    return ret;
+}
+
+int spif_add_cmd_with_dummy(const struct device *dev, uint8_t cmd, uint8_t dummy_cycle)
 {
     __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
     __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
@@ -614,7 +665,25 @@ end:
     return ret;
 }
 
-void spif_set_cmd_by_idx(const struct device *dev, uint8_t cmd, uint8_t dummy_cycle, uint8_t idx)
+void spif_set_cmd_by_idx(const struct device *dev, uint8_t cmd, uint8_t idx)
+{
+    __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
+    __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
+    mm_reg_t table_base = dev_config->base + SPIF_CMD_BASE;
+
+    acquire_spif_device(dev);
+
+    spif_cmd_t spif_cmd;
+    spif_cmd.value = sys_read32(table_base + idx * 4);
+    spif_cmd.CMD = cmd;
+    sys_write32(spif_cmd.value, table_base + idx * 4);
+
+    release_spif_device(dev);
+
+    return;
+}
+
+void spif_set_dummy_by_idx(const struct device *dev, uint8_t dummy_cycle, uint8_t idx)
 {
     __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
     __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
@@ -625,8 +694,41 @@ void spif_set_cmd_by_idx(const struct device *dev, uint8_t cmd, uint8_t dummy_cy
     spif_cmd_t spif_cmd;
     spif_cmd.value = sys_read32(table_base + idx * 4);
     spif_cmd.DUMMY_CYCLE = dummy_cycle;
-    spif_cmd.CMD = cmd;
     sys_write32(spif_cmd.value, table_base + idx * 4);
+
+    release_spif_device(dev);
+
+    return;
+}
+
+void spif_get_cmd_by_idx(const struct device *dev, uint8_t *cmd, uint8_t idx)
+{
+    __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
+    __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
+    mm_reg_t table_base = dev_config->base + SPIF_CMD_BASE;
+
+    acquire_spif_device(dev);
+
+    spif_cmd_t spif_cmd;
+    spif_cmd.value = sys_read32(table_base + idx * 4);
+    *cmd = spif_cmd.CMD;
+
+    release_spif_device(dev);
+
+    return;
+}
+
+void spif_get_dummy_by_idx(const struct device *dev, uint8_t *dummy_cycle, uint8_t idx)
+{
+    __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
+    __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
+    mm_reg_t table_base = dev_config->base + SPIF_CMD_BASE;
+
+    acquire_spif_device(dev);
+
+    spif_cmd_t spif_cmd;
+    spif_cmd.value = sys_read32(table_base + idx * 4);
+    *dummy_cycle = spif_cmd.DUMMY_CYCLE;
 
     release_spif_device(dev);
 
@@ -706,7 +808,7 @@ end:
     return ret;
 }
 
-void spif_remove_cmd_by_idx(const struct device *dev, uint8_t cmd, uint8_t dummy_cycle, uint8_t idx)
+void spif_remove_cmd_by_idx(const struct device *dev, uint8_t cmd, uint8_t idx)
 {
     __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
     __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
@@ -1022,6 +1124,20 @@ void spif_operation_mode_config(const struct device *dev, bool filter_en)
     sys_write32(spif_cfg.value, dev_config->base + SPIF_CFG);
 }
 
+int spif_set_pinctrl_state(const struct device *dev, uint8_t pinctrl_state)
+{
+    __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
+    __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
+
+#if defined(CONFIG_PINCTRL)
+    if ((pinctrl_state == PINCTRL_STATE_DEFAULT) || (pinctrl_state == PINCTRL_STATE_PRIV_START)) {
+        return pinctrl_apply_state(dev_config->pcfg, pinctrl_state);
+    }
+#endif
+
+    return -EINVAL;
+}
+
 int linkedsemi_spi_filter_cold_reset(const struct device *dev)
 {
     __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
@@ -1043,7 +1159,7 @@ int linkedsemi_spi_filter_cold_reset(const struct device *dev)
         mm_reg_t table_base = dev_config->base + SPIF_CMD_BASE;
         spif_cmd_t spif_cmd;
         spif_cmd.CMD = dev_data->fixed_cmd_tab[i];
-        spif_cmd.DUMMY_CYCLE = 0;
+        spif_cmd.DUMMY_CYCLE = dev_data->fixed_cmd_dummy_tab[i];
         spif_cmd.EN = 0;
         sys_write32(spif_cmd.value, table_base + i * 4); /* init fixed table */
     }
@@ -1082,68 +1198,100 @@ static int linkedsemi_spi_filter_init(const struct device *dev)
     return 0;
 }
 
-#define SPI_FILTER_INIT(inst)                                                                                                                                                                                                        \
-    static void linkedsemi_spi_filter_irq_config_func_##inst(const struct device *dev)                                                                                                                                               \
-    {                                                                                                                                                                                                                                \
-        ARG_UNUSED(dev);                                                                                                                                                                                                             \
-        IRQ_CONNECT(DT_INST_IRQN(inst),                                                                                                                                                                                              \
-                    DT_INST_IRQ(inst, priority),                                                                                                                                                                                     \
-                    linkedsemi_spi_filter_isr,                                                                                                                                                                                       \
-                    DEVICE_DT_INST_GET(inst),                                                                                                                                                                                        \
-                    0);                                                                                                                                                                                                              \
-        irq_enable(DT_INST_IRQN(inst));                                                                                                                                                                                              \
-    }                                                                                                                                                                                                                                \
-    PINCTRL_DT_INST_DEFINE(inst);                                                                                                                                                                                                    \
-    __nocache uint32_t dma_mem_##inst[SPIF_LOG_RAM_MAX_SIZE_U32];                                                                                                                                                                    \
-    static const struct linkedsemi_spi_filter_config linkedsemi_spi_filter_cfg_##inst = {                                                                                                                                            \
-        .base = (mm_reg_t)DT_INST_REG_ADDR(inst),                                                                                                                                                                                    \
-        .irq_config_func = linkedsemi_spi_filter_irq_config_func_##inst,                                                                                                                                                             \
-        .dma_chan = 0,                                                                                                                                                                                                               \
-        IF_ENABLED(CONFIG_PINCTRL, (.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst), ))                                                                                                                                                 \
-    };                                                                                                                                                                                                                               \
-    static struct linkedsemi_spi_filter_data linkedsemi_spi_filter_data_##inst = {                                                                                                                                                   \
-        .fixed_cmd_tab = {                                                                                                                                                                                                           \
-            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_page_program), ([IDX_CMD_PAGE_PROGRAM] = DT_INST_PROP(inst, cmd_page_program), ))                                                                                             \
-            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_page_program_quad_addr_quad_data), ([IDX_CMD_PAGE_PROGRAM_QUAD_ADDR_QUAD_DATA] = DT_INST_PROP(inst, cmd_page_program_quad_addr_quad_data), ))                                 \
-            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_erase_4kb), ([IDX_CMD_ERASE_4KB] = DT_INST_PROP(inst, cmd_erase_4kb), ))                                                                                                      \
-            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_erase_32kb), ([IDX_CMD_ERASE_32KB] = DT_INST_PROP(inst, cmd_erase_32kb), ))                                                                                                   \
-            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_erase_64kb), ([IDX_CMD_ERASE_64KB] = DT_INST_PROP(inst, cmd_erase_64kb), ))                                                                                                   \
-            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_read), ([IDX_CMD_READ] = DT_INST_PROP(inst, cmd_read), ))                                                                                                                     \
-            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_fast_read), ([IDX_CMD_FAST_READ] = DT_INST_PROP(inst, cmd_fast_read), ))                                                                                                      \
-            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_read_quad_data), ([IDX_CMD_READ_QUAD_DATA] = DT_INST_PROP(inst, cmd_read_quad_data), ))                                                                                       \
-            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_read_quad_addr_quad_data), ([IDX_CMD_READ_QUAD_ADDR_QUAD_DATA] = DT_INST_PROP(inst, cmd_read_quad_addr_quad_data), ))                                                         \
-            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_quad_spi_mode_enter), ([IDX_CMD_QUAD_SPI_MODE_ENTER] = DT_INST_PROP(inst, cmd_quad_spi_mode_enter), ))                                                                        \
-            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_quad_spi_mode_exit), ([IDX_CMD_QUAD_SPI_MODE_EXIT] = DT_INST_PROP(inst, cmd_quad_spi_mode_exit), ))                                                                           \
-            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_mode_enter), ([IDX_CMD_4BYTE_MODE_ENTER] = DT_INST_PROP(inst, cmd_4byte_mode_enter), ))                                                                                 \
-            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_mode_exit), ([IDX_CMD_4BYTE_MODE_EXIT] = DT_INST_PROP(inst, cmd_4byte_mode_exit), ))                                                                                    \
-            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_read_extended_addr), ([IDX_CMD_4BYTE_READ_EXTENDED_ADDR] = DT_INST_PROP(inst, cmd_4byte_read_extended_addr), ))                                                         \
-            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_write_extended_addr), ([IDX_CMD_4BYTE_WRITE_EXTENDED_ADDR] = DT_INST_PROP(inst, cmd_4byte_write_extended_addr), ))                                                      \
-            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_page_program), ([IDX_CMD_4BYTE_PAGE_PROGRAM] = DT_INST_PROP(inst, cmd_4byte_page_program), ))                                                                           \
-            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_page_program_quad_addr_quad_data), ([IDX_CMD_4BYTE_PAGE_PROGRAM_QUAD_ADDR_QUAD_DATA] = DT_INST_PROP(inst, cmd_4byte_page_program_quad_addr_quad_data), ))               \
-            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_erase_4kb), ([IDX_CMD_4BYTE_ERASE_4KB] = DT_INST_PROP(inst, cmd_4byte_erase_4kb), ))                                                                                    \
-            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_erase_32kb), ([IDX_CMD_4BYTE_ERASE_32KB] = DT_INST_PROP(inst, cmd_4byte_erase_32kb), ))                                                                                 \
-            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_erase_64kb), ([IDX_CMD_4BYTE_ERASE_64KB] = DT_INST_PROP(inst, cmd_4byte_erase_64kb), ))                                                                                 \
-            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_read), ([IDX_CMD_4BYTE_READ] = DT_INST_PROP(inst, cmd_4byte_read), ))                                                                                                   \
-            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_fast_read), ([IDX_CMD_4BYTE_FAST_READ] = DT_INST_PROP(inst, cmd_4byte_fast_read), ))                                                                                    \
-            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_read_quad_data), ([IDX_CMD_4BYTE_READ_QUAD_DATA] = DT_INST_PROP(inst, cmd_4byte_read_quad_data), ))                                                                     \
-            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_read_quad_addr_quad_data), ([IDX_CMD_4BYTE_READ_QUAD_ADDR_QUAD_DATA] = DT_INST_PROP(inst, cmd_4byte_read_quad_addr_quad_data), ))                                       \
-            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_read_dual_data ), ([IDX_CMD_READ_DUAL_DATA] = DT_INST_PROP(inst, cmd_read_dual_data ), ))                                                                                     \
-            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_read_dual_addr_dual_data ), ([IDX_CMD_READ_DUAL_ADDR_DUAL_DATA] = DT_INST_PROP(inst, cmd_read_dual_addr_dual_data ), ))                                                       \
-            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_read_dual_data ), ([IDX_CMD_4BYTE_READ_DUAL_DATA] = DT_INST_PROP(inst, cmd_4byte_read_dual_data ), ))                                                                   \
-            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_read_dual_addr_dual_data ), ([IDX_CMD_4BYTE_READ_DUAL_ADDR_DUAL_DATA] = DT_INST_PROP(inst, cmd_4byte_read_dual_addr_dual_data ), ))                                     \
-            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_program_quad_data ), ([IDX_CMD_PROGRAM_QUAD_DATA] = DT_INST_PROP(inst, cmd_program_quad_data ), ))                                                                            \
-            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_program_quad_data ), ([IDX_CMD_4BYTE_PROGRAM_QUAD_DATA] = DT_INST_PROP(inst, cmd_4byte_program_quad_data ), ))                                                          \
-        },                                                                                                                                                                                                                           \
-        .dma_mem = dma_mem_##inst,                                                                                                                                                                                                   \
-        .dma_log_cnt = 0,                                                                                                                                                                                                            \
-    };                                                                                                                                                                                                                               \
-    DEVICE_DT_INST_DEFINE(inst,                                                                                                                                                                                                      \
-                          linkedsemi_spi_filter_init,                                                                                                                                                                                \
-                          NULL,                                                                                                                                                                                                      \
-                          &linkedsemi_spi_filter_data_##inst,                                                                                                                                                                        \
-                          &linkedsemi_spi_filter_cfg_##inst,                                                                                                                                                                         \
-                          POST_KERNEL,                                                                                                                                                                                               \
-                          CONFIG_KERNEL_INIT_PRIORITY_DEVICE,                                                                                                                                                                        \
+#define SPI_FILTER_INIT(inst)                                                                                                                                                                                                             \
+    static void linkedsemi_spi_filter_irq_config_func_##inst(const struct device *dev)                                                                                                                                                    \
+    {                                                                                                                                                                                                                                     \
+        ARG_UNUSED(dev);                                                                                                                                                                                                                  \
+        IRQ_CONNECT(DT_INST_IRQN(inst),                                                                                                                                                                                                   \
+                    DT_INST_IRQ(inst, priority),                                                                                                                                                                                          \
+                    linkedsemi_spi_filter_isr,                                                                                                                                                                                            \
+                    DEVICE_DT_INST_GET(inst),                                                                                                                                                                                             \
+                    0);                                                                                                                                                                                                                   \
+        irq_enable(DT_INST_IRQN(inst));                                                                                                                                                                                                   \
+    }                                                                                                                                                                                                                                     \
+    PINCTRL_DT_INST_DEFINE(inst);                                                                                                                                                                                                         \
+    __nocache uint32_t dma_mem_##inst[SPIF_LOG_RAM_MAX_SIZE_U32];                                                                                                                                                                         \
+    static const struct linkedsemi_spi_filter_config linkedsemi_spi_filter_cfg_##inst = {                                                                                                                                                 \
+        .base = (mm_reg_t)DT_INST_REG_ADDR(inst),                                                                                                                                                                                         \
+        .irq_config_func = linkedsemi_spi_filter_irq_config_func_##inst,                                                                                                                                                                  \
+        .dma_chan = 0,                                                                                                                                                                                                                    \
+        IF_ENABLED(CONFIG_PINCTRL, (.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst), ))                                                                                                                                                      \
+    };                                                                                                                                                                                                                                    \
+    static struct linkedsemi_spi_filter_data linkedsemi_spi_filter_data_##inst = {                                                                                                                                                        \
+        .fixed_cmd_tab = {                                                                                                                                                                                                                \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_page_program), ([IDX_CMD_PAGE_PROGRAM] = DT_INST_PROP(inst, cmd_page_program), ))                                                                                                  \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_page_program_quad_addr_quad_data), ([IDX_CMD_PAGE_PROGRAM_QUAD_ADDR_QUAD_DATA] = DT_INST_PROP(inst, cmd_page_program_quad_addr_quad_data), ))                                      \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_erase_4kb), ([IDX_CMD_ERASE_4KB] = DT_INST_PROP(inst, cmd_erase_4kb), ))                                                                                                           \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_erase_32kb), ([IDX_CMD_ERASE_32KB] = DT_INST_PROP(inst, cmd_erase_32kb), ))                                                                                                        \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_erase_64kb), ([IDX_CMD_ERASE_64KB] = DT_INST_PROP(inst, cmd_erase_64kb), ))                                                                                                        \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_read), ([IDX_CMD_READ] = DT_INST_PROP(inst, cmd_read), ))                                                                                                                          \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_fast_read), ([IDX_CMD_FAST_READ] = DT_INST_PROP(inst, cmd_fast_read), ))                                                                                                           \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_read_quad_data), ([IDX_CMD_READ_QUAD_DATA] = DT_INST_PROP(inst, cmd_read_quad_data), ))                                                                                            \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_read_quad_addr_quad_data), ([IDX_CMD_READ_QUAD_ADDR_QUAD_DATA] = DT_INST_PROP(inst, cmd_read_quad_addr_quad_data), ))                                                              \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_quad_spi_mode_enter), ([IDX_CMD_QUAD_SPI_MODE_ENTER] = DT_INST_PROP(inst, cmd_quad_spi_mode_enter), ))                                                                             \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_quad_spi_mode_exit), ([IDX_CMD_QUAD_SPI_MODE_EXIT] = DT_INST_PROP(inst, cmd_quad_spi_mode_exit), ))                                                                                \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_mode_enter), ([IDX_CMD_4BYTE_MODE_ENTER] = DT_INST_PROP(inst, cmd_4byte_mode_enter), ))                                                                                      \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_mode_exit), ([IDX_CMD_4BYTE_MODE_EXIT] = DT_INST_PROP(inst, cmd_4byte_mode_exit), ))                                                                                         \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_read_extended_addr), ([IDX_CMD_4BYTE_READ_EXTENDED_ADDR] = DT_INST_PROP(inst, cmd_4byte_read_extended_addr), ))                                                              \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_write_extended_addr), ([IDX_CMD_4BYTE_WRITE_EXTENDED_ADDR] = DT_INST_PROP(inst, cmd_4byte_write_extended_addr), ))                                                           \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_page_program), ([IDX_CMD_4BYTE_PAGE_PROGRAM] = DT_INST_PROP(inst, cmd_4byte_page_program), ))                                                                                \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_page_program_quad_addr_quad_data), ([IDX_CMD_4BYTE_PAGE_PROGRAM_QUAD_ADDR_QUAD_DATA] = DT_INST_PROP(inst, cmd_4byte_page_program_quad_addr_quad_data), ))                    \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_erase_4kb), ([IDX_CMD_4BYTE_ERASE_4KB] = DT_INST_PROP(inst, cmd_4byte_erase_4kb), ))                                                                                         \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_erase_32kb), ([IDX_CMD_4BYTE_ERASE_32KB] = DT_INST_PROP(inst, cmd_4byte_erase_32kb), ))                                                                                      \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_erase_64kb), ([IDX_CMD_4BYTE_ERASE_64KB] = DT_INST_PROP(inst, cmd_4byte_erase_64kb), ))                                                                                      \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_read), ([IDX_CMD_4BYTE_READ] = DT_INST_PROP(inst, cmd_4byte_read), ))                                                                                                        \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_fast_read), ([IDX_CMD_4BYTE_FAST_READ] = DT_INST_PROP(inst, cmd_4byte_fast_read), ))                                                                                         \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_read_quad_data), ([IDX_CMD_4BYTE_READ_QUAD_DATA] = DT_INST_PROP(inst, cmd_4byte_read_quad_data), ))                                                                          \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_read_quad_addr_quad_data), ([IDX_CMD_4BYTE_READ_QUAD_ADDR_QUAD_DATA] = DT_INST_PROP(inst, cmd_4byte_read_quad_addr_quad_data), ))                                            \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_read_dual_data ), ([IDX_CMD_READ_DUAL_DATA] = DT_INST_PROP(inst, cmd_read_dual_data ), ))                                                                                          \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_read_dual_addr_dual_data ), ([IDX_CMD_READ_DUAL_ADDR_DUAL_DATA] = DT_INST_PROP(inst, cmd_read_dual_addr_dual_data ), ))                                                            \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_read_dual_data ), ([IDX_CMD_4BYTE_READ_DUAL_DATA] = DT_INST_PROP(inst, cmd_4byte_read_dual_data ), ))                                                                        \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_read_dual_addr_dual_data ), ([IDX_CMD_4BYTE_READ_DUAL_ADDR_DUAL_DATA] = DT_INST_PROP(inst, cmd_4byte_read_dual_addr_dual_data ), ))                                          \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_program_quad_data ), ([IDX_CMD_PROGRAM_QUAD_DATA] = DT_INST_PROP(inst, cmd_program_quad_data ), ))                                                                                 \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_program_quad_data ), ([IDX_CMD_4BYTE_PROGRAM_QUAD_DATA] = DT_INST_PROP(inst, cmd_4byte_program_quad_data ), ))                                                               \
+        },                                                                                                                                                                                                                                \
+        .fixed_cmd_dummy_tab = {                                                                                                                                                                                                          \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_page_program_dummy), ([IDX_CMD_PAGE_PROGRAM_DUMMY] = DT_INST_PROP(inst, cmd_page_program_dummy), ))                                                                                \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_page_program_quad_addr_quad_data_dummy), ([IDX_CMD_PAGE_PROGRAM_QUAD_ADDR_QUAD_DATA_DUMMY] = DT_INST_PROP(inst, cmd_page_program_quad_addr_quad_data_dummy), ))                    \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_erase_4kb_dummy), ([IDX_CMD_ERASE_4KB_DUMMY] = DT_INST_PROP(inst, cmd_erase_4kb_dummy), ))                                                                                         \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_erase_32kb_dummy), ([IDX_CMD_ERASE_32KB_DUMMY] = DT_INST_PROP(inst, cmd_erase_32kb_dummy), ))                                                                                      \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_erase_64kb_dummy), ([IDX_CMD_ERASE_64KB_DUMMY] = DT_INST_PROP(inst, cmd_erase_64kb_dummy), ))                                                                                      \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_read_dummy), ([IDX_CMD_READ_DUMMY] = DT_INST_PROP(inst, cmd_read_dummy), ))                                                                                                        \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_fast_read_dummy), ([IDX_CMD_FAST_READ_DUMMY] = DT_INST_PROP(inst, cmd_fast_read_dummy), ))                                                                                         \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_read_quad_data_dummy), ([IDX_CMD_READ_QUAD_DATA_DUMMY] = DT_INST_PROP(inst, cmd_read_quad_data_dummy), ))                                                                          \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_read_quad_addr_quad_data_dummy), ([IDX_CMD_READ_QUAD_ADDR_QUAD_DATA_DUMMY] = DT_INST_PROP(inst, cmd_read_quad_addr_quad_data_dummy), ))                                            \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_quad_spi_mode_enter_dummy), ([IDX_CMD_QUAD_SPI_MODE_ENTER_DUMMY] = DT_INST_PROP(inst, cmd_quad_spi_mode_enter_dummy), ))                                                           \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_quad_spi_mode_exit_dummy), ([IDX_CMD_QUAD_SPI_MODE_EXIT_DUMMY] = DT_INST_PROP(inst, cmd_quad_spi_mode_exit_dummy), ))                                                              \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_mode_enter_dummy), ([IDX_CMD_4BYTE_MODE_ENTER_DUMMY] = DT_INST_PROP(inst, cmd_4byte_mode_enter_dummy), ))                                                                    \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_mode_exit_dummy), ([IDX_CMD_4BYTE_MODE_EXIT_DUMMY] = DT_INST_PROP(inst, cmd_4byte_mode_exit_dummy), ))                                                                       \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_read_extended_addr_dummy), ([IDX_CMD_4BYTE_READ_EXTENDED_ADDR_DUMMY] = DT_INST_PROP(inst, cmd_4byte_read_extended_addr_dummy), ))                                            \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_write_extended_addr_dummy), ([IDX_CMD_4BYTE_WRITE_EXTENDED_ADDR_DUMMY] = DT_INST_PROP(inst, cmd_4byte_write_extended_addr_dummy), ))                                         \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_page_program_dummy), ([IDX_CMD_4BYTE_PAGE_PROGRAM_DUMMY] = DT_INST_PROP(inst, cmd_4byte_page_program_dummy), ))                                                              \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_page_program_quad_addr_quad_data_dummy), ([IDX_CMD_4BYTE_PAGE_PROGRAM_QUAD_ADDR_QUAD_DATA_DUMMY] = DT_INST_PROP(inst, cmd_4byte_page_program_quad_addr_quad_data_dummy), ))  \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_erase_4kb_dummy), ([IDX_CMD_4BYTE_ERASE_4KB_DUMMY] = DT_INST_PROP(inst, cmd_4byte_erase_4kb_dummy), ))                                                                       \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_erase_32kb_dummy), ([IDX_CMD_4BYTE_ERASE_32KB_DUMMY] = DT_INST_PROP(inst, cmd_4byte_erase_32kb_dummy), ))                                                                    \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_erase_64kb_dummy), ([IDX_CMD_4BYTE_ERASE_64KB_DUMMY] = DT_INST_PROP(inst, cmd_4byte_erase_64kb_dummy), ))                                                                    \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_read_dummy), ([IDX_CMD_4BYTE_READ_DUMMY] = DT_INST_PROP(inst, cmd_4byte_read_dummy), ))                                                                                      \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_fast_read_dummy), ([IDX_CMD_4BYTE_FAST_READ_DUMMY] = DT_INST_PROP(inst, cmd_4byte_fast_read_dummy), ))                                                                       \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_read_quad_data_dummy), ([IDX_CMD_4BYTE_READ_QUAD_DATA_DUMMY] = DT_INST_PROP(inst, cmd_4byte_read_quad_data_dummy), ))                                                        \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_read_quad_addr_quad_data_dummy), ([IDX_CMD_4BYTE_READ_QUAD_ADDR_QUAD_DATA_DUMMY] = DT_INST_PROP(inst, cmd_4byte_read_quad_addr_quad_data_dummy), ))                          \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_read_dual_data_dummy), ([IDX_CMD_READ_DUAL_DATA_DUMMY] = DT_INST_PROP(inst, cmd_read_dual_data_dummy), ))                                                                          \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_read_dual_addr_dual_data_dummy), ([IDX_CMD_READ_DUAL_ADDR_DUAL_DATA_DUMMY] = DT_INST_PROP(inst, cmd_read_dual_addr_dual_data_dummy), ))                                            \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_read_dual_data_dummy), ([IDX_CMD_4BYTE_READ_DUAL_DATA_DUMMY] = DT_INST_PROP(inst, cmd_4byte_read_dual_data_dummy), ))                                                        \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_read_dual_addr_dual_data_dummy), ([IDX_CMD_4BYTE_READ_DUAL_ADDR_DUAL_DATA_DUMMY] = DT_INST_PROP(inst, cmd_4byte_read_dual_addr_dual_data_dummy), ))                          \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_program_quad_data_dummy), ([IDX_CMD_PROGRAM_QUAD_DATA_DUMMY] = DT_INST_PROP(inst, cmd_program_quad_data_dummy), ))                                                                 \
+            IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, cmd_4byte_program_quad_data_dummy), ([IDX_CMD_4BYTE_PROGRAM_QUAD_DATA_DUMMY] = DT_INST_PROP(inst, cmd_4byte_program_quad_data_dummy), ))                                               \
+        },                                                                                                                                                                                                                                \
+        .dma_mem = dma_mem_##inst,                                                                                                                                                                                                        \
+        .dma_log_cnt = 0,                                                                                                                                                                                                                 \
+    };                                                                                                                                                                                                                                    \
+    DEVICE_DT_INST_DEFINE(inst,                                                                                                                                                                                                           \
+                          linkedsemi_spi_filter_init,                                                                                                                                                                                     \
+                          NULL,                                                                                                                                                                                                           \
+                          &linkedsemi_spi_filter_data_##inst,                                                                                                                                                                             \
+                          &linkedsemi_spi_filter_cfg_##inst,                                                                                                                                                                              \
+                          POST_KERNEL,                                                                                                                                                                                                    \
+                          CONFIG_KERNEL_INIT_PRIORITY_DEVICE,                                                                                                                                                                             \
                           NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_FILTER_INIT)
