@@ -26,17 +26,17 @@
 
 void pinmux_spi1_mst_init(void)
 {
-    pinmux_cfg_pin_func_alt(SPI2_MST_CSN_FUNC2_PG02_PIN, SPI2_MST_CSN_FUNC2_PG02_FUNC, 0);
-    pinmux_cfg_pin_func_alt(SPI2_MST_CLK_FUNC3_PG09_PIN, SPI2_MST_CLK_FUNC3_PG09_FUNC, 0);
-    pinmux_cfg_pin_func_alt(SPI2_MST_IO3_FUNC3_PG13_PIN, SPI2_MST_IO3_FUNC3_PG13_FUNC, 0);
-    pinmux_cfg_pin_func_alt(SPI2_MST_IO2_FUNC3_PG15_PIN, SPI2_MST_IO2_FUNC3_PG15_FUNC, 0);
-    pinmux_cfg_pin_func_alt(SPI2_MST_IO0_FUNC3_PH05_PIN, SPI2_MST_IO0_FUNC3_PH05_FUNC, 0);
-    pinmux_cfg_pin_func_alt(SPI2_MST_IO1_FUNC3_PH07_PIN, SPI2_MST_IO1_FUNC3_PH07_FUNC, 0);
+    pinmux_cfg_pin_func_alt(SPI1_MST_CSN_FUNC3_PI08_PIN, SPI1_MST_CSN_FUNC3_PI08_FUNC, 0);
+    pinmux_cfg_pin_func_alt(SPI1_MST_CLK_FUNC3_PG00_PIN, SPI1_MST_CLK_FUNC3_PG00_FUNC, 0);
+    pinmux_cfg_pin_func_alt(SPI1_MST_IO0_FUNC3_PF15_PIN, SPI1_MST_IO0_FUNC3_PF15_FUNC, 0);
+    pinmux_cfg_pin_func_alt(SPI1_MST_IO1_FUNC3_PF13_PIN, SPI1_MST_IO1_FUNC3_PF13_FUNC, 0);
+    pinmux_cfg_pin_func_alt(SPI1_MST_IO2_FUNC3_PH01_PIN, SPI1_MST_IO2_FUNC3_PH01_FUNC, 0);
+    pinmux_cfg_pin_func_alt(SPI1_MST_IO3_FUNC3_PH03_PIN, SPI1_MST_IO3_FUNC3_PH03_FUNC, 0);
 
-    io_cfg_input(SPI2_MST_IO3_FUNC3_PG13_PIN);
-    io_cfg_input(SPI2_MST_IO2_FUNC3_PG15_PIN);
-    io_cfg_input(SPI2_MST_IO0_FUNC3_PH05_PIN);
-    io_cfg_input(SPI2_MST_IO1_FUNC3_PH07_PIN);
+    io_cfg_input(SPI1_MST_IO0_FUNC3_PF15_PIN);
+    io_cfg_input(SPI1_MST_IO1_FUNC3_PF13_PIN);
+    io_cfg_input(SPI1_MST_IO2_FUNC3_PH01_PIN);
+    io_cfg_input(SPI1_MST_IO3_FUNC3_PH03_PIN);
 }
 
 SSI_HandleTypeDef SsiHandle = {0};
@@ -44,7 +44,7 @@ SSI_HandleTypeDef SsiHandle = {0};
 void spi_init(void)
 {
     pinmux_spi1_mst_init();
-    SsiHandle.REG = (reg_ssi_t *)APP_DWSPI4_ADDR;
+    SsiHandle.REG = (reg_ssi_t *)APP_DWSPI3_ADDR;
     SsiHandle.Init.clk_div = 500;
     SsiHandle.Init.rxsample_dly = 0;
     SsiHandle.Init.ctrl.cph = SCLK_Toggle_In_Middle;
