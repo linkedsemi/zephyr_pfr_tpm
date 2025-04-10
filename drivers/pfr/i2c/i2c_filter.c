@@ -87,6 +87,33 @@ static void linkedsemi_i2c_filter_isr(const struct device *dev)
     }
 }
 
+int linkedsemi_i2c_filter_enable_channel(const struct device *dev,
+                                        uint8_t idx,
+                                        bool enable)
+{
+    __unused const struct linkedsemi_i2c_filter_config *dev_config = dev->config;
+    __unused struct linkedsemi_i2c_filter_data *dev_data = dev->data;
+
+    if (idx > (LINKEDSEMI_I2C_F_ADDR_NUM - 1)) {
+        LOG_ERR("i2c filter index invalid");
+        return -EINVAL;
+    }
+
+    k_mutex_lock(&dev_data->lock, K_FOREVER);
+
+    uint32_t smbf_address_enable = sys_read32(dev_config->base + SMBF_ADDRESS_ENABLE);
+    if (enable) {
+        smbf_address_enable |= BIT(idx);
+    } else {
+        smbf_address_enable &= ~(BIT(idx));
+    }
+    sys_write32(smbf_address_enable, dev_config->base + SMBF_ADDRESS_ENABLE);
+
+    k_mutex_unlock(&dev_data->lock);
+
+    return 0;
+}
+
 int linkedsemi_i2c_filter_fill_bitmap(const struct device *dev,
                                     uint8_t idx,
                                     uint8_t addr,
@@ -207,6 +234,20 @@ int linkedsemi_i2c_filter_en(const struct device *dev,
     k_mutex_unlock(&dev_data->lock);
 
     return 0;
+}
+
+int linkedsemi_i2c_filter_set_pinctrl_state(const struct device *dev, uint8_t pinctrl_state)
+{
+    __unused const struct linkedsemi_i2c_filter_config *dev_config = dev->config;
+    __unused struct linkedsemi_i2c_filter_data *dev_data = dev->data;
+
+#if defined(CONFIG_PINCTRL)
+    if ((pinctrl_state == PINCTRL_STATE_DEFAULT) || (pinctrl_state == PINCTRL_STATE_PRIV_START)) {
+        return pinctrl_apply_state(dev_config->pcfg, pinctrl_state);
+    }
+#endif
+
+    return -EINVAL;
 }
 
 int linkedsemi_i2c_filter_cold_reset(const struct device *dev)
