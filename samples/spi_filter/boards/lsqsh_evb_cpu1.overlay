@@ -21,3 +21,15 @@
 &spif4 {
     status = "okay";
 };
+
+&spi3 {
+    cs-gpios = <&gpioi 8 GPIO_ACTIVE_LOW>,
+                <&gpiog 2 GPIO_ACTIVE_LOW>;
+    status = "okay";
+};
+
+&spi4 {
+    cs-gpios = <&gpioi 0 GPIO_ACTIVE_LOW>,
+                <&gpioq 0 GPIO_ACTIVE_LOW>;
+    status = "okay";
+};
