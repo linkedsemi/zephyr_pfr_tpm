@@ -3,7 +3,7 @@
 / {
     aliases {
         i2cfilter = &i2cf1;
-        i2cmaster1 = &i2c3;
+        i2cmaster = &i2c1;
     };
 };
 
@@ -20,5 +20,29 @@
 };
 
 &i2cf4 {
+    status = "okay";
+};
+
+&i2c1 {
+    /delete-property/ pinctrl-0;
+    /delete-property/ pinctrl-names;
+    status = "okay";
+};
+
+&i2c2 {
+    /delete-property/ pinctrl-0;
+    /delete-property/ pinctrl-names;
+    status = "okay";
+};
+
+&i2c3 {
+    /delete-property/ pinctrl-0;
+    /delete-property/ pinctrl-names;
+    status = "okay";
+};
+
+&i2c4 {
+    /delete-property/ pinctrl-0;
+    /delete-property/ pinctrl-names;
     status = "okay";
 };
