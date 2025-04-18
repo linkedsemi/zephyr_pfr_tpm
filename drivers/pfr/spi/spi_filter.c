@@ -19,6 +19,10 @@
 #include <spi_filter.h>
 #include <reg_spi_filter.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/cache.h>
+#include <lsqsh-pinctrl_pfr_tpm_func_pinctrl.h>
+#include <ls_soc_gpio.h>
 
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -26,6 +30,8 @@ LOG_MODULE_REGISTER(spi_pfr_filter);
 
 struct linkedsemi_spi_filter_config {
     mm_reg_t base;
+    const struct device *spi;
+    const struct gpio_dt_spec cs;
     const struct pinctrl_dev_config *pcfg;
     void (*irq_config_func)(const struct device *dev);
     bool blacklist_en;
@@ -935,17 +941,20 @@ static void spif_dma_callback(DMA_Controller_HandleTypeDef *hdma, uint32_t param
             for (uint16_t i = dev_data->dma_log_cnt; i < block_ts; i++) {
                 spif_dma_data_t *spif_dma_data = (spif_dma_data_t *)dev_data->dma_mem;
                 LOG_DBG("dma log idx: %d\n", i);
+                sys_cache_data_invd_range((void *)(&spif_dma_data[i]), sizeof(spif_dma_data_t));
                 spif_dma_data_print(spif_dma_data[i]);
             }
         } else {
             for (uint16_t i = dev_data->dma_log_cnt; i < SPIF_LOG_RAM_MAX_SIZE_U32; i++) {
                 spif_dma_data_t *spif_dma_data = (spif_dma_data_t *)dev_data->dma_mem;
                 LOG_DBG("dma log idx: %d\n", i);
+                sys_cache_data_invd_range((void *)(&spif_dma_data[i]), sizeof(spif_dma_data_t));
                 spif_dma_data_print(spif_dma_data[i]);
             }
             for (uint16_t i = 0; i < block_ts; i++) {
                 spif_dma_data_t *spif_dma_data = (spif_dma_data_t *)dev_data->dma_mem;
                 LOG_DBG("dma log idx: %d\n", i);
+                sys_cache_data_invd_range((void *)(&spif_dma_data[i]), sizeof(spif_dma_data_t));
                 spif_dma_data_print(spif_dma_data[i]);
             }
         }
@@ -1124,18 +1133,110 @@ void spif_operation_mode_config(const struct device *dev, bool filter_en)
     sys_write32(spif_cfg.value, dev_config->base + SPIF_CFG);
 }
 
-int spif_set_pinctrl_state(const struct device *dev, uint8_t pinctrl_state)
+struct pin_func {
+    uint8_t pin;
+    uint8_t func;
+};
+
+struct pin_func spif1_out_pin_func[] = {
+    { .pin = SPIF1_CSN_OUT_FUNC4_PI08_PIN, .func = SPIF1_CSN_OUT_FUNC4_PI08_FUNC, },
+    { .pin = SPIF1_CLK_OUT_FUNC4_PG00_PIN, .func = SPIF1_CLK_OUT_FUNC4_PG00_FUNC, },
+    { .pin = SPIF1_IO0_OUT_FUNC4_PF15_PIN, .func = SPIF1_IO0_OUT_FUNC4_PF15_FUNC, },
+    { .pin = SPIF1_IO1_OUT_FUNC4_PF13_PIN, .func = SPIF1_IO1_OUT_FUNC4_PF13_FUNC, },
+    { .pin = SPIF1_IO2_OUT_FUNC4_PH01_PIN, .func = SPIF1_IO2_OUT_FUNC4_PH01_FUNC, },
+    { .pin = SPIF1_IO3_OUT_FUNC4_PH03_PIN, .func = SPIF1_IO3_OUT_FUNC4_PH03_FUNC, },
+};
+
+struct pin_func spif2_out_pin_func[] = {
+    { .pin = SPIF2_CSN_OUT_FUNC3_PG02_PIN, .func = SPIF2_CSN_OUT_FUNC3_PG02_FUNC, },
+    { .pin = SPIF2_CLK_OUT_FUNC4_PG09_PIN, .func = SPIF2_CLK_OUT_FUNC4_PG09_FUNC, },
+    { .pin = SPIF2_IO0_OUT_FUNC4_PH05_PIN, .func = SPIF2_IO0_OUT_FUNC4_PH05_FUNC, },
+    { .pin = SPIF2_IO1_OUT_FUNC4_PH07_PIN, .func = SPIF2_IO1_OUT_FUNC4_PH07_FUNC, },
+    { .pin = SPIF2_IO2_OUT_FUNC4_PG15_PIN, .func = SPIF2_IO2_OUT_FUNC4_PG15_FUNC, },
+    { .pin = SPIF2_IO3_OUT_FUNC4_PG13_PIN, .func = SPIF2_IO3_OUT_FUNC4_PG13_FUNC, },
+};
+
+struct pin_func spif3_out_pin_func[] = {
+    { .pin = SPIF3_CSN_OUT_FUNC4_PI00_PIN, .func = SPIF3_CSN_OUT_FUNC4_PI00_FUNC, },
+    { .pin = SPIF3_CLK_OUT_FUNC4_PF09_PIN, .func = SPIF3_CLK_OUT_FUNC4_PF09_FUNC, },
+    { .pin = SPIF3_IO0_OUT_FUNC4_PF05_PIN, .func = SPIF3_IO0_OUT_FUNC4_PF05_FUNC, },
+    { .pin = SPIF3_IO1_OUT_FUNC4_PF03_PIN, .func = SPIF3_IO1_OUT_FUNC4_PF03_FUNC, },
+    { .pin = SPIF3_IO2_OUT_FUNC4_PF11_PIN, .func = SPIF3_IO2_OUT_FUNC4_PF11_FUNC, },
+    { .pin = SPIF3_IO3_OUT_FUNC4_PF07_PIN, .func = SPIF3_IO3_OUT_FUNC4_PF07_FUNC, },
+};
+
+struct pin_func spif4_out_pin_func[] = {
+    { .pin = SPIF4_CSN_OUT_FUNC3_PQ00_PIN, .func = SPIF4_CSN_OUT_FUNC3_PQ00_FUNC, },
+    { .pin = SPIF4_CLK_OUT_FUNC4_PH13_PIN, .func = SPIF4_CLK_OUT_FUNC4_PH13_FUNC, },
+    { .pin = SPIF4_IO0_OUT_FUNC4_PH11_PIN, .func = SPIF4_IO0_OUT_FUNC4_PH11_FUNC, },
+    { .pin = SPIF4_IO1_OUT_FUNC4_PH09_PIN, .func = SPIF4_IO1_OUT_FUNC4_PH09_FUNC, },
+    { .pin = SPIF4_IO2_OUT_FUNC4_PG01_PIN, .func = SPIF4_IO2_OUT_FUNC4_PG01_FUNC, },
+    { .pin = SPIF4_IO3_OUT_FUNC4_PG05_PIN, .func = SPIF4_IO3_OUT_FUNC4_PG05_FUNC, },
+};
+
+const struct device *spif_spi_dev(const struct device *dev)
+{
+    const struct linkedsemi_spi_filter_config *dev_config = dev->config;
+
+    return dev_config->spi;
+}
+
+const struct gpio_dt_spec *spif_spi_cs(const struct device *dev)
+{
+    const struct linkedsemi_spi_filter_config *dev_config = dev->config;
+
+    return &dev_config->cs;
+}
+
+int spif_switch_to_master(const struct device *dev)
 {
     __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
     __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
 
-#if defined(CONFIG_PINCTRL)
-    if ((pinctrl_state == PINCTRL_STATE_DEFAULT) || (pinctrl_state == PINCTRL_STATE_PRIV_START)) {
-        return pinctrl_apply_state(dev_config->pcfg, pinctrl_state);
+    switch(dev_config->base) {
+    case SPIFILTER1:
+        for (uint8_t i = 0; i < sizeof(spif2_out_pin_func) / sizeof(struct pin_func); i++) {
+            if (spif2_out_pin_func[i].func == per_func_get(spif2_out_pin_func[i].pin)) {
+                per_func_disable(spif2_out_pin_func[i].pin, spif2_out_pin_func[i].func);
+            }
+        }
+        break;
+    case SPIFILTER2:
+        for (uint8_t i = 0; i < sizeof(spif1_out_pin_func) / sizeof(struct pin_func); i++) {
+            if (spif1_out_pin_func[i].func == per_func_get(spif1_out_pin_func[i].pin)) {
+                per_func_disable(spif1_out_pin_func[i].pin, spif1_out_pin_func[i].func);
+            }
+        }
+        break;
+    case SPIFILTER3:
+        for (uint8_t i = 0; i < sizeof(spif4_out_pin_func) / sizeof(struct pin_func); i++) {
+            if (spif4_out_pin_func[i].func == per_func_get(spif4_out_pin_func[i].pin)) {
+                per_func_disable(spif4_out_pin_func[i].pin, spif4_out_pin_func[i].func);
+            }
+        }
+        break;
+    case SPIFILTER4:
+        for (uint8_t i = 0; i < sizeof(spif3_out_pin_func) / sizeof(struct pin_func); i++) {
+            if (spif3_out_pin_func[i].func == per_func_get(spif3_out_pin_func[i].pin)) {
+                per_func_disable(spif3_out_pin_func[i].pin, spif3_out_pin_func[i].func);
+            }
+        }
+        break;
     }
-#endif
 
-    return -EINVAL;
+    pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_PRIV_START);
+
+    return 0;
+}
+
+int spif_switch_to_filter(const struct device *dev)
+{
+    __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
+    __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
+
+    pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_DEFAULT);
+
+    return 0;
 }
 
 int linkedsemi_spi_filter_cold_reset(const struct device *dev)
@@ -1213,6 +1314,8 @@ static int linkedsemi_spi_filter_init(const struct device *dev)
     __nocache uint32_t dma_mem_##inst[SPIF_LOG_RAM_MAX_SIZE_U32];                                                                                                                                                                         \
     static const struct linkedsemi_spi_filter_config linkedsemi_spi_filter_cfg_##inst = {                                                                                                                                                 \
         .base = (mm_reg_t)DT_INST_REG_ADDR(inst),                                                                                                                                                                                         \
+        .spi = DEVICE_DT_GET(DT_INST_PHANDLE(inst, spi)),                                                                                                                                                                                 \
+        .cs = GPIO_DT_SPEC_INST_GET(inst, cs_gpios),                                                                                                                                                                                      \
         .irq_config_func = linkedsemi_spi_filter_irq_config_func_##inst,                                                                                                                                                                  \
         .dma_chan = 0,                                                                                                                                                                                                                    \
         IF_ENABLED(CONFIG_PINCTRL, (.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst), ))                                                                                                                                                      \

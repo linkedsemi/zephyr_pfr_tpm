@@ -103,6 +103,10 @@ void spif_memset_read_addr_whitelist(const struct device *dev, uint8_t num);
 void spif_memset_write_addr_whitelist(const struct device *dev, uint8_t num);
 int spif_set_pinctrl_state(const struct device *dev, uint8_t pinctrl_state);
 int linkedsemi_spi_filter_cold_reset(const struct device *dev);
+const struct device *spif_spi_dev(const struct device *dev);
+const struct gpio_dt_spec *spif_spi_cs(const struct device *dev);
+int spif_switch_to_master(const struct device *dev);
+int spif_switch_to_filter(const struct device *dev);
 
 #include "ls_hal_dmacv3.h"
 void spif_dma_config(const struct device *dev, DMA_Controller_HandleTypeDef *dmac_inst);
