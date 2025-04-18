@@ -11,5 +11,9 @@ properties:
     scl-hold-time:
       type: int
       required: true
-      description: |
-        scl-hold-time
+      description: scl-hold-time
+
+    i2c:
+      type: phandle
+      required: true
+      description: i2c controller node

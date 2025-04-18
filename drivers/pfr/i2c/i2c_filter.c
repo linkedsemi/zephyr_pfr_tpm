@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(i2c_pfr_filter);
 
 struct linkedsemi_i2c_filter_config {
     mm_reg_t base;
+    const struct device *i2c;
     const struct pinctrl_dev_config *pcfg;
     void (*irq_config_func)(const struct device *dev);
 };
@@ -31,6 +32,8 @@ struct linkedsemi_i2c_filter_data {
     i2c_filter_callback_t cb;
     void *user_data;
 };
+
+extern int i2c_idle_check_prepare(const struct device *dev, const struct pinctrl_dev_config *pcfg, uint8_t pinctrl_state);
 
 int linkedsemi_i2c_filter_config_scl_hold_time(const struct device *dev, uint16_t scl_hold_time)
 {
@@ -236,18 +239,41 @@ int linkedsemi_i2c_filter_en(const struct device *dev,
     return 0;
 }
 
-int linkedsemi_i2c_filter_set_pinctrl_state(const struct device *dev, uint8_t pinctrl_state)
+const struct device *i2cf_i2c_dev(const struct device *dev)
+{
+    const struct linkedsemi_i2c_filter_config *dev_config = dev->config;
+
+    return dev_config->i2c;
+}
+
+int linkedsemi_i2c_filter_switch_to_master(const struct device *dev)
+{
+    __unused const struct linkedsemi_i2c_filter_config *dev_config = dev->config;
+    __unused struct linkedsemi_i2c_filter_data *dev_data = dev->data;
+    const struct device *master = i2cf_i2c_dev(dev);
+
+    k_mutex_lock(&dev_data->lock, K_FOREVER);
+
+    i2c_idle_check_prepare(master, dev_config->pcfg, PINCTRL_STATE_PRIV_START);
+    pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_PRIV_START);
+
+    k_mutex_unlock(&dev_data->lock);
+
+    return 0;
+}
+
+int linkedsemi_i2c_filter_switch_to_filter(const struct device *dev)
 {
     __unused const struct linkedsemi_i2c_filter_config *dev_config = dev->config;
     __unused struct linkedsemi_i2c_filter_data *dev_data = dev->data;
 
-#if defined(CONFIG_PINCTRL)
-    if ((pinctrl_state == PINCTRL_STATE_DEFAULT) || (pinctrl_state == PINCTRL_STATE_PRIV_START)) {
-        return pinctrl_apply_state(dev_config->pcfg, pinctrl_state);
-    }
-#endif
+    k_mutex_lock(&dev_data->lock, K_FOREVER);
 
-    return -EINVAL;
+    pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_DEFAULT);
+
+    k_mutex_unlock(&dev_data->lock);
+
+    return 0;
 }
 
 int linkedsemi_i2c_filter_cold_reset(const struct device *dev)
@@ -303,8 +329,9 @@ static int linkedsemi_i2c_filter_init(const struct device *dev)
     }                                                                                     \
     PINCTRL_DT_INST_DEFINE(inst);                                                         \
     static const struct linkedsemi_i2c_filter_config linkedsemi_i2c_filter_cfg_##inst = { \
-        .base = (mm_reg_t)DT_INST_REG_ADDR(inst),                                       \
+        .base = (mm_reg_t)DT_INST_REG_ADDR(inst),                                         \
         .irq_config_func = linkedsemi_i2c_filter_irq_config_func_##inst,                  \
+        .i2c = DEVICE_DT_GET(DT_INST_PHANDLE(inst, i2c)),                                 \
         IF_ENABLED(CONFIG_PINCTRL, (.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst), ))      \
     };                                                                                    \
     static struct linkedsemi_i2c_filter_data linkedsemi_i2c_filter_data_##inst = {        \

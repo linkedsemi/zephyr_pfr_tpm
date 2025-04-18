@@ -46,7 +46,11 @@ int linkedsemi_i2c_filter_enable_channel(const struct device *dev,
                                         uint8_t idx,
                                         bool enable);
 
-int linkedsemi_i2c_filter_set_pinctrl_state(const struct device *dev, uint8_t pinctrl_state);
+int linkedsemi_i2c_filter_switch_to_master(const struct device *dev);
+
+int linkedsemi_i2c_filter_switch_to_filter(const struct device *dev);
+
+const struct device *i2cf_i2c_dev(const struct device *dev);
 
 /**
  * @}

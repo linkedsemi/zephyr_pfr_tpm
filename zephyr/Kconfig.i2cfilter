@@ -5,5 +5,6 @@ config I2C_FILTER_LINKEDSEMI
     bool "i2c filter"
     default y
     depends on DT_HAS_LINKEDSEMI_I2C_FILTER_ENABLED
+    select I2C
     help
       I2C_FILTER_LINKEDSEMI
