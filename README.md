@@ -33,13 +33,7 @@ index 7b26860a91c..c1be0ddb8fd 100644
        revision: 0f7b166487b1ac08e1c6c492383f5c103320b2be
 ```
 
-3. install *.yaml to zephyr/dts/bindings/misc
-```
-cd modules/lib/pfr_tpm
-bash install.sh /data/work/modules/lib/pfr_tpm /data/work/zephyr
-```
-
-4. build
+3. build
 ```
 cd /data/work
 west build -b lsqsh_evb@2os/lsqsh/cpu1 -p always modules/lib/pfr_tpm/samples/spid
