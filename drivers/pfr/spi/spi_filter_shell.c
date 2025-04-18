@@ -110,7 +110,7 @@ static int add_cmd(const struct shell *shell, size_t argc, char *argv[])
     if (ret)
         goto end;
 
-    ret = spif_add_cmd(spif_device, cmd, dummy_cycle);
+    ret = spif_add_cmd_with_dummy(spif_device, cmd, dummy_cycle);
 
 end:
     return ret;
