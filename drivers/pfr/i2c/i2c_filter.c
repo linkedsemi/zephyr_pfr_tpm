@@ -6,24 +6,37 @@
 
 #define DT_DRV_COMPAT linkedsemi_i2c_filter
 
-#include <zephyr/kernel.h>
-#include <zephyr/device.h>
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
-#include <i2c_filter.h>
-#include <reg_i2c_filter.h>
-#include <zephyr/drivers/pinctrl.h>
+
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#if defined(CONFIG_PINCTRL)
+    #include <zephyr/drivers/pinctrl.h>
+#endif
+#if defined(CONFIG_RESET)
+    #include <zephyr/drivers/reset.h>
+#endif
+#if defined(CONFIG_CLOCK_CONTROL)
+    #include <zephyr/drivers/clock_control.h>
+    #include <soc_clock.h>
+#endif
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_pfr_filter);
 
+#include <i2c_filter.h>
+#include <reg_i2c_filter.h>
+
 struct linkedsemi_i2c_filter_config {
     mm_reg_t base;
     const struct device *i2c;
-    const struct pinctrl_dev_config *pcfg;
     void (*irq_config_func)(const struct device *dev);
+    IF_ENABLED(CONFIG_PINCTRL, (const struct pinctrl_dev_config *pcfg;))
+    IF_ENABLED(CONFIG_CLOCK_CONTROL, (struct ls_clk_cfg ccfg;))
+    IF_ENABLED(CONFIG_RESET, (struct reset_dt_spec reset;))
 };
 
 struct linkedsemi_i2c_filter_data {
@@ -280,14 +293,45 @@ int linkedsemi_i2c_filter_cold_reset(const struct device *dev)
 {
     __unused const struct linkedsemi_i2c_filter_config *dev_config = dev->config;
     __unused struct linkedsemi_i2c_filter_data *dev_data = dev->data;
+    __unused int ret;
+
+#if defined(CONFIG_CLOCK_CONTROL)
+    if (dev_config->ccfg.cctl_dev) {
+        const struct device *clk_dev = dev_config->ccfg.cctl_dev;
+        if (!device_is_ready(clk_dev)) {
+            LOG_DBG("%s device not ready", clk_dev->name);
+            return -ENODEV;
+        }
+        clock_control_off(clk_dev, (clock_control_subsys_t)&dev_config->ccfg);
+    }
+#endif
+
+#if defined(CONFIG_RESET)
+    if (dev_config->reset.dev != NULL) {
+        if (!device_is_ready(dev_config->reset.dev)) {
+            LOG_ERR("Reset controller device is not ready");
+            return -ENODEV;
+        }
+
+        ret = reset_line_toggle(dev_config->reset.dev, dev_config->reset.id);
+        if (ret != 0) {
+            LOG_ERR("toggle reset line failed");
+            return ret;
+        }
+    }
+#endif
+
+#if defined(CONFIG_CLOCK_CONTROL)
+    if (dev_config->ccfg.cctl_dev) {
+        const struct device *clk_dev = dev_config->ccfg.cctl_dev;
+        clock_control_on(clk_dev, (clock_control_subsys_t)&dev_config->ccfg);
+    }
+#endif
 
 #if defined(CONFIG_PINCTRL)
-    if (dev_config->pcfg != NULL) {
-        int ret;
-        ret = pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_DEFAULT);
-        if (ret < 0) {
-            LOG_WRN("Could not configure pins");
-        }
+    ret = pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_DEFAULT);
+    if (ret < 0) {
+        LOG_ERR("Could not configure pins");
     }
 #endif
 
@@ -316,35 +360,37 @@ static int linkedsemi_i2c_filter_init(const struct device *dev)
     return 0;
 }
 
-#define I2C_FILTER_INIT(inst)                                                             \
-    static void linkedsemi_i2c_filter_irq_config_func_##inst(const struct device *dev)    \
-    {                                                                                     \
-        ARG_UNUSED(dev);                                                                  \
-        IRQ_CONNECT(DT_INST_IRQN(inst),                                                   \
-                    DT_INST_IRQ(inst, priority),                                          \
-                    linkedsemi_i2c_filter_isr,                                            \
-                    DEVICE_DT_INST_GET(inst),                                             \
-                    0);                                                                   \
-        irq_enable(DT_INST_IRQN(inst));                                                   \
-    }                                                                                     \
-    PINCTRL_DT_INST_DEFINE(inst);                                                         \
-    static const struct linkedsemi_i2c_filter_config linkedsemi_i2c_filter_cfg_##inst = { \
-        .base = (mm_reg_t)DT_INST_REG_ADDR(inst),                                         \
-        .irq_config_func = linkedsemi_i2c_filter_irq_config_func_##inst,                  \
-        .i2c = DEVICE_DT_GET(DT_INST_PHANDLE(inst, i2c)),                                 \
-        IF_ENABLED(CONFIG_PINCTRL, (.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst), ))      \
-    };                                                                                    \
-    static struct linkedsemi_i2c_filter_data linkedsemi_i2c_filter_data_##inst = {        \
-        .scl_hold_time = DT_INST_PROP(inst, scl_hold_time),                               \
-    };                                                                                    \
-                                                                                          \
-    DEVICE_DT_INST_DEFINE(inst,                                                           \
-                          linkedsemi_i2c_filter_init,                                     \
-                          NULL,                                                           \
-                          &linkedsemi_i2c_filter_data_##inst,                             \
-                          &linkedsemi_i2c_filter_cfg_##inst,                              \
-                          POST_KERNEL,                                                    \
-                          CONFIG_KERNEL_INIT_PRIORITY_DEVICE,                             \
+#define I2C_FILTER_INIT(inst)                                                                      \
+    static void linkedsemi_i2c_filter_irq_config_func_##inst(const struct device *dev)             \
+    {                                                                                              \
+        ARG_UNUSED(dev);                                                                           \
+        IRQ_CONNECT(DT_INST_IRQN(inst),                                                            \
+                    DT_INST_IRQ(inst, priority),                                                   \
+                    linkedsemi_i2c_filter_isr,                                                     \
+                    DEVICE_DT_INST_GET(inst),                                                      \
+                    0);                                                                            \
+        irq_enable(DT_INST_IRQN(inst));                                                            \
+    }                                                                                              \
+    PINCTRL_DT_INST_DEFINE(inst);                                                                  \
+    static const struct linkedsemi_i2c_filter_config linkedsemi_i2c_filter_cfg_##inst = {          \
+        .base = (mm_reg_t)DT_INST_REG_ADDR(inst),                                                  \
+        .irq_config_func = linkedsemi_i2c_filter_irq_config_func_##inst,                           \
+        .i2c = DEVICE_DT_GET(DT_INST_PHANDLE(inst, i2c)),                                          \
+        IF_ENABLED(CONFIG_PINCTRL, (.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst), ))               \
+        IF_ENABLED(DT_HAS_CLOCKS(inst), (.ccfg = LS_DT_CLK_CFG_ITEM(inst), ))                      \
+        IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, resets), (.reset = RESET_DT_SPEC_INST_GET(inst), )) \
+    };                                                                                             \
+    static struct linkedsemi_i2c_filter_data linkedsemi_i2c_filter_data_##inst = {                 \
+        .scl_hold_time = DT_INST_PROP(inst, scl_hold_time),                                        \
+    };                                                                                             \
+                                                                                                   \
+    DEVICE_DT_INST_DEFINE(inst,                                                                    \
+                          linkedsemi_i2c_filter_init,                                              \
+                          NULL,                                                                    \
+                          &linkedsemi_i2c_filter_data_##inst,                                      \
+                          &linkedsemi_i2c_filter_cfg_##inst,                                       \
+                          POST_KERNEL,                                                             \
+                          CONFIG_KERNEL_INIT_PRIORITY_DEVICE,                                      \
                           NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_FILTER_INIT)
