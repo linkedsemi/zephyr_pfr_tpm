@@ -4,18 +4,27 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <string.h>
+
 #include <zephyr/kernel.h>
 #include <zephyr/irq.h>
-#define LOG_LEVEL CONFIG_SPID_LOG_LEVEL
-#include <zephyr/logging/log.h>
-#include <string.h>
 #if defined(CONFIG_PINCTRL)
     #include <zephyr/drivers/pinctrl.h>
 #endif
+#if defined(CONFIG_RESET)
+    #include <zephyr/drivers/reset.h>
+#endif
+#if defined(CONFIG_CLOCK_CONTROL)
+    #include <zephyr/drivers/clock_control.h>
+    #include <soc_clock.h>
+#endif
+
+#define LOG_LEVEL CONFIG_SPID_LOG_LEVEL
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(spid_linkedsemi);
+
 #include "spid_linkedsemi.h"
 #include "reg_spid.h"
-
-LOG_MODULE_REGISTER(spid_linkedsemi);
 
 #define DT_DRV_COMPAT linkedsemi_spid
 
@@ -31,10 +40,10 @@ typedef void (*irq_cfg_func_t)(const struct device *dev);
 struct spid_linkedsemi_config {
     mm_reg_t reg;
     uint32_t data;
-#if defined(CONFIG_PINCTRL)
-    const struct pinctrl_dev_config *pcfg;
-#endif
     irq_cfg_func_t irq_config_func;
+    IF_ENABLED(CONFIG_PINCTRL, (const struct pinctrl_dev_config *pcfg;))
+    IF_ENABLED(CONFIG_CLOCK_CONTROL, (struct ls_clk_cfg ccfg;))
+    IF_ENABLED(CONFIG_RESET, (struct reset_dt_spec reset;))
 };
 
 static void linkedsemi_spid_main_isr(const struct device *dev)
@@ -92,25 +101,56 @@ void init_spid_registers(const struct device *dev, int mode)
 
 static int spid_linkedsemi_init(const struct device *dev)
 {
-    const struct spid_linkedsemi_config *cfg = dev->config;
-#if defined(CONFIG_PINCTRL)
-    if (cfg->pcfg != NULL) {
-        int ret;
-        /* Configure dt provided device signals when available */
-        ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
-        if (ret < 0) {
-            LOG_WRN("Could not configure pins");
+    const struct spid_linkedsemi_config *dev_config = dev->config;
+    __unused int ret;
+
+#if defined(CONFIG_CLOCK_CONTROL)
+    if (dev_config->ccfg.cctl_dev) {
+        const struct device *clk_dev = dev_config->ccfg.cctl_dev;
+        if (!device_is_ready(clk_dev)) {
+            LOG_DBG("%s device not ready", clk_dev->name);
+            return -ENODEV;
+        }
+        clock_control_off(clk_dev, (clock_control_subsys_t)&dev_config->ccfg);
+    }
+#endif
+
+#if defined(CONFIG_RESET)
+    if (dev_config->reset.dev != NULL) {
+        if (!device_is_ready(dev_config->reset.dev)) {
+            LOG_ERR("Reset controller device is not ready");
+            return -ENODEV;
+        }
+
+        ret = reset_line_toggle(dev_config->reset.dev, dev_config->reset.id);
+        if (ret != 0) {
+            LOG_ERR("toggle reset line failed");
+            return ret;
         }
     }
 #endif
 
-    cfg->irq_config_func(dev);
+#if defined(CONFIG_CLOCK_CONTROL)
+    if (dev_config->ccfg.cctl_dev) {
+        const struct device *clk_dev = dev_config->ccfg.cctl_dev;
+        clock_control_on(clk_dev, (clock_control_subsys_t)&dev_config->ccfg);
+    }
+#endif
+
+#if defined(CONFIG_PINCTRL)
+    ret = pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_DEFAULT);
+    if (ret < 0) {
+        LOG_ERR("Could not configure pins");
+    }
+#endif
+
+    dev_config->irq_config_func(dev);
 
     init_spid_registers(dev, INTF_CRB_MODE);
-    sys_write32(0xff, cfg->reg + SPID_INTR_ENABLE);
+    sys_write32(0xff, dev_config->reg + SPID_INTR_ENABLE);
 #if 0
     k_msleep(1);
-    sys_write32(0x1, cfg->reg + INTR_TEST);
+    sys_write32(0x1, dev_config->reg + INTR_TEST);
 #endif
 
     return 0;
@@ -127,22 +167,23 @@ static int spid_linkedsemi_init(const struct device *dev)
         irq_enable(DT_INST_IRQ_BY_NAME(index, main, irq));                        \
     }
 
-#define SPID_LINKEDSEMI_INIT(index)                                                     \
-    IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_INST_DEFINE(index)));                        \
-    SPID_LINKEDSEMI_IRQ_HANDLER(index)                                                  \
-    static const struct spid_linkedsemi_config spid_linkedsemi_cfg_##index = {          \
-        .reg = (mm_reg_t)DT_INST_REG_ADDR(index),                                     \
-        .irq_config_func = spid_linkedsemi_irq_config_func_##index,                     \
-        IF_ENABLED(CONFIG_PINCTRL, (.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index), ))   \
-        IF_ENABLED(DT_HAS_CLOCKS(index), (.cctl_cfg = LS_DT_CLK_CFG_ITEM(index), ))     \
-    };                                                                                  \
-    static struct spid_linkedsemi_data spid_linkedsemi_dev_data_##index;                \
-    DEVICE_DT_INST_DEFINE(index,                                                        \
-                          spid_linkedsemi_init,                                         \
-                          NULL,                                                         \
-                          &spid_linkedsemi_dev_data_##index,                            \
-                          &spid_linkedsemi_cfg_##index,                                 \
-                          POST_KERNEL,                                                  \
-                          CONFIG_KERNEL_INIT_PRIORITY_DEVICE,                           \
+#define SPID_LINKEDSEMI_INIT(index)                                                                          \
+    IF_ENABLED(CONFIG_PINCTRL, (PINCTRL_DT_INST_DEFINE(index)));                                             \
+    SPID_LINKEDSEMI_IRQ_HANDLER(index)                                                                       \
+    static const struct spid_linkedsemi_config spid_linkedsemi_cfg_##index = {                               \
+        .reg = (mm_reg_t)DT_INST_REG_ADDR(index),                                                            \
+        .irq_config_func = spid_linkedsemi_irq_config_func_##index,                                          \
+        IF_ENABLED(CONFIG_PINCTRL, (.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index), ))                        \
+        IF_ENABLED(DT_HAS_CLOCKS(index), (.ccfg = LS_DT_CLK_CFG_ITEM(index), ))                              \
+        IF_ENABLED(DT_INST_NODE_HAS_PROP(index, resets), (.reset = RESET_DT_SPEC_INST_GET(index), ))         \
+    };                                                                                                       \
+    static struct spid_linkedsemi_data spid_linkedsemi_dev_data_##index;                                     \
+    DEVICE_DT_INST_DEFINE(index,                                                                             \
+                          spid_linkedsemi_init,                                                              \
+                          NULL,                                                                              \
+                          &spid_linkedsemi_dev_data_##index,                                                 \
+                          &spid_linkedsemi_cfg_##index,                                                      \
+                          POST_KERNEL,                                                                       \
+                          CONFIG_KERNEL_INIT_PRIORITY_DEVICE,                                                \
                           NULL);
 DT_INST_FOREACH_STATUS_OKAY(SPID_LINKEDSEMI_INIT)
