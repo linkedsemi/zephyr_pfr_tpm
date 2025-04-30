@@ -6,6 +6,8 @@
 
 #include <zephyr/dt-bindings/pinctrl/lsqsh-pinctrl.h>
 #include "lsqsh-pinctrl_pfr_tpm_func_pinctrl.h"
+#include "lsqsh_clock_pfr_tpm.h"
+#include "lsqsh_reset_pfr_tpm.h"
 
 / {
     soc {
@@ -14,6 +16,8 @@
             reg = <0x40090000 0x800>;
             interrupts = <155 3>;
             scl-hold-time = <0xfa>;
+            clocks = <SMB_FLT1_CLOCK>;
+            resets = <SMB_FLT1_RESET>;
             status = "disabled";
         };
 
@@ -22,6 +26,8 @@
             reg = <0x40090800 0x800>;
             interrupts = <156 3>;
             scl-hold-time = <0xfa>;
+            clocks = <SMB_FLT2_CLOCK>;
+            resets = <SMB_FLT2_RESET>;
             status = "disabled";
         };
 
@@ -30,6 +36,8 @@
             reg = <0x40091000 0x800>;
             interrupts = <157 3>;
             scl-hold-time = <0xfa>;
+            clocks = <SMB_FLT3_CLOCK>;
+            resets = <SMB_FLT3_RESET>;
             status = "disabled";
         };
 
@@ -38,6 +46,8 @@
             reg = <0x40091800 0x800>;
             interrupts = <158 3>;
             scl-hold-time = <0xfa>;
+            clocks = <SMB_FLT4_CLOCK>;
+            resets = <SMB_FLT4_RESET>;
             status = "disabled";
         };
 
@@ -45,24 +55,32 @@
             compatible = "linkedsemi,spi-filter";
             reg = <0x40070000 0x2000>;
             interrupts = <71 3>;
+            clocks = <SPI1_FLT_CLOCK>;
+            resets = <SPI1_FLT_RESET>;
             status = "disabled";
         };
         spif2: spif@40072000 {
             compatible = "linkedsemi,spi-filter";
             reg = <0x40072000 0x2000>;
             interrupts = <72 3>;
+            clocks = <SPI2_FLT_CLOCK>;
+            resets = <SPI2_FLT_RESET>;
             status = "disabled";
         };
         spif3: spif@40074000 {
             compatible = "linkedsemi,spi-filter";
             reg = <0x40074000 0x2000>;
             interrupts = <73 3>;
+            clocks = <SPI3_FLT_CLOCK>;
+            resets = <SPI3_FLT_RESET>;
             status = "disabled";
         };
         spif4: spif@40076000 {
             compatible = "linkedsemi,spi-filter";
             reg = <0x40076000 0x2000>;
             interrupts = <74 3>;
+            clocks = <SPI4_FLT_CLOCK>;
+            resets = <SPI4_FLT_RESET>;
             status = "disabled";
         };
 
@@ -71,6 +89,8 @@
             reg = <0x4000c000 0x2000>;
             interrupts = <56 3>, <57 3>;
             interrupt-names = "main", "sysc";
+            clocks = <TPM_SPIS1_CLOCK>;
+            resets = <TPM_SPIS1_RESET>;
             status = "disabled";
         };
 
@@ -79,6 +99,8 @@
             reg = <0x4000e000 0x2000>;
             interrupts = <58 3>, <59 3>;
             interrupt-names = "main", "sysc";
+            clocks = <TPM_SPIS2_CLOCK>;
+            resets = <TPM_SPIS2_RESET>;
             status = "disabled";
         };
     };
