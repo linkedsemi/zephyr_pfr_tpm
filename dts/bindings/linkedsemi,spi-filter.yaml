@@ -5,7 +5,7 @@ description: linkedsemi spi filter
 
 compatible: "linkedsemi,spi-filter"
 
-include: [base.yaml, pinctrl-device.yaml]
+include: [base.yaml, pinctrl-device.yaml, reset-device.yaml]
 
 properties:
   cmd-page-program:

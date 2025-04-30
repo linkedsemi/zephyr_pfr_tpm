@@ -11,32 +11,45 @@
 
 #define DT_DRV_COMPAT linkedsemi_spi_filter
 
-#include <zephyr/kernel.h>
-#include <zephyr/device.h>
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
-#include <spi_filter.h>
-#include <reg_spi_filter.h>
-#include <zephyr/drivers/pinctrl.h>
+
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/cache.h>
-#include <lsqsh-pinctrl_pfr_tpm_func_pinctrl.h>
-#include <ls_soc_gpio.h>
+#if defined(CONFIG_PINCTRL)
+    #include <zephyr/drivers/pinctrl.h>
+#endif
+#if defined(CONFIG_RESET)
+    #include <zephyr/drivers/reset.h>
+#endif
+#if defined(CONFIG_CLOCK_CONTROL)
+    #include <zephyr/drivers/clock_control.h>
+    #include <soc_clock.h>
+#endif
 
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(spi_pfr_filter);
 
+#include <spi_filter.h>
+#include <reg_spi_filter.h>
+#include <lsqsh-pinctrl_pfr_tpm_func_pinctrl.h>
+#include <ls_soc_gpio.h>
+
 struct linkedsemi_spi_filter_config {
     mm_reg_t base;
     const struct device *spi;
     const struct gpio_dt_spec cs;
-    const struct pinctrl_dev_config *pcfg;
     void (*irq_config_func)(const struct device *dev);
     bool blacklist_en;
     uint8_t dma_chan;
     uint8_t dma_handshake;
+    IF_ENABLED(CONFIG_PINCTRL, (const struct pinctrl_dev_config *pcfg;))
+    IF_ENABLED(CONFIG_CLOCK_CONTROL, (struct ls_clk_cfg ccfg;))
+    IF_ENABLED(CONFIG_RESET, (struct reset_dt_spec reset;))
 };
 
 struct linkedsemi_spi_filter_data {
@@ -1243,16 +1256,48 @@ int linkedsemi_spi_filter_cold_reset(const struct device *dev)
 {
     __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
     __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
+    __unused int ret;
 
-#if defined(CONFIG_PINCTRL)
-    if (dev_config->pcfg != NULL) {
-        int ret;
-        ret = pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_DEFAULT);
-        if (ret < 0) {
-            LOG_WRN("Could not configure pins");
+#if defined(CONFIG_CLOCK_CONTROL)
+    if (dev_config->ccfg.cctl_dev) {
+        const struct device *clk_dev = dev_config->ccfg.cctl_dev;
+        if (!device_is_ready(clk_dev)) {
+            LOG_DBG("%s device not ready", clk_dev->name);
+            return -ENODEV;
+        }
+        clock_control_off(clk_dev, (clock_control_subsys_t)&dev_config->ccfg);
+    }
+#endif
+
+#if defined(CONFIG_RESET)
+    if (dev_config->reset.dev != NULL) {
+        if (!device_is_ready(dev_config->reset.dev)) {
+            LOG_ERR("Reset controller device is not ready");
+            return -ENODEV;
+        }
+
+        ret = reset_line_toggle(dev_config->reset.dev, dev_config->reset.id);
+        if (ret != 0) {
+            LOG_ERR("toggle reset line failed");
+            return ret;
         }
     }
 #endif
+
+#if defined(CONFIG_CLOCK_CONTROL)
+    if (dev_config->ccfg.cctl_dev) {
+        const struct device *clk_dev = dev_config->ccfg.cctl_dev;
+        clock_control_on(clk_dev, (clock_control_subsys_t)&dev_config->ccfg);
+    }
+#endif
+
+#if defined(CONFIG_PINCTRL)
+    ret = pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_DEFAULT);
+    if (ret < 0) {
+        LOG_ERR("Could not configure pins");
+    }
+#endif
+
     spif_reg_unlock(dev);
 
     spif_memset_addr_whitelist(dev, 1); /* default */
@@ -1319,6 +1364,8 @@ static int linkedsemi_spi_filter_init(const struct device *dev)
         .irq_config_func = linkedsemi_spi_filter_irq_config_func_##inst,                                                                                                                                                                  \
         .dma_chan = 0,                                                                                                                                                                                                                    \
         IF_ENABLED(CONFIG_PINCTRL, (.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst), ))                                                                                                                                                      \
+        IF_ENABLED(DT_HAS_CLOCKS(inst), (.ccfg = LS_DT_CLK_CFG_ITEM(inst), ))                                                                                                                                                             \
+        IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, resets), (.reset = RESET_DT_SPEC_INST_GET(inst), ))                                                                                                                                        \
     };                                                                                                                                                                                                                                    \
     static struct linkedsemi_spi_filter_data linkedsemi_spi_filter_data_##inst = {                                                                                                                                                        \
         .fixed_cmd_tab = {                                                                                                                                                                                                                \
