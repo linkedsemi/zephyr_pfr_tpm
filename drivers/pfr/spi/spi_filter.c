@@ -979,20 +979,23 @@ static void spif_dma_callback(DMA_Controller_HandleTypeDef *hdma, uint32_t param
             for (uint16_t i = dev_data->dma_log_cnt; i < block_ts; i++) {
                 spif_dma_data_t *spif_dma_data = (spif_dma_data_t *)dev_data->dma_mem;
                 LOG_DBG("dma log idx: %d\n", i);
-                sys_cache_data_invd_range((void *)(&spif_dma_data[i]), sizeof(spif_dma_data_t));
+                void *align_addr = (void *)ROUND_DOWN((uint32_t)&spif_dma_data[i], CONFIG_DCACHE_LINE_SIZE);
+                sys_cache_data_invd_range(align_addr, sizeof(spif_dma_data_t));
                 spif_dma_data_print(spif_dma_data[i]);
             }
         } else {
             for (uint16_t i = dev_data->dma_log_cnt; i < SPIF_LOG_RAM_MAX_SIZE_U32; i++) {
                 spif_dma_data_t *spif_dma_data = (spif_dma_data_t *)dev_data->dma_mem;
                 LOG_DBG("dma log idx: %d\n", i);
-                sys_cache_data_invd_range((void *)(&spif_dma_data[i]), sizeof(spif_dma_data_t));
+                void *align_addr = (void *)ROUND_DOWN((uint32_t)&spif_dma_data[i], CONFIG_DCACHE_LINE_SIZE);
+                sys_cache_data_invd_range(align_addr, sizeof(spif_dma_data_t));
                 spif_dma_data_print(spif_dma_data[i]);
             }
             for (uint16_t i = 0; i < block_ts; i++) {
                 spif_dma_data_t *spif_dma_data = (spif_dma_data_t *)dev_data->dma_mem;
                 LOG_DBG("dma log idx: %d\n", i);
-                sys_cache_data_invd_range((void *)(&spif_dma_data[i]), sizeof(spif_dma_data_t));
+                void *align_addr = (void *)ROUND_DOWN((uint32_t)&spif_dma_data[i], CONFIG_DCACHE_LINE_SIZE);
+                sys_cache_data_invd_range(align_addr, sizeof(spif_dma_data_t));
                 spif_dma_data_print(spif_dma_data[i]);
             }
         }
