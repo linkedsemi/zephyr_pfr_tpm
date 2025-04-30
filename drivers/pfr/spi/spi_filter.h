@@ -70,7 +70,7 @@ int spif_get_general_cmd_slot(const struct device *dev, uint8_t cmd, uint32_t st
 int spif_add_general_cmd(const struct device *dev, uint8_t cmd);
 int spif_remove_general_cmd(const struct device *dev, uint8_t cmd);
 void spif_remove_cmd_by_idx(const struct device *dev, uint8_t cmd, uint8_t idx);
-void spif_dump_rw_addr_privilege_table(const struct device *dev);
+int spif_dump_rw_addr_privilege_table(const struct device *dev);
 void spif_dump_cmd_bitmap_log(const struct device *dev, uint8_t bitmap[SPIF_CMD_BITMAP_LOG_SIZE_BYTE]);
 void spif_clear_cmd_bitmap_log(const struct device *dev);
 int spif_address_privilege_config(const struct device *dev,

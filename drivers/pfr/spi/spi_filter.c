@@ -251,11 +251,13 @@ void spif_dump_cmd_table(const struct device *dev)
     release_spif_device(dev);
 }
 
-static void spif_peek_rw_area(const struct device *dev, enum addr_priv_rw_select rw_select, uint32_t addr, uint32_t *data)
+static int spif_peek_rw_area(const struct device *dev, enum addr_priv_rw_select rw_select, uint32_t addr, uint32_t *data)
 {
     __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
     __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
     spif_read_addr_req_t spif_read_addr_req = {};
+	k_timepoint_t timeout;
+    int ret = 0;
 
     if (rw_select == FLAG_ADDR_PRIV_READ_SELECT) {
         spif_read_addr_req.READ_RADDR_REQ = 1;
@@ -267,11 +269,21 @@ static void spif_peek_rw_area(const struct device *dev, enum addr_priv_rw_select
 
     sys_write32(addr, dev_config->base + SPIF_READ_SRAM_ADDR);
     sys_write32(spif_read_addr_req.value, dev_config->base + SPIF_READ_ADDR_REQ);
-    while (sys_read32(dev_config->base + SPIF_READ_ADDR_REQ)); /* wait for cs line idle */
+    timeout = sys_timepoint_calc(K_MSEC(100));
+    while (sys_read32(dev_config->base + SPIF_READ_ADDR_REQ)) { /* wait for cs line idle */
+        if (sys_timepoint_expired(timeout)) {
+            LOG_ERR( "cs line busy");
+            ret = -EIO;
+            goto err;
+        }
+    }
     *data = sys_read32(dev_config->base + SPIF_READ_SRAM_DATA);
+
+err:
+    return ret;
 }
 
-static void spif_protect_area_parser(const struct device *dev,
+static int spif_protect_area_parser(const struct device *dev,
                                        struct priv_reg_info start,
                                        struct priv_reg_info *res,
                                        uint32_t *num_protect_blk,
@@ -284,6 +296,7 @@ static void spif_protect_area_parser(const struct device *dev,
     uint32_t bit_off = start.start_bit_off;
     uint32_t reg_val;
     uint32_t i;
+    int ret = 0;
 
     if (region == FLAG_ADDR_PRIV_READ_SELECT) {
         priv_table_base = dev_config->base + SPIF_ADDR_PRIV_TABLE_BASE + SPIF_ADDR_SIZE;
@@ -295,7 +308,10 @@ static void spif_protect_area_parser(const struct device *dev,
     *num_protect_blk = 0;
 
     while (reg_off < SPIF_ADDR_PRIV_REG_NUN) {
-        spif_peek_rw_area(dev, region, reg_off, &reg_val);
+        ret = spif_peek_rw_area(dev, region, reg_off, &reg_val);
+        if (ret) {
+            goto end;
+        }
         reg_val >>= bit_off;
         for (i = bit_off; i < 32; i++) {
             if ((reg_val & 1) == 0) {
@@ -309,7 +325,7 @@ static void spif_protect_area_parser(const struct device *dev,
             } else if ((reg_val & 1) == 1 && *num_protect_blk != 0) {
                 res->end_reg_off = reg_off;
                 res->end_bit_off = i;
-                return;
+                goto end;
             }
 
             reg_val >>= 1;
@@ -321,6 +337,9 @@ static void spif_protect_area_parser(const struct device *dev,
 
     res->end_reg_off = SPIF_ADDR_PRIV_REG_NUN - 1;
     res->end_bit_off = 32;
+
+end:
+    return ret;
 }
 
 void spif_dump_cmd_bitmap_log(const struct device *dev, uint8_t bitmap[SPIF_CMD_BITMAP_LOG_SIZE_BYTE])
@@ -343,7 +362,7 @@ void spif_clear_cmd_bitmap_log(const struct device *dev)
     sys_write32(spif_intr_clr.value, dev_config->base + SPIF_INTR_CLR);
 }
 
-void spif_dump_rw_addr_privilege_table(const struct device *dev)
+int spif_dump_rw_addr_privilege_table(const struct device *dev)
 {
     __unused const struct linkedsemi_spi_filter_config *dev_config = dev->config;
     __unused struct linkedsemi_spi_filter_data *dev_data = dev->data;
@@ -352,6 +371,7 @@ void spif_dump_rw_addr_privilege_table(const struct device *dev)
     struct priv_reg_info res;
     bool protect_en = false;
     uint32_t rw;
+    int ret = 0;
 
     acquire_spif_device(dev);
 
@@ -361,6 +381,9 @@ void spif_dump_rw_addr_privilege_table(const struct device *dev)
         LOG_DBG("%s protect regions:\n", rw == 0 ? "read" : "write");
         do {
             spif_protect_area_parser(dev, start, &res, &num_protect_blk, rw);
+            if (ret) {
+                goto end;
+            }
             if (num_protect_blk != 0) {
                 protect_en = true;
                 LOG_DBG("[0x%08x - 0x%08x]\n",
@@ -377,7 +400,9 @@ void spif_dump_rw_addr_privilege_table(const struct device *dev)
         LOG_DBG("======END======\n\n");
     }
 
+end:
     release_spif_device(dev);
+    return ret;
 }
 
 static uint32_t spif_get_cross_block_num(uint32_t addr, uint32_t len)
