@@ -25,6 +25,7 @@ extern "C" {
 #define SPIF_CMD_BITMAP_LOG_SIZE_BYTE 32
 #define SPI_CMD_BITMAPF_LOG_SIZE_U32  8
 #define SPIF_LOG_RAM_MAX_SIZE_U32     2047
+#define SPIF_DMA_RX_THREAD_STACK_SIZE 1024
 
 struct priv_reg_info {
     uint32_t start_reg_off;
@@ -108,8 +109,8 @@ const struct gpio_dt_spec *spif_spi_cs(const struct device *dev);
 int spif_switch_to_master(const struct device *dev);
 int spif_switch_to_filter(const struct device *dev);
 
-#include "ls_hal_dmacv3.h"
-void spif_dma_config(const struct device *dev, DMA_Controller_HandleTypeDef *dmac_inst);
+int spif_dma_start(const struct device *dev);
+int spi_filter_dma_thread_init(const struct device *dev);
 
 /**
  * @}
