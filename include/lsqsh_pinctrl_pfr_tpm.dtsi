@@ -8,6 +8,7 @@
 #include "lsqsh-pinctrl_pfr_tpm_func_pinctrl.h"
 #include "lsqsh_clock_pfr_tpm.h"
 #include "lsqsh_reset_pfr_tpm.h"
+#include "dma_config.h"
 
 / {
     soc {
@@ -57,6 +58,8 @@
             interrupts = <71 3>;
             clocks = <SPI1_FLT_CLOCK>;
             resets = <SPI1_FLT_RESET>;
+            dmas = <&dmac1 0 DMA_SPIFILTER1>;
+            dma-names = "rx";
             status = "disabled";
         };
         spif2: spif@40072000 {
@@ -65,6 +68,8 @@
             interrupts = <72 3>;
             clocks = <SPI2_FLT_CLOCK>;
             resets = <SPI2_FLT_RESET>;
+            dmas = <&dmac1 1 DMA_SPIFILTER2>;
+            dma-names = "rx";
             status = "disabled";
         };
         spif3: spif@40074000 {
@@ -73,6 +78,8 @@
             interrupts = <73 3>;
             clocks = <SPI3_FLT_CLOCK>;
             resets = <SPI3_FLT_RESET>;
+            dmas = <&dmac1 2 DMA_SPIFILTER3>;
+            dma-names = "rx";
             status = "disabled";
         };
         spif4: spif@40076000 {
@@ -81,6 +88,8 @@
             interrupts = <74 3>;
             clocks = <SPI4_FLT_CLOCK>;
             resets = <SPI4_FLT_RESET>;
+            dmas = <&dmac1 3 DMA_SPIFILTER4>;
+            dma-names = "rx";
             status = "disabled";
         };
 
