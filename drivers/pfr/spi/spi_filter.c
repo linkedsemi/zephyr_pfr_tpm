@@ -1222,11 +1222,14 @@ static void spif_dma_rx_thread(void *arg1, void *unused1, void *unused2)
                 sys_cache_data_invd_range(align_addr, sizeof(spif_dma_data_t));
                 spif_dma_data_print(spif_dma_data[i]);
             }
-        } else {
+        }
+        dev_data->dma_log_cnt = block_ts;
+        if (block_ts == SPIF_LOG_RAM_MAX_SIZE_U32) {
+            dev_data->dma_log_cnt = 0;
+            dma_suspend(dev_config->dev_dma, dev_config->dma_slot);
             dma_stop(dev_config->dev_dma, dev_config->dma_slot);
             spif_dma_start(dev);
         }
-        dev_data->dma_log_cnt = block_ts;
     }
 }
 
