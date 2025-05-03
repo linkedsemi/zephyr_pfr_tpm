@@ -188,9 +188,6 @@ properties:
   cmd-4byte-program-quad-data-dummy:
       type: int
       default: 0
-  dma-chan:
-      type: int
-      default: 0
   spi:
       type: phandle
       description: spi controller node
