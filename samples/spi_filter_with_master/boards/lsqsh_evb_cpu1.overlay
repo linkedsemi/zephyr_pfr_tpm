@@ -33,3 +33,7 @@
                 <&gpioq 0 GPIO_ACTIVE_LOW>;
     status = "okay";
 };
+
+&dmac1 {
+    status = "okay";
+};

@@ -83,7 +83,6 @@ static void spif_callback(const struct device *dev,
 #include "test_w.c"
 #include "test_r.c"
 
-DEF_DMA_CONTROLLER(hdma_inst, DMAC1);
 int main(void)
 {
     const struct device *const spifilter = DEVICE_DT_GET(DT_ALIAS(spif));
@@ -101,8 +100,8 @@ int main(void)
 
 //dma log
 #if 1
-    DMA_CONTROLLER_INIT(hdma_inst);
-    spif_dma_config(spifilter, &hdma_inst);
+    spi_filter_dma_thread_init(spifilter);
+    spif_dma_start(spifilter);
 #endif
 #if 1
 //stand spi
