@@ -1,4 +1,4 @@
-#include "../../../include/lsqsh_pinctrl_pfr_tpm.dtsi"
+#include "lsqsh_pinctrl_pfr_tpm.dtsi"
 
 / {
     aliases {
