@@ -30,6 +30,7 @@
     #include <zephyr/drivers/clock_control.h>
     #include <soc_clock.h>
 #endif
+#include <zephyr/drivers/dma/dma_dw.h>
 #include <soc_dma.h>
 
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
@@ -43,7 +44,6 @@ LOG_MODULE_REGISTER(spi_pfr_filter);
 
 struct spif_dma_config {
     int32_t state;
-    uint32_t dma_slot;
     void (*irq_call_back)(void);
     struct dma_config dma_cfg;
     struct dma_block_config dma_block;
@@ -55,9 +55,9 @@ struct linkedsemi_spi_filter_config {
     const struct gpio_dt_spec cs;
     void (*irq_config_func)(const struct device *dev);
     bool blacklist_en;
-    uint8_t dma_handshake;
     const struct device *dev_dma;
-    uint32_t dma_slot;
+    uint32_t dma_channel;
+    uint8_t dma_handshake;
     IF_ENABLED(CONFIG_PINCTRL, (const struct pinctrl_dev_config *pcfg;))
     IF_ENABLED(CONFIG_CLOCK_CONTROL, (struct ls_clk_cfg ccfg;))
     IF_ENABLED(CONFIG_RESET, (struct reset_dt_spec reset;))
@@ -1012,7 +1012,7 @@ int spif_dma_start(const struct device *dev)
     dev_data->spif_dma_config.dma_block.dest_address = (uint32_t)dev_data->dma_mem;
 
     dev_data->spif_dma_config.dma_cfg.block_count = 1;
-    dev_data->spif_dma_config.dma_cfg.dma_slot = dev_config->dma_slot;
+    dev_data->spif_dma_config.dma_cfg.dma_slot = dev_config->dma_handshake;
     dev_data->spif_dma_config.dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
     dev_data->spif_dma_config.dma_cfg.source_burst_length = 0;
     dev_data->spif_dma_config.dma_cfg.dest_burst_length = 0;
@@ -1022,7 +1022,6 @@ int spif_dma_start(const struct device *dev)
     dev_data->spif_dma_config.dma_cfg.user_data = (void *)dev;
     dev_data->spif_dma_config.dma_cfg.source_data_size = 4;
     dev_data->spif_dma_config.dma_cfg.dest_data_size = 4;
-    dev_data->spif_dma_config.dma_cfg.handshake = dev_config->dma_handshake;
     dev_data->spif_dma_config.dma_cfg.head_block = &(dev_data->spif_dma_config.dma_block);
 
     if (dev_config->dev_dma == NULL || !device_is_ready(dev_config->dev_dma)) {
@@ -1030,8 +1029,8 @@ int spif_dma_start(const struct device *dev)
         return -EINVAL;
     }
 
-    dma_config(dev_config->dev_dma, dev_config->dma_slot, &dev_data->spif_dma_config.dma_cfg);
-    dma_start(dev_config->dev_dma, dev_config->dma_slot);
+    dma_config(dev_config->dev_dma, dev_config->dma_channel, &dev_data->spif_dma_config.dma_cfg);
+    dma_start(dev_config->dev_dma, dev_config->dma_channel);
 
     return 0;
 }
@@ -1212,7 +1211,7 @@ static void spif_dma_rx_thread(void *arg1, void *unused1, void *unused2)
     for(;;) {
         k_sem_take(&dev_data->rx_new_log, K_FOREVER);
         struct dma_status stat;
-        dma_get_status(dev_config->dev_dma, dev_config->dma_slot, &stat);
+        dma_get_status(dev_config->dev_dma, dev_config->dma_channel, &stat);
         uint16_t block_ts = stat.pending_length >> 2;
         if (dev_data->dma_log_cnt < block_ts) {
             for (uint16_t i = dev_data->dma_log_cnt; i < block_ts; i++) {
@@ -1226,8 +1225,8 @@ static void spif_dma_rx_thread(void *arg1, void *unused1, void *unused2)
         dev_data->dma_log_cnt = block_ts;
         if (block_ts == SPIF_LOG_RAM_MAX_SIZE_U32) {
             dev_data->dma_log_cnt = 0;
-            dma_suspend(dev_config->dev_dma, dev_config->dma_slot);
-            dma_stop(dev_config->dev_dma, dev_config->dma_slot);
+            dma_suspend(dev_config->dev_dma, dev_config->dma_channel);
+            dma_stop(dev_config->dev_dma, dev_config->dma_channel);
             spif_dma_start(dev);
         }
     }
@@ -1360,7 +1359,7 @@ static int linkedsemi_spi_filter_init(const struct device *dev)
         .cs = GPIO_DT_SPEC_INST_GET(inst, cs_gpios),                                                                                                                                                                                      \
         .irq_config_func = linkedsemi_spi_filter_irq_config_func_##inst,                                                                                                                                                                  \
         IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, dmas), (.dev_dma = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(inst, rx)),))                                                                                                                   \
-        IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, dmas), (.dma_slot = DT_INST_DMAS_CELL_BY_NAME(inst, rx, channel),))                                                                                                                        \
+        IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, dmas), (.dma_channel = DT_INST_DMAS_CELL_BY_NAME(inst, rx, channel),))                                                                                                                        \
         IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, dmas), (.dma_handshake = DT_INST_DMAS_CELL_BY_NAME(inst, rx, handshake),))                                                                                                                 \
         IF_ENABLED(CONFIG_PINCTRL, (.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst), ))                                                                                                                                                      \
         IF_ENABLED(DT_HAS_CLOCKS(inst), (.ccfg = LS_DT_CLK_CFG_ITEM(inst), ))                                                                                                                                                             \
