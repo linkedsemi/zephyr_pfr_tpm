@@ -78,11 +78,6 @@ int spid_linkedsemi_register_callback(const struct device *dev,
 // #define SPID_MODE_REG   0x400120fc
 // #define ENABLE_SPID_REG 0x400130a4
 
-enum {
-    INTF_FIFO_MODE,
-    INTF_CRB_MODE,
-};
-
 void init_spid_registers(const struct device *dev, int mode)
 {
     struct spid_linkedsemi_config *cfg = (struct spid_linkedsemi_config *)dev->config;
@@ -99,7 +94,7 @@ void init_spid_registers(const struct device *dev, int mode)
     // sys_write32(0x0000f000, ENABLE_SPID_REG); // enable spid2 io(MISO)
 }
 
-static int spid_linkedsemi_init(const struct device *dev)
+int spid_linkedsemi_cold_reset(const struct device *dev)
 {
     const struct spid_linkedsemi_config *dev_config = dev->config;
     __unused int ret;
@@ -144,14 +139,15 @@ static int spid_linkedsemi_init(const struct device *dev)
     }
 #endif
 
-    dev_config->irq_config_func(dev);
+    return 0;
+}
 
-    init_spid_registers(dev, INTF_CRB_MODE);
-    sys_write32(0xff, dev_config->reg + SPID_INTR_ENABLE);
-#if 0
-    k_msleep(1);
-    sys_write32(0x1, dev_config->reg + INTR_TEST);
-#endif
+static int spid_linkedsemi_init(const struct device *dev)
+{
+    const struct spid_linkedsemi_config *dev_config = dev->config;
+    __unused int ret;
+
+    dev_config->irq_config_func(dev);
 
     return 0;
 }
