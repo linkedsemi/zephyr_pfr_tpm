@@ -5,8 +5,8 @@ config SPI_FILTER_LINKEDSEMI
     bool "spi filter"
     default y
     depends on DT_HAS_LINKEDSEMI_SPI_FILTER_ENABLED
-    depends on SPI
-    depends on DMA
+    select SPI
+    select DMA
     help
       SPI_FILTER_LINKEDSEMI
 
