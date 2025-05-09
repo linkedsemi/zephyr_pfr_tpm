@@ -2,7 +2,7 @@
 
 / {
     aliases {
-        spif = &spif2;
+        spif = &spif3;
     };
 };
 
@@ -31,5 +31,9 @@
 &spi4 {
     cs-gpios = <&gpioi 0 GPIO_ACTIVE_LOW>,
                 <&gpioq 0 GPIO_ACTIVE_LOW>;
+    status = "okay";
+};
+
+&dmac1 {
     status = "okay";
 };
