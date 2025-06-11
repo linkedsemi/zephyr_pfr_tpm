@@ -54,6 +54,7 @@ int main(void)
     uint32_t cmd_addr;
 
     spid_linkedsemi_cold_reset(spid);
+    spid_linkedsemi_interrupt_register(spid);
     init_spid_registers(spid, INTF_CRB_MODE);
     int ret = spid_linkedsemi_register_callback(spid, 0, spid_callback, NULL);
     if (ret) {
