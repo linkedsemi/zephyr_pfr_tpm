@@ -142,13 +142,18 @@ int spid_linkedsemi_cold_reset(const struct device *dev)
     return 0;
 }
 
-static int spid_linkedsemi_init(const struct device *dev)
+int spid_linkedsemi_interrupt_register(const struct device *dev)
 {
     const struct spid_linkedsemi_config *dev_config = dev->config;
     __unused int ret;
 
     dev_config->irq_config_func(dev);
 
+    return 0;
+}
+
+static int spid_linkedsemi_init(const struct device *dev)
+{
     return 0;
 }
 

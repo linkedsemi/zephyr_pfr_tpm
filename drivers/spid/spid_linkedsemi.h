@@ -21,6 +21,8 @@ typedef void (*spid_callback_t)(const struct device *dev,
 
 int spid_linkedsemi_cold_reset(const struct device *dev);
 
+int spid_linkedsemi_interrupt_register(const struct device *dev);
+
 void init_spid_registers(const struct device *dev, int mode);
 
 int spid_linkedsemi_register_callback(const struct device *dev,
