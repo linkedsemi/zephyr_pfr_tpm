@@ -139,6 +139,8 @@ int spid_linkedsemi_cold_reset(const struct device *dev)
     }
 #endif
 
+    sys_write32(0xff, dev_config->reg + SPID_INTR_ENABLE);
+
     return 0;
 }
 
