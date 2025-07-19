@@ -230,4 +230,6 @@ properties:
         If this property is not defined, no chip select GPIOs are set.
         SPI controllers with dedicated CS pins do not need to define
         the cs-gpios property.
-
+  index:
+      type: int
+      default: 0

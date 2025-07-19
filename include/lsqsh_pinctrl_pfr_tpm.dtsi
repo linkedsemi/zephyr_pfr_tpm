@@ -60,6 +60,7 @@
             resets = <SPI1_FLT_RESET>;
             dmas = <&dmac1 0 DMA_SPIFILTER1>;
             dma-names = "rx";
+            index = <0>;
             status = "disabled";
         };
         spif2: spif@40072000 {
@@ -70,6 +71,7 @@
             resets = <SPI2_FLT_RESET>;
             dmas = <&dmac1 1 DMA_SPIFILTER2>;
             dma-names = "rx";
+            index = <1>;
             status = "disabled";
         };
         spif3: spif@40074000 {
@@ -80,6 +82,7 @@
             resets = <SPI3_FLT_RESET>;
             dmas = <&dmac1 2 DMA_SPIFILTER3>;
             dma-names = "rx";
+            index = <2>;
             status = "disabled";
         };
         spif4: spif@40076000 {
@@ -90,6 +93,7 @@
             resets = <SPI4_FLT_RESET>;
             dmas = <&dmac1 3 DMA_SPIFILTER4>;
             dma-names = "rx";
+            index = <3>;
             status = "disabled";
         };
 
