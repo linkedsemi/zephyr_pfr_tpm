@@ -46,7 +46,7 @@ struct linkedsemi_i2c_filter_data {
     void *user_data;
 };
 
-extern int i2c_idle_check_prepare(const struct device *dev, const struct pinctrl_dev_config *pcfg, uint8_t pinctrl_state);
+extern int i2c_ls_pinctrl(const struct device *dev, uint32_t pinctrl_state);
 
 int linkedsemi_i2c_filter_config_scl_hold_time(const struct device *dev, uint16_t scl_hold_time)
 {
@@ -267,8 +267,7 @@ int linkedsemi_i2c_filter_switch_to_master(const struct device *dev)
 
     k_mutex_lock(&dev_data->lock, K_FOREVER);
 
-    i2c_idle_check_prepare(master, dev_config->pcfg, PINCTRL_STATE_PRIV_START);
-    pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_PRIV_START);
+    i2c_ls_pinctrl(master, PINCTRL_STATE_DEFAULT);
 
     k_mutex_unlock(&dev_data->lock);
 
