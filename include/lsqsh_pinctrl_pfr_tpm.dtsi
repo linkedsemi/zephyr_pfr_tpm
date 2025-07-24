@@ -429,6 +429,31 @@
         gpio;
         input-enable;
     };
+
+    DEFINE_PINCTRL_PRODUCER_I2C(I2C1, PB06, PB10, I2C1_SCL_FUNC2_PB06_PINMUX, I2C1_SDA_FUNC2_PB10_PINMUX)
+    DEFINE_PINCTRL_PRODUCER_I2C(I2C2, PB04, PB01, I2C2_SCL_FUNC2_PB04_PINMUX, I2C2_SDA_FUNC2_PB01_PINMUX)
+    DEFINE_PINCTRL_PRODUCER_I2C(I2C3, PB15, PB14, I2C3_SCL_FUNC2_PB15_PINMUX, I2C3_SDA_FUNC2_PB14_PINMUX)
+    DEFINE_PINCTRL_PRODUCER_I2C(I2C4, PE02, PB00, I2C4_SCL_FUNC2_PE02_PINMUX, I2C4_SDA_FUNC2_PB00_PINMUX)
+};
+
+&i2c1 {
+    DEFINE_PINCTRL_CONSUMER_I2C(I2C1, PB06, PB10, gpiob, 6, gpiob, 10)
+    pinctrl-noinit;
+};
+
+&i2c2 {
+    DEFINE_PINCTRL_CONSUMER_I2C(I2C2, PB04, PB01, gpiob, 4, gpiob, 1)
+    pinctrl-noinit;
+};
+
+&i2c3 {
+    DEFINE_PINCTRL_CONSUMER_I2C(I2C3, PB15, PB14, gpiob, 15, gpiob, 14)
+    pinctrl-noinit;
+};
+
+&i2c4 {
+    DEFINE_PINCTRL_CONSUMER_I2C(I2C4, PE02, PB00, gpioe, 2, gpiob, 0)
+    pinctrl-noinit;
 };
 
 &i2cf1 {
@@ -439,11 +464,7 @@
         &i2cf1_sclo_pb06
         &i2cf1_sdao_pb10
     >;
-    pinctrl-1 = <
-        &i2c1_scl_pb06
-        &i2c1_sda_pb10
-    >;
-    pinctrl-names = "default", "priv_start";
+    pinctrl-names = "default";
 };
 
 &i2cf2 {
@@ -454,11 +475,7 @@
         &i2cf2_sclo_pb04
         &i2cf2_sdao_pb01
     >;
-    pinctrl-1 = <
-        &i2c2_scl_pb04
-        &i2c2_sda_pb01
-    >;
-    pinctrl-names = "default", "priv_start";
+    pinctrl-names = "default";
 };
 
 &i2cf3 {
@@ -469,11 +486,7 @@
         &i2cf3_scli_pb13
         &i2cf3_sdai_pb12
     >;
-    pinctrl-1 = <
-        &i2c3_scl_pb15
-        &i2c3_sda_pb14
-    >;
-    pinctrl-names = "default", "priv_start";
+    pinctrl-names = "default";
 };
 
 &i2cf4 {
@@ -484,11 +497,7 @@
         &i2cf4_scli_pe03
         &i2cf4_sdai_pb02
     >;
-    pinctrl-1 = <
-        &i2c4_scl_pe02
-        &i2c4_sda_pb00
-    >;
-    pinctrl-names = "default", "priv_start";
+    pinctrl-names = "default";
 };
 
 &spif1 {
