@@ -606,8 +606,8 @@ int spif_address_privilege_config(const struct device *dev,
     reg_off = addr / KB(512);            /* 512K per register; */
     bit_off = (addr % KB(512)) / KB(16); /* (512K / 16K); */
     total_bit_num = spif_get_cross_block_num(addr, len);
-    LOG_INF("addr: 0x%08lx, len: 0x%08x\n", addr, len);
-    LOG_INF("reg_off: 0x%08x, bit_off: 0x%08x, total_bit_num: 0x%08x\n",
+    LOG_DBG("addr: 0x%08lx, len: 0x%08x\n", addr, len);
+    LOG_DBG("reg_off: 0x%08x, bit_off: 0x%08x, total_bit_num: 0x%08x\n",
             reg_off,
             bit_off,
             total_bit_num);
@@ -644,7 +644,7 @@ int spif_address_privilege_config(const struct device *dev,
                 reg_val &= ~BIT(bit_off);
             }
             sys_write32(reg_val, priv_table_base + reg_off * 4);
-            LOG_INF("reg: 0x%08lx, val: 0x%08x\n", priv_table_base + reg_off * 4, reg_val);
+            LOG_DBG("reg: 0x%08lx, val: 0x%08x\n", priv_table_base + reg_off * 4, reg_val);
 
             bit_off++;
             total_bit_num--;
@@ -1487,7 +1487,7 @@ int linkedsemi_spi_filter_cold_reset(const struct device *dev)
     sys_write32(0xffffffff, dev_config->base + SPIF_TARGET_ADDR);
     sys_write32(0x7, dev_config->base + SPIF_BCMD_RANGE);
     spif_cfg_t spif_cfg = {
-        .EN = 1,
+        .EN = 0,
         .OPERATION_MODE = 0, /* default: monitor */
         .ADDR_3B_4B_SEL = 0,
         .TARGET_ADDR_MODE_SEL = 0,
@@ -1496,6 +1496,7 @@ int linkedsemi_spi_filter_cold_reset(const struct device *dev)
         .DMA_EN = 0,
     };
     sys_write32(spif_cfg.value, dev_config->base + SPIF_CFG);
+    spif_clk_check_config(spifilter, 0, 2, BIT(12) - 1, false);
     spif_intr_t intr_mask;
     intr_mask.value = sys_read32(dev_config->base + SPIF_INTR_MASK);
     intr_mask.ERROR_OVERFLOW = 1;
