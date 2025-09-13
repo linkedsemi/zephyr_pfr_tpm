@@ -437,22 +437,22 @@
 };
 
 &i2c1 {
-    DEFINE_PINCTRL_CONSUMER_I2C(I2C1, PB06, PB10, gpiob, 6, gpiob, 10)
+    DEFINE_PINCTRL_CONSUMER_I2C(I2C1, PB06, PB10)
     pinctrl-noinit;
 };
 
 &i2c2 {
-    DEFINE_PINCTRL_CONSUMER_I2C(I2C2, PB04, PB01, gpiob, 4, gpiob, 1)
+    DEFINE_PINCTRL_CONSUMER_I2C(I2C2, PB04, PB01)
     pinctrl-noinit;
 };
 
 &i2c3 {
-    DEFINE_PINCTRL_CONSUMER_I2C(I2C3, PB15, PB14, gpiob, 15, gpiob, 14)
+    DEFINE_PINCTRL_CONSUMER_I2C(I2C3, PB15, PB14)
     pinctrl-noinit;
 };
 
 &i2c4 {
-    DEFINE_PINCTRL_CONSUMER_I2C(I2C4, PE02, PB00, gpioe, 2, gpiob, 0)
+    DEFINE_PINCTRL_CONSUMER_I2C(I2C4, PE02, PB00)
     pinctrl-noinit;
 };
 
