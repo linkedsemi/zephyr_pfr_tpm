@@ -1496,7 +1496,7 @@ int linkedsemi_spi_filter_cold_reset(const struct device *dev)
         .DMA_EN = 0,
     };
     sys_write32(spif_cfg.value, dev_config->base + SPIF_CFG);
-    spif_clk_check_config(spifilter, 0, 2, BIT(12) - 1, false);
+    spif_clk_check_config(dev, 0, 2, BIT(12) - 1, false);
     spif_intr_t intr_mask;
     intr_mask.value = sys_read32(dev_config->base + SPIF_INTR_MASK);
     intr_mask.ERROR_OVERFLOW = 1;
