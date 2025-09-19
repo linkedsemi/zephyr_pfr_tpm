@@ -198,14 +198,14 @@ static void linkedsemi_spi_filter_isr(const struct device *dev)
     intr_status.value = sys_read32(dev_config->base + SPIF_INTR_STT);
     sys_write32(intr_status.value, dev_config->base + SPIF_INTR_CLR);
     if (intr_status.ERROR_OVERFLOW) {
-        LOG_DBG("ERROR_OVERFLOW\n");
+        LOG_ERR("ERROR_OVERFLOW\n");
     }
     if (intr_status.ERROR) {
-        LOG_DBG("ERROR\n");
+        LOG_ERR("ERROR\n");
     }
     if (intr_status.TARGET_ADDR) {
         uint32_t addr = sys_read32(dev_config->base + SPIF_TARGET_ADDR);
-        LOG_DBG("TARGET_ADDR: %#x\n", addr);
+        LOG_ERR("TARGET_ADDR: %#x\n", addr);
     }
     if (intr_status.SCK_CHECK) {
         spif_sck_fqc_hi_t spif_sck_fqc_hi;
@@ -214,7 +214,7 @@ static void linkedsemi_spi_filter_isr(const struct device *dev)
         spif_sck_fqc_hi.value = sys_read32(dev_config->base + SPIF_SCK_FQC_HI);
         spif_sck_fqc_lo.value = sys_read32(dev_config->base + SPIF_SCK_FQC_LO);
         spif_sck_set.value = sys_read32(dev_config->base + SPIF_SCK_SET);
-        LOG_DBG("SCK_CHECK: expect [%#x, %#x] but got %#x\n",
+        LOG_ERR("SCK_CHECK: expect [%#x, %#x] but got %#x\n",
                spif_sck_fqc_lo.SCK_FQC_LO,
                spif_sck_fqc_hi.SCK_FQC_HI,
                spif_sck_set.SCK_FQC);
@@ -1121,11 +1121,11 @@ spif_dma_data_t *spif_log_dma_buf(const struct device *dev)
 
 static void spif_dma_data_print(spif_dma_data_t spif_dma_data)
 {
-    LOG_DBG("ADDR_ERR: %#x\n", spif_dma_data.ADDR_ERR);
-    LOG_DBG("CMD_ERR: %#x\n", spif_dma_data.CMD_ERR);
-    LOG_DBG("POR_ADDR: %#x\n", spif_dma_data.POR_ADDR);
-    LOG_DBG("ERROR_ADDR: %#x\n", spif_dma_data.ERROR_ADDR << 11);
-    LOG_DBG("ERROR_CMD: %#x\n", spif_dma_data.ERROR_CMD);
+    LOG_ERR("ADDR_ERR: %#x\n", spif_dma_data.ADDR_ERR);
+    LOG_ERR("CMD_ERR: %#x\n", spif_dma_data.CMD_ERR);
+    LOG_ERR("POR_ADDR: %#x\n", spif_dma_data.POR_ADDR);
+    LOG_ERR("ERROR_ADDR: %#x\n", spif_dma_data.ERROR_ADDR << 11);
+    LOG_ERR("ERROR_CMD: %#x\n", spif_dma_data.ERROR_CMD);
 }
 
 static void spif_dma_callback(const struct device *dev_dma, void *callback_arg,
