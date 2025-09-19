@@ -90,10 +90,10 @@ static void linkedsemi_i2c_filter_isr(const struct device *dev)
     smbf_nonwhitelist.value = sys_read32(dev_config->base + SMBF_NONWHITELIST);
 
     if (intr_status.ADDRESS_BEYOND_WHITELIST) {
-        LOG_DBG("address beyond whitelist: i2c@%#x\n", smbf_nonwhitelist.ERROR_ADDRESS);
+        LOG_ERR("address beyond whitelist: i2c@%#x\n", smbf_nonwhitelist.ERROR_ADDRESS);
     }
     if (intr_status.COMMAND_BEYOND_WHITELIST) {
-        LOG_DBG("command beyond whitelist: i2c@%#x cmd@%#x\n",
+        LOG_ERR("command beyond whitelist: i2c@%#x cmd@%#x\n",
                                                     smbf_nonwhitelist.ERROR_ADDRESS,
                                                     smbf_nonwhitelist.ERROR_COMMAND);
     }
