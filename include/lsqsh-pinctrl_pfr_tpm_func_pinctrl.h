@@ -8,7 +8,7 @@
 #define __LSQSH_PINCTRL_PFR_TPM_FUNC_PINCTRL_H_
 
 #ifndef GEN_PINMUX
-#define GEN_PINMUX(FUNC, PIN)             ((FUNC << LS_FUNC_POS) | (PIN << LS_PIN_POS))
+#define GEN_PINMUX(FUNC, PIN)             ((FUNC << LS_FUNC_POS) | (PIN << LS_PIN_POS) | (1 << LS_FUNC_VALID_POS))
 #endif
 
 #define SPIF3_CSN_IN_FUNC2_PI02_PINMUX    GEN_PINMUX(PINMUX_FUNC2, PI02)

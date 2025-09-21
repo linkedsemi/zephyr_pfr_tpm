@@ -245,7 +245,7 @@
         input-enable;
     };
     /omit-if-no-ref/spif3_io1_out_pf03: spif3_io1_out_pf03 {
-        pinmux = <SPIF3_IO1_OUT_FUNC4_PF03_PINMUX>;
+        pinmux = <SPIF3_IO1_OUT_FUNC4_PF03_PIN>;
         input-enable;
     };
     /omit-if-no-ref/spif3_io0_in_pf04: spif3_io0_in_pf04 {
@@ -253,7 +253,7 @@
         input-enable;
     };
     /omit-if-no-ref/spif3_io0_out_pf05: spif3_io0_out_pf05 {
-        pinmux = <SPIF3_IO0_OUT_FUNC4_PF05_PINMUX>;
+        pinmux = <SPIF3_IO0_OUT_FUNC4_PF05_PIN>;
         input-enable;
     };
     /omit-if-no-ref/spif3_io3_in_pf06: spif3_io3_in_pf06 {
@@ -261,7 +261,7 @@
         input-enable;
     };
     /omit-if-no-ref/spif3_io3_out_pf07: spif3_io3_out_pf07 {
-        pinmux = <SPIF3_IO3_OUT_FUNC4_PF07_PINMUX>;
+        pinmux = <SPIF3_IO3_OUT_FUNC4_PF07_PIN>;
         input-enable;
     };
     /omit-if-no-ref/spif3_clk_in_pf08: spif3_clk_in_pf08 {
@@ -269,7 +269,7 @@
         input-enable;
     };
     /omit-if-no-ref/spif3_clk_out_pf09: spif3_clk_out_pf09 {
-        pinmux = <SPIF3_CLK_OUT_FUNC4_PF09_PINMUX>;
+        pinmux = <SPIF3_CLK_OUT_FUNC4_PF09_PIN>;
         input-enable;
     };
     /omit-if-no-ref/spif3_io2_in_pf10: spif3_io2_in_pf10 {
@@ -277,7 +277,7 @@
         input-enable;
     };
     /omit-if-no-ref/spif3_io2_out_pf11: spif3_io2_out_pf11 {
-        pinmux = <SPIF3_IO2_OUT_FUNC4_PF11_PINMUX>;
+        pinmux = <SPIF3_IO2_OUT_FUNC4_PF11_PIN>;
         input-enable;
     };
     /omit-if-no-ref/spif4_io2_in_pf12: spif4_io2_in_pf12 {
@@ -285,7 +285,7 @@
         input-enable;
     };
     /omit-if-no-ref/spif1_io1_out_pf13: spif1_io1_out_pf13 {
-        pinmux = <SPIF1_IO1_OUT_FUNC4_PF13_PINMUX>;
+        pinmux = <SPIF1_IO1_OUT_FUNC4_PF13_PIN>;
         input-enable;
     };
     /omit-if-no-ref/spif1_io0_in_pf14: spif1_io0_in_pf14 {
@@ -293,15 +293,15 @@
         input-enable;
     };
     /omit-if-no-ref/spif1_io0_out_pf15: spif1_io0_out_pf15 {
-        pinmux = <SPIF1_IO0_OUT_FUNC4_PF15_PINMUX>;
+        pinmux = <SPIF1_IO0_OUT_FUNC4_PF15_PIN>;
         input-enable;
     };
     /omit-if-no-ref/spif1_clk_out_pg00: spif1_clk_out_pg00 {
-        pinmux = <SPIF1_CLK_OUT_FUNC4_PG00_PINMUX>;
+        pinmux = <SPIF1_CLK_OUT_FUNC4_PG00_PIN>;
         input-enable;
     };
     /omit-if-no-ref/spif4_io2_out_pg01: spif4_io2_out_pg01 {
-        pinmux = <SPIF4_IO2_OUT_FUNC4_PG01_PINMUX>;
+        pinmux = <SPIF4_IO2_OUT_FUNC4_PG01_PIN>;
         input-enable;
     };
     /omit-if-no-ref/spif1_clk_in_pg04: spif1_clk_in_pg04 {
@@ -309,7 +309,7 @@
         input-enable;
     };
     /omit-if-no-ref/spif4_io3_out_pg05: spif4_io3_out_pg05 {
-        pinmux = <SPIF4_IO3_OUT_FUNC4_PG05_PINMUX>;
+        pinmux = <SPIF4_IO3_OUT_FUNC4_PG05_PIN>;
         input-enable;
     };
     /omit-if-no-ref/spif1_io1_in_pg06: spif1_io1_in_pg06 {
@@ -325,7 +325,7 @@
         input-enable;
     };
     /omit-if-no-ref/spif2_clk_out_pg09: spif2_clk_out_pg09 {
-        pinmux = <SPIF2_CLK_OUT_FUNC4_PG09_PINMUX>;
+        pinmux = <SPIF2_CLK_OUT_FUNC4_PG09_PIN>;
         input-enable;
     };
     /omit-if-no-ref/spif2_io3_in_pg12: spif2_io3_in_pg12 {
@@ -333,7 +333,7 @@
         input-enable;
     };
     /omit-if-no-ref/spif2_io3_out_pg13: spif2_io3_out_pg13 {
-        pinmux = <SPIF2_IO3_OUT_FUNC4_PG13_PINMUX>;
+        pinmux = <SPIF2_IO3_OUT_FUNC4_PG13_PIN>;
         input-enable;
     };
     /omit-if-no-ref/spif2_io2_in_pg14: spif2_io2_in_pg14 {
@@ -341,7 +341,7 @@
         input-enable;
     };
     /omit-if-no-ref/spif2_io2_out_pg15: spif2_io2_out_pg15 {
-        pinmux = <SPIF2_IO2_OUT_FUNC4_PG15_PINMUX>;
+        pinmux = <SPIF2_IO2_OUT_FUNC4_PG15_PIN>;
         input-enable;
     };
     /omit-if-no-ref/spif1_io2_in_ph00: spif1_io2_in_ph00 {
@@ -349,7 +349,7 @@
         input-enable;
     };
     /omit-if-no-ref/spif1_io2_out_ph01: spif1_io2_out_ph01 {
-        pinmux = <SPIF1_IO2_OUT_FUNC4_PH01_PINMUX>;
+        pinmux = <SPIF1_IO2_OUT_FUNC4_PH01_PIN>;
         input-enable;
     };
     /omit-if-no-ref/spif1_io3_in_ph02: spif1_io3_in_ph02 {
@@ -357,7 +357,7 @@
         input-enable;
     };
     /omit-if-no-ref/spif1_io3_out_ph03: spif1_io3_out_ph03 {
-        pinmux = <SPIF1_IO3_OUT_FUNC4_PH03_PINMUX>;
+        pinmux = <SPIF1_IO3_OUT_FUNC4_PH03_PIN>;
         input-enable;
     };
     /omit-if-no-ref/spif2_io0_in_ph04: spif2_io0_in_ph04 {
@@ -365,7 +365,7 @@
         input-enable;
     };
     /omit-if-no-ref/spif2_io0_out_ph05: spif2_io0_out_ph05 {
-        pinmux = <SPIF2_IO0_OUT_FUNC4_PH05_PINMUX>;
+        pinmux = <SPIF2_IO0_OUT_FUNC4_PH05_PIN>;
         input-enable;
     };
     /omit-if-no-ref/spif2_io1_in_ph06: spif2_io1_in_ph06 {
@@ -373,7 +373,7 @@
         input-enable;
     };
     /omit-if-no-ref/spif2_io1_out_ph07: spif2_io1_out_ph07 {
-        pinmux = <SPIF2_IO1_OUT_FUNC4_PH07_PINMUX>;
+        pinmux = <SPIF2_IO1_OUT_FUNC4_PH07_PIN>;
         input-enable;
     };
     /omit-if-no-ref/spif4_io1_in_ph08: spif4_io1_in_ph08 {
@@ -381,7 +381,7 @@
         input-enable;
     };
     /omit-if-no-ref/spif4_io1_out_ph09: spif4_io1_out_ph09 {
-        pinmux = <SPIF4_IO1_OUT_FUNC4_PH09_PINMUX>;
+        pinmux = <SPIF4_IO1_OUT_FUNC4_PH09_PIN>;
         input-enable;
     };
     /omit-if-no-ref/spif4_io0_in_ph10: spif4_io0_in_ph10 {
@@ -389,7 +389,7 @@
         input-enable;
     };
     /omit-if-no-ref/spif4_io0_out_ph11: spif4_io0_out_ph11 {
-        pinmux = <SPIF4_IO0_OUT_FUNC4_PH11_PINMUX>;
+        pinmux = <SPIF4_IO0_OUT_FUNC4_PH11_PIN>;
         input-enable;
     };
     /omit-if-no-ref/spif4_clk_in_ph12: spif4_clk_in_ph12 {
@@ -397,7 +397,7 @@
         input-enable;
     };
     /omit-if-no-ref/spif4_clk_out_ph13: spif4_clk_out_ph13 {
-        pinmux = <SPIF4_CLK_OUT_FUNC4_PH13_PINMUX>;
+        pinmux = <SPIF4_CLK_OUT_FUNC4_PH13_PIN>;
         input-enable;
     };
     /omit-if-no-ref/spif3_csn_out_pi00: spif3_csn_out_pi00 {
@@ -410,24 +410,28 @@
     };
 
     /omit-if-no-ref/spi1_mst_csn_gpio_pi08: spi1_mst_csn_gpio_pi08 {
-        pinmux = <PI08>;
+        pinmux = <SPIF1_CSN_OUT_FUNC4_PI08_PIN>;
         gpio;
         input-enable;
+        output-enable;
     };
     /omit-if-no-ref/spi2_mst_csn_gpio_pg02: spi2_mst_csn_gpio_pg02 {
-        pinmux = <PG02>;
+        pinmux = <SPIF2_CSN_OUT_FUNC3_PG02_PIN>;
         gpio;
         input-enable;
+        output-enable;
     };
     /omit-if-no-ref/spi3_mst_csn_gpio_pi00: spi3_mst_csn_gpio_pi00 {
-        pinmux = <PI00>;
+        pinmux = <SPIF3_CSN_OUT_FUNC4_PI00_PIN>;
         gpio;
         input-enable;
+        output-enable;
     };
     /omit-if-no-ref/spi4_mst_csn_gpio_pq00: spi4_mst_csn_gpio_pq00 {
-        pinmux = <PQ00>;
+        pinmux = <SPIF4_CSN_OUT_FUNC3_PQ00_PIN>;
         gpio;
         input-enable;
+        output-enable;
     };
 
     DEFINE_PINCTRL_PRODUCER_I2C(I2C1, PB06, PB10, I2C1_SCL_FUNC2_PB06_PINMUX, I2C1_SDA_FUNC2_PB10_PINMUX)
@@ -454,6 +458,18 @@
 &i2c4 {
     DEFINE_PINCTRL_CONSUMER_I2C(I2C4, PE02, PB00)
     pinctrl-noinit;
+};
+
+&spi3 {
+    /* clear all pinctrl */
+    pinctrl-0 = <>;
+    pinctrl-names = "default";
+};
+
+&spi4 {
+    /* clear all pinctrl */
+    pinctrl-0 = <>;
+    pinctrl-names = "default";
 };
 
 &i2cf1 {
@@ -510,6 +526,7 @@
         &spif1_io1_in_pg06
         &spif1_io2_in_ph00
         &spif1_io3_in_ph02
+
         &spif1_csn_out_pi08
         &spif1_clk_out_pg00
         &spif1_io0_out_pf15
@@ -545,6 +562,7 @@
         &spif2_io1_in_ph06
         &spif2_io2_in_pg14
         &spif2_io3_in_pg12
+
         &spif2_csn_out_pg02
         &spif2_clk_out_pg09
         &spif2_io0_out_ph05
@@ -580,6 +598,7 @@
         &spif3_io1_in_pf02
         &spif3_io2_in_pf10
         &spif3_io3_in_pf06
+
         &spif3_csn_out_pi00
         &spif3_clk_out_pf09
         &spif3_io0_out_pf05
@@ -615,6 +634,7 @@
         &spif4_io1_in_ph08
         &spif4_io2_in_pf12
         &spif4_io3_in_pg07
+
         &spif4_csn_out_pq00
         &spif4_clk_out_ph13
         &spif4_io0_out_ph11
