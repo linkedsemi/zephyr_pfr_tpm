@@ -43,6 +43,7 @@ int test(void)
 int main(void)
 {
     const struct device *const spifilter = DEVICE_DT_GET(DT_ALIAS(spif));
+    bool check;
 
     linkedsemi_spi_filter_cold_reset(spifilter);
     spif_dump_cmd_table(spifilter);
@@ -54,12 +55,18 @@ int main(void)
     spi_filter_dma_thread_init(spifilter);
     spif_dma_start(spifilter);
     spif_filter_enable(spifilter, true);
+    check = spif_pinctrl_filter_mode_check(spifilter);
+    __ASSERT_NO_MSG(check);
     spif_passthrough_analog_mux_enable(spifilter, true);
+    check = spif_pinctrl_passthrough_mode_check(spifilter);
+    __ASSERT_NO_MSG(check);
 
     do {
         const struct device *const spifilter = DEVICE_DT_GET(DT_NODELABEL(spif1));
         // linkedsemi_spi_filter_cold_reset(spifilter);
         spif_switch_to_master(spifilter);
+        check = spif_pinctrl_master_mode_check(spifilter);
+        __ASSERT_NO_MSG(check);
     } while (0);
 
     bool flag = false;
