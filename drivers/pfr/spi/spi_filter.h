@@ -134,10 +134,10 @@ int spim_add_allow_command(const struct device *dev, uint8_t cmd, uint32_t flag)
 int spim_remove_allow_command(const struct device *dev, uint8_t cmd);
 void spim_dump_rw_addr_privilege_table(const struct device *dev);
 int spim_address_privilege_config(const struct device *dev,
-								enum addr_priv_rw_select rw_select,
-								enum addr_priv_op priv_op,
-								mm_reg_t addr,
-								uint32_t len);
+                                enum addr_priv_rw_select rw_select,
+                                enum addr_priv_op priv_op,
+                                mm_reg_t addr,
+                                uint32_t len);
 void spim_lock_common(const struct device *dev);
 void spim_monitor_enable(const struct device *dev, bool enable);
 typedef void (*spim_isr_callback_t)(const struct device *dev);
