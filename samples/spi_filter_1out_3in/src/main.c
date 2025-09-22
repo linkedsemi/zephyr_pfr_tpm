@@ -67,6 +67,26 @@ int main(void)
         spif_switch_to_master(spifilter);
         check = spif_pinctrl_master_mode_check(spifilter);
         __ASSERT_NO_MSG(check);
+#if 0
+#if 1
+        spif_switch_to_filter(spifilter);
+        check = spif_pinctrl_filter_mode_check(spifilter);
+        __ASSERT_NO_MSG(check);
+#endif
+
+        const struct device *const spifilter2 = DEVICE_DT_GET(DT_NODELABEL(spif2));
+        spif_switch_to_master(spifilter2);
+        check = spif_pinctrl_master_mode_check(spifilter2);
+        __ASSERT_NO_MSG(check);
+
+        spif_switch_to_filter(spifilter2);
+        check = spif_pinctrl_filter_mode_check(spifilter2);
+        __ASSERT_NO_MSG(check);
+
+        spif_switch_to_master(spifilter);
+        check = spif_pinctrl_master_mode_check(spifilter);
+        __ASSERT_NO_MSG(check);
+#endif
     } while (0);
 
     bool flag = false;
