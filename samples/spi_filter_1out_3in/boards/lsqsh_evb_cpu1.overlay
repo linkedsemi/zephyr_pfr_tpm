@@ -1,0 +1,50 @@
+#include "lsqsh_pinctrl_pfr_tpm.dtsi"
+
+/ {
+    aliases {
+        spif = &spif3;
+    };
+};
+
+&spif1 {
+    status = "okay";
+};
+
+&spif2 {
+    status = "okay";
+};
+
+&spif3 {
+    status = "okay";
+};
+
+&spif4 {
+    status = "okay";
+};
+
+&spi3 {
+    cs-gpios = <&gpioi 8 GPIO_ACTIVE_LOW>,
+                <&gpiog 2 GPIO_ACTIVE_LOW>;
+    pinctrl-0 = <>;
+    pinctrl-names = "default";
+    status = "okay";
+
+    flash3_0: flash3@0 {
+        compatible = "jedec,spi-nor";
+        reg = <0>;
+        spi-max-frequency = <DT_FREQ_M(25)>;
+        re-init-support;
+    };
+};
+
+&spi4 {
+    cs-gpios = <&gpioi 0 GPIO_ACTIVE_LOW>,
+                <&gpioq 0 GPIO_ACTIVE_LOW>;
+    pinctrl-0 = <>;
+    pinctrl-names = "default";
+    status = "okay";
+};
+
+&dmac1 {
+    status = "okay";
+};
