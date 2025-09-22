@@ -16,3 +16,9 @@ config SPI_FILTER_LINKEDSEMI_SHELL
     depends on DT_HAS_LINKEDSEMI_SPI_FILTER_ENABLED && SHELL
     help
       SPI_FILTER_LINKEDSEMI_SHELL
+
+config SPIM_NAME
+    bool "SPIM_NAME"
+    default n
+    help
+      SPIM_NAME
