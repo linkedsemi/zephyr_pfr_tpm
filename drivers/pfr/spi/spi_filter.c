@@ -1311,28 +1311,53 @@ static const char *spim_dev_names[4] = {
 };
 #endif
 
-
-static bool spif_out_pin_master_mode_check(const struct device *dev)
+static bool spif_pinctrl_mode_check(const struct device *dev, uint8_t mode)
 {
     const struct linkedsemi_spi_filter_config *dev_config = dev->config;
     const struct pinctrl_state *state;
-    bool ret = true;
+    int ret = 0;
+    bool check = true;
 
-    ret = pinctrl_lookup_state(dev_config->pcfg, PINCTRL_STATE_MASTER, &state);
+    __ASSERT_NO_MSG((PINCTRL_STATE_DEFAULT == mode)
+                    || (PINCTRL_STATE_PASSTHROUGH == mode)
+                    || (PINCTRL_STATE_MASTER == mode));
+
+    ret = pinctrl_lookup_state(dev_config->pcfg, mode, &state);
     if (ret) {
-        return ret;
+        __ASSERT_NO_MSG(0);
     }
 
     for(int i = 0; i < state->pin_cnt; i++) {
         const pinctrl_soc_pin_t *pins = &state->pins[i];
         const uint8_t pin = pins->pinmux.pin;
-        if (per_func_get(pin) != pins->pinmux.func) {
-            ret = false;
+        const uint8_t func = per_func_get(pin);
+        bool func_valid = is_per_func_valid(func);
+        if ((func_valid != pins->pinmux.func_valid)
+            || ((pins->pinmux.func_valid) && (func != pins->pinmux.func))) {
+            check = false;
             break;
         }
     }
 
-    return ret;
+    return check;
+}
+
+bool spif_pinctrl_filter_mode_check(const struct device *dev)
+{
+    __ASSERT_NO_MSG(dev);
+    return spif_pinctrl_mode_check(dev, PINCTRL_STATE_DEFAULT);
+}
+
+bool spif_pinctrl_passthrough_mode_check(const struct device *dev)
+{
+    __ASSERT_NO_MSG(dev);
+    return spif_pinctrl_mode_check(dev, PINCTRL_STATE_PASSTHROUGH);
+}
+
+bool spif_pinctrl_master_mode_check(const struct device *dev)
+{
+    __ASSERT_NO_MSG(dev);
+    return spif_pinctrl_mode_check(dev, PINCTRL_STATE_MASTER);
 }
 
 /*
@@ -1364,7 +1389,7 @@ int spif_switch_to_master_handle(const struct device *dev, bool force)
 
     spif_out_check_dev = device_get_binding(spif_dev_name[spif_out_check_index[dev_config->index]]);
     if (spif_out_check_dev) {
-        if (spif_out_pin_master_mode_check(spif_out_check_dev)) {
+        if (spif_pinctrl_master_mode_check(spif_out_check_dev)) {
             if (force) {
                 LOG_WRN("another spi filter out pin is master function, force switch to master mode");
                 spif_switch_to_filter(spif_out_check_dev);

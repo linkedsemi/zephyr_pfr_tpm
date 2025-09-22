@@ -122,6 +122,9 @@ int spif_switch_to_master_handle(const struct device *dev, bool force);
 int spif_switch_to_master(const struct device *dev);
 int spif_switch_to_master_force(const struct device *dev);
 int spif_passthrough_analog_mux_enable(const struct device *dev, bool enable);
+bool spif_pinctrl_filter_mode_check(const struct device *dev);
+bool spif_pinctrl_passthrough_mode_check(const struct device *dev);
+bool spif_pinctrl_master_mode_check(const struct device *dev);
 
 int spif_dma_start(const struct device *dev);
 int spi_filter_dma_thread_init(const struct device *dev);
