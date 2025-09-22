@@ -1311,19 +1311,6 @@ static const char *spim_dev_names[4] = {
 };
 #endif
 
-// static const uint8_t spif_cs_in[SPIF_MAX] = {
-//     SPIF1_CSN_IN_FUNC2_PI10_PIN,
-//     SPIF2_CSN_IN_FUNC3_PG03_PIN,
-//     SPIF3_CSN_IN_FUNC2_PI02_PIN,
-//     SPIF4_CSN_IN_FUNC3_PQ05_PIN,
-// };
-
-// static const uint8_t spif_cs_out[SPIF_MAX] = {
-//     SPIF1_CSN_OUT_FUNC4_PI08_PIN,
-//     SPIF2_CSN_OUT_FUNC3_PG02_PIN,
-//     SPIF3_CSN_OUT_FUNC4_PI00_PIN,
-//     SPIF4_CSN_OUT_FUNC3_PQ00_PIN,
-// };
 
 static bool spif_out_pin_master_mode_check(const struct device *dev)
 {
@@ -1339,9 +1326,6 @@ static bool spif_out_pin_master_mode_check(const struct device *dev)
     for(int i = 0; i < state->pin_cnt; i++) {
         const pinctrl_soc_pin_t *pins = &state->pins[i];
         const uint8_t pin = pins->pinmux.pin;
-        // if ((pin == spif_cs_in[dev_config->index]) || (pin == spif_cs_out[dev_config->index])) {
-        //     continue;
-        // }
         if (per_func_get(pin) != pins->pinmux.func) {
             ret = false;
             break;
