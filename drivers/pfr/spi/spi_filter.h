@@ -117,8 +117,11 @@ int spif_set_pinctrl_state(const struct device *dev, uint8_t pinctrl_state);
 int linkedsemi_spi_filter_cold_reset(const struct device *dev);
 const struct device *spif_spi_dev(const struct device *dev);
 const struct gpio_dt_spec *spif_spi_cs(const struct device *dev);
-int spif_switch_to_master(const struct device *dev);
 int spif_switch_to_filter(const struct device *dev);
+int spif_switch_to_master_handle(const struct device *dev, bool force);
+int spif_switch_to_master(const struct device *dev);
+int spif_switch_to_master_force(const struct device *dev);
+int spif_passthrough_analog_mux_enable(const struct device *dev, bool enable);
 
 int spif_dma_start(const struct device *dev);
 int spi_filter_dma_thread_init(const struct device *dev);
