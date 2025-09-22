@@ -1124,11 +1124,16 @@ spif_dma_data_t *spif_log_dma_buf(const struct device *dev)
 
 static void spif_dma_data_print(spif_dma_data_t spif_dma_data)
 {
-    LOG_ERR("ADDR_ERR: %#x\n", spif_dma_data.ADDR_ERR);
-    LOG_ERR("CMD_ERR: %#x\n", spif_dma_data.CMD_ERR);
-    LOG_ERR("POR_ADDR: %#x\n", spif_dma_data.POR_ADDR);
-    LOG_ERR("ERROR_ADDR: %#x\n", spif_dma_data.ERROR_ADDR << 11);
-    LOG_ERR("ERROR_CMD: %#x\n", spif_dma_data.ERROR_CMD);
+    LOG_ERR("ADDR_ERR: %#x "
+            "CMD_ERR: %#x "
+            "POR_ADDR: %#x "
+            "ERROR_ADDR: %#8.8x "
+            "ERROR_CMD: %#2.2x",
+            spif_dma_data.ADDR_ERR,
+            spif_dma_data.CMD_ERR,
+            spif_dma_data.POR_ADDR,
+            spif_dma_data.ERROR_ADDR << 11,
+            spif_dma_data.ERROR_CMD);
 }
 
 static void spif_dma_callback(const struct device *dev_dma, void *callback_arg,
