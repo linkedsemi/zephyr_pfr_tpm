@@ -102,7 +102,7 @@ void spim_log_parser(const struct device *dev, uint32_t idx, uint32_t log_val)
     if (log->CMD_ERR) {
         /* block command */
         LOG_ERR("[%s][b][%03d][cmd] %02xh", dev->name, idx, log->ERROR_CMD);
-    } else if (log->ERROR_ADDR) {
+    } else if (log->ADDR_ERR) {
         if (log->POR_ADDR) {
             /* block read command */
             LOG_ERR("[%s][b][%03d][r_addr] 0x%08x", dev->name, idx, log->ERROR_ADDR << 11);
