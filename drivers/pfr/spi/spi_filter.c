@@ -1280,37 +1280,6 @@ const struct gpio_dt_spec *spif_spi_cs(const struct device *dev)
     return &dev_config->cs;
 }
 
-enum spif_index {
-    SPIF_1 = 0,
-    SPIF_2,
-    SPIF_3,
-    SPIF_4,
-    SPIF_MAX,
-};
-
-static const uint8_t spif_out_check_index[SPIF_MAX] = {
-    SPIF_2,
-    SPIF_1,
-    SPIF_4,
-    SPIF_3,
-};
-
-#if !defined(CONFIG_SPIM_NAME)
-static const char *spif_dev_name[SPIF_MAX] = {
-    "spif@40070000",
-    "spif@40072000",
-    "spif@40074000",
-    "spif@40076000",
-};
-#else
-static const char *spim_dev_names[4] = {
-    "spim@1",
-    "spim@2",
-    "spim@3",
-    "spim@4",
-};
-#endif
-
 static bool spif_pinctrl_mode_check(const struct device *dev, uint8_t mode)
 {
     const struct linkedsemi_spi_filter_config *dev_config = dev->config;
@@ -1376,6 +1345,18 @@ int spif_switch_to_filter(const struct device *dev)
     return 0;
 }
 
+struct spif_spi_check_dev_name {
+    char *dev;
+    char *check_dev;
+};
+
+static const struct spif_spi_check_dev_name spif_spi_check_dev_name_arr[] = {
+    { .dev = "spif@40070000", .check_dev = "spif@40072000"},
+    { .dev = "spif@40072000", .check_dev = "spif@40070000"},
+    { .dev = "spif@40074000", .check_dev = "spif@40076000"},
+    { .dev = "spif@40076000", .check_dev = "spif@40074000"},
+};
+
 /*
 check whether another filter out pin is master function
 */
@@ -1384,14 +1365,19 @@ int spif_switch_to_master_handle(const struct device *dev, bool force)
     __ASSERT_NO_MSG(dev);
 
     const struct linkedsemi_spi_filter_config *dev_config = dev->config;
-    const struct device *spif_out_check_dev;
     int ret = 0;
 
-    spif_out_check_dev = device_get_binding(spif_dev_name[spif_out_check_index[dev_config->index]]);
+    const struct device *spif_out_check_dev = NULL;
+    for (int i = 0; i < ARRAY_SIZE(spif_spi_check_dev_name_arr); i++) {
+        if (0 == strcmp(dev->name, spif_spi_check_dev_name_arr[i].dev)) {
+            spif_out_check_dev = device_get_binding(spif_spi_check_dev_name_arr[i].check_dev);
+            break;
+        }
+    }
     if (spif_out_check_dev) {
         if (spif_pinctrl_master_mode_check(spif_out_check_dev)) {
             if (force) {
-                LOG_WRN("another spi filter out pin is master function, force switch to master mode");
+                LOG_INF("another spi filter out pin is master function, force switch to master mode");
                 spif_switch_to_filter(spif_out_check_dev);
             } else {
                 LOG_ERR("another spi filter out pin is master function, cannot switch to master mode");
@@ -1399,6 +1385,8 @@ int spif_switch_to_master_handle(const struct device *dev, bool force)
                 goto err;
             }
         }
+    } else {
+        __ASSERT_NO_MSG(0);
     }
 
     pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_MASTER);
