@@ -58,7 +58,7 @@
             interrupts = <71 3>;
             clocks = <SPI1_FLT_CLOCK>;
             resets = <SPI1_FLT_RESET>;
-            dmas = <&dmac1 0 DMA_SPIFILTER1>;
+            dmas = <&dmac1 2 DMA_SPIFILTER1>;
             dma-names = "rx";
             index = <0>;
             status = "disabled";
@@ -69,7 +69,7 @@
             interrupts = <72 3>;
             clocks = <SPI2_FLT_CLOCK>;
             resets = <SPI2_FLT_RESET>;
-            dmas = <&dmac1 1 DMA_SPIFILTER2>;
+            dmas = <&dmac1 3 DMA_SPIFILTER2>;
             dma-names = "rx";
             index = <1>;
             status = "disabled";
@@ -80,7 +80,7 @@
             interrupts = <73 3>;
             clocks = <SPI3_FLT_CLOCK>;
             resets = <SPI3_FLT_RESET>;
-            dmas = <&dmac1 2 DMA_SPIFILTER3>;
+            dmas = <&dmac1 4 DMA_SPIFILTER3>;
             dma-names = "rx";
             index = <2>;
             status = "disabled";
@@ -91,7 +91,7 @@
             interrupts = <74 3>;
             clocks = <SPI4_FLT_CLOCK>;
             resets = <SPI4_FLT_RESET>;
-            dmas = <&dmac1 3 DMA_SPIFILTER4>;
+            dmas = <&dmac1 5 DMA_SPIFILTER4>;
             dma-names = "rx";
             index = <3>;
             status = "disabled";
