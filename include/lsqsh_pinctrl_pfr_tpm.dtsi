@@ -638,30 +638,133 @@
         analog;
     };
 
+    /omit-if-no-ref/spi1_mst_clk_pg00: spi1_mst_clk_pg00 {
+        pinmux = <SPI1_MST_CLK_FUNC3_PG00_PINMUX>;
+        input-enable;
+    };
+    /omit-if-no-ref/spi1_mst_io0_pf15: spi1_mst_io0_pf15 {
+        pinmux = <SPI1_MST_IO0_FUNC3_PF15_PINMUX>;
+        input-enable;
+        bias-pull-up;
+    };
+    /omit-if-no-ref/spi1_mst_io1_pf13: spi1_mst_io1_pf13 {
+        pinmux = <SPI1_MST_IO1_FUNC3_PF13_PINMUX>;
+        input-enable;
+        bias-pull-up;
+    };
+    /omit-if-no-ref/spi1_mst_io2_ph01: spi1_mst_io2_ph01 {
+        pinmux = <SPI1_MST_IO2_FUNC3_PH01_PINMUX>;
+        input-enable;
+        bias-pull-up;
+    };
+    /omit-if-no-ref/spi1_mst_io3_ph03: spi1_mst_io3_ph03 {
+        pinmux = <SPI1_MST_IO3_FUNC3_PH03_PINMUX>;
+        input-enable;
+        bias-pull-up;
+    };
+
+    /omit-if-no-ref/spi2_mst_clk_pg09: spi2_mst_clk_pg09 {
+        pinmux = <SPI2_MST_CLK_FUNC3_PG09_PINMUX>;
+        input-enable;
+    };
+    /omit-if-no-ref/spi2_mst_io0_ph05: spi2_mst_io0_ph05 {
+        pinmux = <SPI2_MST_IO0_FUNC3_PH05_PINMUX>;
+        input-enable;
+        bias-pull-up;
+    };
+    /omit-if-no-ref/spi2_mst_io1_ph07: spi2_mst_io1_ph07 {
+        pinmux = <SPI2_MST_IO1_FUNC3_PH07_PINMUX>;
+        input-enable;
+        bias-pull-up;
+    };
+    /omit-if-no-ref/spi2_mst_io3_pg13: spi2_mst_io3_pg13 {
+        pinmux = <SPI2_MST_IO3_FUNC3_PG13_PINMUX>;
+        input-enable;
+        bias-pull-up;
+    };
+    /omit-if-no-ref/spi2_mst_io2_pg15: spi2_mst_io2_pg15 {
+        pinmux = <SPI2_MST_IO2_FUNC3_PG15_PINMUX>;
+        input-enable;
+        bias-pull-up;
+    };
+
+    /omit-if-no-ref/spi3_mst_clk_pf09: spi3_mst_clk_pf09 {
+        pinmux = <SPI3_MST_CLK_FUNC3_PF09_PINMUX>;
+        input-enable;
+    };
+    /omit-if-no-ref/spi3_mst_io0_pf05: spi3_mst_io0_pf05 {
+        pinmux = <SPI3_MST_IO0_FUNC3_PF05_PINMUX>;
+        input-enable;
+        bias-pull-up;
+    };
+    /omit-if-no-ref/spi3_mst_io1_pf03: spi3_mst_io1_pf03 {
+        pinmux = <SPI3_MST_IO1_FUNC3_PF03_PINMUX>;
+        input-enable;
+        bias-pull-up;
+    };
+    /omit-if-no-ref/spi3_mst_io2_pf11: spi3_mst_io2_pf11 {
+        pinmux = <SPI3_MST_IO2_FUNC3_PF11_PINMUX>;
+        input-enable;
+        bias-pull-up;
+    };
+    /omit-if-no-ref/spi3_mst_io3_pf07: spi3_mst_io3_pf07 {
+        pinmux = <SPI3_MST_IO3_FUNC3_PF07_PINMUX>;
+        input-enable;
+        bias-pull-up;
+    };
+
+    /omit-if-no-ref/spi4_mst_clk_ph13: spi4_mst_clk_ph13 {
+        pinmux = <SPI4_MST_CLK_FUNC3_PH13_PINMUX>;
+        input-enable;
+    };
+    /omit-if-no-ref/spi4_mst_io0_ph11: spi4_mst_io0_ph11 {
+        pinmux = <SPI4_MST_IO0_FUNC3_PH11_PINMUX>;
+        input-enable;
+        bias-pull-up;
+    };
+    /omit-if-no-ref/spi4_mst_io1_ph09: spi4_mst_io1_ph09 {
+        pinmux = <SPI4_MST_IO1_FUNC3_PH09_PINMUX>;
+        input-enable;
+        bias-pull-up;
+    };
+    /omit-if-no-ref/spi4_mst_io2_pg01: spi4_mst_io2_pg01 {
+        pinmux = <SPI4_MST_IO2_FUNC3_PG01_PINMUX>;
+        input-enable;
+        bias-pull-up;
+    };
+    /omit-if-no-ref/spi4_mst_io3_pg05: spi4_mst_io3_pg05 {
+        pinmux = <SPI4_MST_IO3_FUNC3_PG05_PINMUX>;
+        input-enable;
+        bias-pull-up;
+    };
 
     /omit-if-no-ref/spi1_mst_csn_gpio_pi08: spi1_mst_csn_gpio_pi08 {
         pinmux = <SPIF1_CSN_OUT_FUNC4_PI08_PIN>;
         gpio;
         input-enable;
         output-enable;
+        bias-pull-up;
     };
     /omit-if-no-ref/spi2_mst_csn_gpio_pg02: spi2_mst_csn_gpio_pg02 {
         pinmux = <SPIF2_CSN_OUT_FUNC3_PG02_PIN>;
         gpio;
         input-enable;
         output-enable;
+        bias-pull-up;
     };
     /omit-if-no-ref/spi3_mst_csn_gpio_pi00: spi3_mst_csn_gpio_pi00 {
         pinmux = <SPIF3_CSN_OUT_FUNC4_PI00_PIN>;
         gpio;
         input-enable;
         output-enable;
+        bias-pull-up;
     };
     /omit-if-no-ref/spi4_mst_csn_gpio_pq00: spi4_mst_csn_gpio_pq00 {
         pinmux = <SPIF4_CSN_OUT_FUNC3_PQ00_PIN>;
         gpio;
         input-enable;
         output-enable;
+        bias-pull-up;
     };
 };
 
