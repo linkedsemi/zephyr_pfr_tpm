@@ -22,3 +22,15 @@ config SPIM_NAME
     default n
     help
       SPIM_NAME
+
+config SPI_FILTER_INTERRUPT_LOG
+    bool "SPI_FILTER_INTERRUPT_LOG"
+    default y
+    help
+      SPI_FILTER_INTERRUPT_LOG
+
+config SPI_FILTER_DMA_LOG
+    bool "SPI_FILTER_DMA_LOG"
+    default y
+    help
+      SPI_FILTER_DMA_LOG

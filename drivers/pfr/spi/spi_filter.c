@@ -200,15 +200,16 @@ static void linkedsemi_spi_filter_isr(const struct device *dev)
 
     intr_status.value = sys_read32(dev_config->base + SPIF_INTR_STT);
     sys_write32(intr_status.value, dev_config->base + SPIF_INTR_CLR);
+#if defined(CONFIG_SPI_FILTER_INTERRUPT_LOG)
     if (intr_status.ERROR_OVERFLOW) {
-        LOG_ERR("ERROR_OVERFLOW\n");
+        LOG_ERR("ERROR_OVERFLOW");
     }
     if (intr_status.ERROR) {
-        LOG_ERR("ERROR\n");
+        LOG_ERR("ERROR");
     }
     if (intr_status.TARGET_ADDR) {
         uint32_t addr = sys_read32(dev_config->base + SPIF_TARGET_ADDR);
-        LOG_ERR("TARGET_ADDR: %#x\n", addr);
+        LOG_ERR("TARGET_ADDR: %#x", addr);
     }
     if (intr_status.SCK_CHECK) {
         spif_sck_fqc_hi_t spif_sck_fqc_hi;
@@ -217,12 +218,12 @@ static void linkedsemi_spi_filter_isr(const struct device *dev)
         spif_sck_fqc_hi.value = sys_read32(dev_config->base + SPIF_SCK_FQC_HI);
         spif_sck_fqc_lo.value = sys_read32(dev_config->base + SPIF_SCK_FQC_LO);
         spif_sck_set.value = sys_read32(dev_config->base + SPIF_SCK_SET);
-        LOG_ERR("SCK_CHECK: expect [%#x, %#x] but got %#x\n",
+        LOG_ERR("SCK_CHECK: expect [%#x, %#x] but got %#x",
                spif_sck_fqc_lo.SCK_FQC_LO,
                spif_sck_fqc_hi.SCK_FQC_HI,
                spif_sck_set.SCK_FQC);
     }
-
+#endif
     if (dev_data->cb) {
         dev_data->cb(dev);
     }
@@ -364,9 +365,9 @@ void spif_dump_cmd_table(const struct device *dev)
         if (spif_cmd.value == 0)
             continue;
         if (i < SPIF_FIXED_CMD_TABLE_NUM) {
-            LOG_DBG("[%s]idx %02d: %-46.46s: 0x%02x: %s\n", dev->name, i, fix_cmd_desc[i], spif_cmd.CMD, spif_cmd.EN == 1 ? "enabled" : "disabled");
+            LOG_INF("[%s]idx %02d: %-46.46s: 0x%02x: %s", dev->name, i, fix_cmd_desc[i], spif_cmd.CMD, spif_cmd.EN == 1 ? "enabled" : "disabled");
         } else {
-            LOG_DBG("[%s]idx %02d: %-46.46s: 0x%02x: %s\n", dev->name, i, general_cmd_desc, spif_cmd.CMD, spif_cmd.EN == 1 ? "enabled" : "disabled");
+            LOG_INF("[%s]idx %02d: %-46.46s: 0x%02x: %s", dev->name, i, general_cmd_desc, spif_cmd.CMD, spif_cmd.EN == 1 ? "enabled" : "disabled");
         }
     }
 
@@ -526,7 +527,7 @@ int spif_dump_rw_addr_privilege_table(const struct device *dev)
     for (rw = 0; rw < 2; rw++) {
         memset(&start, 0x0, sizeof(struct priv_reg_info));
         memset(&res, 0x0, sizeof(struct priv_reg_info));
-        LOG_DBG("%s protect regions:\n", rw == 0 ? "read" : "write");
+        LOG_INF("%s protect regions:", rw == 0 ? "read" : "write");
         do {
             spif_protect_area_parser(dev, start, &res, &num_protect_blk, rw);
             if (ret) {
@@ -534,7 +535,7 @@ int spif_dump_rw_addr_privilege_table(const struct device *dev)
             }
             if (num_protect_blk != 0) {
                 protect_en = true;
-                LOG_DBG("[0x%08x - 0x%08x]\n",
+                LOG_INF("[0x%08x - 0x%08x]",
                        SPIF_ABS_ADDR(res.start_reg_off, res.start_bit_off),
                        SPIF_ABS_ADDR(res.end_reg_off, res.end_bit_off));
                 start.start_reg_off = res.end_reg_off;
@@ -543,9 +544,9 @@ int spif_dump_rw_addr_privilege_table(const struct device *dev)
         } while (num_protect_blk != 0);
 
         if (!protect_en) {
-            LOG_DBG("all regions are free!\n");
+            LOG_INF("all regions are free!");
         }
-        LOG_DBG("======END======\n\n");
+        LOG_INF("======END======");
     }
 
 end:
@@ -609,8 +610,8 @@ int spif_address_privilege_config(const struct device *dev,
     reg_off = addr / KB(512);            /* 512K per register; */
     bit_off = (addr % KB(512)) / KB(16); /* (512K / 16K); */
     total_bit_num = spif_get_cross_block_num(addr, len);
-    LOG_DBG("addr: 0x%08lx, len: 0x%08x\n", addr, len);
-    LOG_DBG("reg_off: 0x%08x, bit_off: 0x%08x, total_bit_num: 0x%08x\n",
+    LOG_DBG("addr: 0x%08lx, len: 0x%08x", addr, len);
+    LOG_DBG("reg_off: 0x%08x, bit_off: 0x%08x, total_bit_num: 0x%08x",
             reg_off,
             bit_off,
             total_bit_num);
@@ -647,7 +648,7 @@ int spif_address_privilege_config(const struct device *dev,
                 reg_val &= ~BIT(bit_off);
             }
             sys_write32(reg_val, priv_table_base + reg_off * 4);
-            LOG_DBG("reg: 0x%08lx, val: 0x%08x\n", priv_table_base + reg_off * 4, reg_val);
+            LOG_DBG("reg: 0x%08lx, val: 0x%08x", priv_table_base + reg_off * 4, reg_val);
 
             bit_off++;
             total_bit_num--;
@@ -1122,6 +1123,7 @@ spif_dma_data_t *spif_log_dma_buf(const struct device *dev)
     return (spif_dma_data_t *)dev_data->log_info->log_ram_addr;
 }
 
+#if defined(CONFIG_SPI_FILTER_DMA_LOG)
 static void spif_dma_data_print(spif_dma_data_t spif_dma_data)
 {
     LOG_ERR("ADDR_ERR: %#x "
@@ -1135,6 +1137,7 @@ static void spif_dma_data_print(spif_dma_data_t spif_dma_data)
             spif_dma_data.ERROR_ADDR << 11,
             spif_dma_data.ERROR_CMD);
 }
+#endif
 
 static void spif_dma_callback(const struct device *dev_dma, void *callback_arg,
                  uint32_t channel, int status)
@@ -1144,13 +1147,13 @@ static void spif_dma_callback(const struct device *dev_dma, void *callback_arg,
 
     if(status == DMA_STATUS_TRIGGER) {
         k_sem_give(&dev_data->rx_new_log);
-        LOG_DBG("DMA_STATUS_TRIGGER\n");
+        LOG_DBG("DMA_STATUS_TRIGGER");
     }
     if (status == DMA_STATUS_BLOCK) {
-        LOG_DBG("DMA_STATUS_BLOCK\n");
+        LOG_DBG("DMA_STATUS_BLOCK");
     }
     if (status == DMA_STATUS_COMPLETE) {
-        LOG_DBG("DMA_STATUS_COMPLETE\n");
+        LOG_DBG("DMA_STATUS_COMPLETE");
     }
 }
 
@@ -1432,10 +1435,12 @@ static void spif_dma_rx_thread(void *arg1, void *unused1, void *unused2)
         if (dev_data->log_info->log_idx < block_ts) {
             for (uint16_t i = dev_data->log_info->log_idx; i < block_ts; i++) {
                 spif_dma_data_t *spif_dma_data = (spif_dma_data_t *)dev_data->log_info->log_ram_addr;
-                LOG_DBG("dma log idx: %d\n", i);
+                LOG_DBG("dma log idx: %d", i);
                 void *align_addr = (void *)ROUND_DOWN((uint32_t)&spif_dma_data[i], CONFIG_DCACHE_LINE_SIZE);
                 sys_cache_data_invd_range(align_addr, sizeof(spif_dma_data_t));
+#if defined(CONFIG_SPI_FILTER_DMA_LOG)
                 spif_dma_data_print(spif_dma_data[i]);
+#endif
             }
         }
         dev_data->log_info->log_idx = block_ts;
