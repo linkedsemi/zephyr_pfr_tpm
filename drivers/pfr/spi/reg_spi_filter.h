@@ -32,7 +32,7 @@
 #define SPIF_4B_RDEAR_CMD             (0x60)
 #define SPIF_4B_WREAR_CMD             (0x64)
 #define SPIF_4B_PRG_CMD               (0x68)
-#define SPIF_4B_PRG_QADDR_QDATA_CM    (0x6c)
+#define SPIF_4B_PRG_QADDR_QDATA_CMD   (0x6c)
 #define SPIF_4B_ERASE_4KB_CMD         (0x70)
 #define SPIF_4B_ERASE_32KB_CMD        (0x74)
 #define SPIF_4B_ERASE_64KB_CMD        (0x78)
