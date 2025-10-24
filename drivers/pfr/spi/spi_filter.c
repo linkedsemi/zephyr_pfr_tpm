@@ -142,22 +142,25 @@ struct linkedsemi_spi_filter_config {
     const struct device *dev_dma;
     uint32_t dma_channel;
     uint8_t dma_handshake;
+    uint8_t fixed_cmd_tab[SPIF_FIXED_CMD_TABLE_NUM];
+    uint8_t fixed_cmd_dummy_tab[SPIF_FIXED_CMD_TABLE_NUM];
+    struct spif_log_info *log_info;
     IF_ENABLED(CONFIG_PINCTRL, (const struct pinctrl_dev_config *pcfg;))
     IF_ENABLED(CONFIG_CLOCK_CONTROL, (struct ls_clk_cfg ccfg;))
     IF_ENABLED(CONFIG_RESET, (struct reset_dt_spec reset;))
 };
 
 struct linkedsemi_spi_filter_data {
+#if defined(CONFIG_SPI_FILTER_ADDR_WHITELIST_BUF)
+    uint32_t read_addr_whitelist[SPIF_ADDR_PRIV_REG_NUN];
+    uint32_t write_addr_whitelist[SPIF_ADDR_PRIV_REG_NUN];
+#endif
+    const struct device *dev;
     struct k_sem sem_spif;
-    uint8_t fixed_cmd_tab[SPIF_FIXED_CMD_TABLE_NUM];
-    uint8_t fixed_cmd_dummy_tab[SPIF_FIXED_CMD_TABLE_NUM];
     spif_callback_t cb;
     void *user_data;
-    struct spif_log_info *log_info;
     struct spif_dma_config spif_dma_config;
-    struct k_sem rx_new_log;
-    struct k_thread spif_dma_rx_thread;
-    K_KERNEL_STACK_MEMBER(spif_dma_rx_thread_stack, SPIF_DMA_RX_THREAD_STACK_SIZE);
+    struct k_work dma_work;
 };
 
 uint32_t spif_get_ctrl_idx(const struct device *dev)
@@ -174,9 +177,9 @@ void spif_get_log_info(const struct device *dev, struct spif_log_info *info)
     __ASSERT_NO_MSG(dev);
     __ASSERT_NO_MSG(info);
 
-    struct linkedsemi_spi_filter_data *dev_data = dev->data;
+    const struct linkedsemi_spi_filter_config *dev_config = dev->config;
 
-    memcpy(info, dev_data->log_info, sizeof(struct spif_log_info));
+    memcpy(info, dev_config->log_info, sizeof(struct spif_log_info));
 
     return;
 }
@@ -396,6 +399,23 @@ void spif_get_cmd_table(const struct device *dev, uint8_t cmd[SPIF_CMD_TABLE_NUM
     release_spif_device(dev);
 }
 
+#if defined(CONFIG_SPI_FILTER_ADDR_WHITELIST_BUF)
+static inline int spif_peek_rw_area(const struct device *dev, enum addr_priv_rw_select rw_select, uint32_t addr, uint32_t *data)
+{
+    __ASSERT_NO_MSG(addr < SPIF_ADDR_PRIV_REG_NUN);
+
+    struct linkedsemi_spi_filter_data *dev_data = dev->data;
+    int ret = 0;
+
+    if (rw_select == FLAG_ADDR_PRIV_READ_SELECT) {
+        *data = dev_data->read_addr_whitelist[addr];
+    } else {
+        *data = dev_data->write_addr_whitelist[addr];
+    }
+
+    return ret;
+}
+#else
 static int spif_peek_rw_area(const struct device *dev, enum addr_priv_rw_select rw_select, uint32_t addr, uint32_t *data)
 {
     __ASSERT_NO_MSG(dev);
@@ -428,6 +448,7 @@ static int spif_peek_rw_area(const struct device *dev, enum addr_priv_rw_select 
 err:
     return ret;
 }
+#endif
 
 static int spif_protect_area_parser(const struct device *dev,
                                        struct priv_reg_info start,
@@ -437,19 +458,11 @@ static int spif_protect_area_parser(const struct device *dev,
 {
     __ASSERT_NO_MSG(dev);
 
-    const struct linkedsemi_spi_filter_config *dev_config = dev->config;
-    mm_reg_t priv_table_base;
     uint32_t reg_off = start.start_reg_off;
     uint32_t bit_off = start.start_bit_off;
     uint32_t reg_val;
     uint32_t i;
     int ret = 0;
-
-    if (region == FLAG_ADDR_PRIV_READ_SELECT) {
-        priv_table_base = dev_config->base + SPIF_ADDR_PRIV_TABLE_BASE + SPIF_ADDR_SIZE;
-    } else {
-        priv_table_base = dev_config->base + SPIF_ADDR_PRIV_TABLE_BASE;
-    }
 
     /* init search result */
     *num_protect_blk = 0;
@@ -577,7 +590,9 @@ int spif_address_privilege_config(const struct device *dev,
     __ASSERT_NO_MSG(dev);
 
     const struct linkedsemi_spi_filter_config *dev_config = dev->config;
+    struct linkedsemi_spi_filter_data *dev_data = dev->data;
     mm_reg_t priv_table_base;
+    uint32_t *addr_whitelist;
     int ret = 0;
     uint32_t reg_off;
     uint32_t bit_off;
@@ -620,8 +635,10 @@ int spif_address_privilege_config(const struct device *dev,
 
     if (rw_select == FLAG_ADDR_PRIV_READ_SELECT) {
         priv_table_base = dev_config->base + SPIF_READ_ADDR_VALID_EN_ADDR;
+        addr_whitelist = dev_data->read_addr_whitelist;
     } else {
         priv_table_base = dev_config->base + SPIF_WRITE_ADDR_VALID_EN_ADDR;
+        addr_whitelist = dev_data->write_addr_whitelist;
     }
 
     do {
@@ -633,20 +650,26 @@ int spif_address_privilege_config(const struct device *dev,
         if (bit_off == 0 && total_bit_num >= 32) {
             /* speed up for large area configuration */
             if (priv_op == FLAG_ADDR_PRIV_ENABLE) {
+                addr_whitelist[reg_off] = 0xffffffff;
                 sys_write32(0xffffffff, priv_table_base + reg_off * 4);
             } else {
+                addr_whitelist[reg_off] = 0x0;
                 sys_write32(0x0, priv_table_base + reg_off * 4);
             }
 
             reg_off++;
             total_bit_num -= 32;
         } else {
-            spif_peek_rw_area(dev, rw_select, reg_off, &reg_val);
+            ret = spif_peek_rw_area(dev, rw_select, reg_off, &reg_val);
+            if (ret) {
+                goto end;
+            }
             if (priv_op == FLAG_ADDR_PRIV_ENABLE) {
                 reg_val |= BIT(bit_off);
             } else {
                 reg_val &= ~BIT(bit_off);
             }
+            addr_whitelist[reg_off] = reg_val;
             sys_write32(reg_val, priv_table_base + reg_off * 4);
             LOG_DBG("reg: 0x%08lx, val: 0x%08x", priv_table_base + reg_off * 4, reg_val);
 
@@ -661,39 +684,21 @@ end:
     return ret;
 }
 
-void spif_memset_addr_whitelist(const struct device *dev, uint8_t num)
-{
-    __ASSERT_NO_MSG(dev);
-
-    const struct linkedsemi_spi_filter_config *dev_config = dev->config;
-
-    if (num == 0) {
-        for (uint32_t off = 0; off < SPIF_ADDR_SIZE; off += 4) {
-            sys_write32(0, dev_config->base + SPIF_WRITE_ADDR_VALID_EN_ADDR + off); /* memset WRITE_ADDR */
-            sys_write32(0, dev_config->base + SPIF_READ_ADDR_VALID_EN_ADDR + off);  /* memset READ_ADDR */
-        }
-    } else if (num == 1) {
-        for (uint32_t off = 0; off < SPIF_ADDR_SIZE; off += 4) {
-            sys_write32(0xffffffff, dev_config->base + SPIF_WRITE_ADDR_VALID_EN_ADDR + off); /* memset WRITE_ADDR */
-            sys_write32(0xffffffff, dev_config->base + SPIF_READ_ADDR_VALID_EN_ADDR + off);  /* memset READ_ADDR */
-        }
-    } else {
-        LOG_ERR("num should be 0 or 1");
-    }
-}
-
 void spif_memset_read_addr_whitelist(const struct device *dev, uint8_t num)
 {
     __ASSERT_NO_MSG(dev);
 
     const struct linkedsemi_spi_filter_config *dev_config = dev->config;
+    struct linkedsemi_spi_filter_data *dev_data = dev->data;
 
     if (num == 0) {
         for (uint32_t off = 0; off < SPIF_ADDR_SIZE; off += 4) {
+            memset(dev_data->read_addr_whitelist, 0, SPIF_ADDR_PRIV_REG_NUN * sizeof(uint32_t));
             sys_write32(0, dev_config->base + SPIF_READ_ADDR_VALID_EN_ADDR + off);  /* memset READ_ADDR */
         }
     } else if (num == 1) {
         for (uint32_t off = 0; off < SPIF_ADDR_SIZE; off += 4) {
+            memset(dev_data->read_addr_whitelist, 0xff, SPIF_ADDR_PRIV_REG_NUN * sizeof(uint32_t));
             sys_write32(0xffffffff, dev_config->base + SPIF_READ_ADDR_VALID_EN_ADDR + off);  /* memset READ_ADDR */
         }
     } else {
@@ -706,15 +711,33 @@ void spif_memset_write_addr_whitelist(const struct device *dev, uint8_t num)
     __ASSERT_NO_MSG(dev);
 
     const struct linkedsemi_spi_filter_config *dev_config = dev->config;
+    struct linkedsemi_spi_filter_data *dev_data = dev->data;
 
     if (num == 0) {
         for (uint32_t off = 0; off < SPIF_ADDR_SIZE; off += 4) {
+            memset(dev_data->write_addr_whitelist, 0, SPIF_ADDR_PRIV_REG_NUN * sizeof(uint32_t));
             sys_write32(0, dev_config->base + SPIF_WRITE_ADDR_VALID_EN_ADDR + off); /* memset WRITE_ADDR */
         }
     } else if (num == 1) {
         for (uint32_t off = 0; off < SPIF_ADDR_SIZE; off += 4) {
+            memset(dev_data->write_addr_whitelist, 0xff, SPIF_ADDR_PRIV_REG_NUN * sizeof(uint32_t));
             sys_write32(0xffffffff, dev_config->base + SPIF_WRITE_ADDR_VALID_EN_ADDR + off); /* memset WRITE_ADDR */
         }
+    } else {
+        LOG_ERR("num should be 0 or 1");
+    }
+}
+
+void spif_memset_addr_whitelist(const struct device *dev, uint8_t num)
+{
+    __ASSERT_NO_MSG(dev);
+
+    if (num == 0) {
+        spif_memset_read_addr_whitelist(dev, 0);
+        spif_memset_write_addr_whitelist(dev, 0);
+    } else if (num == 1) {
+        spif_memset_read_addr_whitelist(dev, 1);
+        spif_memset_write_addr_whitelist(dev, 1);
     } else {
         LOG_ERR("num should be 0 or 1");
     }
@@ -766,7 +789,6 @@ int spif_add_cmd(const struct device *dev, uint8_t cmd)
     __ASSERT_NO_MSG(dev);
 
     const struct linkedsemi_spi_filter_config *dev_config = dev->config;
-    struct linkedsemi_spi_filter_data *dev_data = dev->data;
     int ret = 0;
     mm_reg_t table_base = dev_config->base + SPIF_CMD_BASE;
     int idx;
@@ -787,7 +809,7 @@ int spif_add_cmd(const struct device *dev, uint8_t cmd)
     }
 
     for (uint8_t off = 0; off < SPIF_FIXED_CMD_TABLE_NUM; off++) {
-        if (dev_data->fixed_cmd_tab[off] == cmd) {
+        if (dev_config->fixed_cmd_tab[off] == cmd) {
             spif_cmd_t spif_cmd;
             spif_cmd.CMD = cmd;
             spif_cmd.EN = 1;
@@ -818,7 +840,6 @@ int spif_add_cmd_with_dummy(const struct device *dev, uint8_t cmd, uint8_t dummy
     __ASSERT_NO_MSG(dev);
 
     const struct linkedsemi_spi_filter_config *dev_config = dev->config;
-    struct linkedsemi_spi_filter_data *dev_data = dev->data;
     int ret = 0;
     mm_reg_t table_base = dev_config->base + SPIF_CMD_BASE;
     int idx;
@@ -840,7 +861,7 @@ int spif_add_cmd_with_dummy(const struct device *dev, uint8_t cmd, uint8_t dummy
     }
 
     for (uint8_t off = 0; off < SPIF_FIXED_CMD_TABLE_NUM; off++) {
-        if (dev_data->fixed_cmd_tab[off] == cmd) {
+        if (dev_config->fixed_cmd_tab[off] == cmd) {
             spif_cmd_t spif_cmd;
             spif_cmd.CMD = cmd;
             spif_cmd.DUMMY_CYCLE = dummy_cycle;
@@ -1118,9 +1139,9 @@ spif_dma_data_t *spif_log_dma_buf(const struct device *dev)
 {
     __ASSERT_NO_MSG(dev);
 
-    struct linkedsemi_spi_filter_data *dev_data = dev->data;
+    const struct linkedsemi_spi_filter_config *dev_config = dev->config;
 
-    return (spif_dma_data_t *)dev_data->log_info->log_ram_addr;
+    return (spif_dma_data_t *)dev_config->log_info->log_ram_addr;
 }
 
 #if defined(CONFIG_SPI_FILTER_DMA_LOG)
@@ -1146,7 +1167,9 @@ static void spif_dma_callback(const struct device *dev_dma, void *callback_arg,
     struct linkedsemi_spi_filter_data *dev_data = dev->data;
 
     if(status == DMA_STATUS_TRIGGER) {
-        k_sem_give(&dev_data->rx_new_log);
+        if (!k_work_busy_get(&dev_data->dma_work)) {
+            k_work_submit(&dev_data->dma_work);
+        }
         LOG_DBG("DMA_STATUS_TRIGGER");
     }
     if (status == DMA_STATUS_BLOCK) {
@@ -1164,7 +1187,7 @@ int spif_dma_start(const struct device *dev)
     const struct linkedsemi_spi_filter_config *dev_config = dev->config;
     struct linkedsemi_spi_filter_data *dev_data = dev->data;
 
-    memset((void *)dev_data->log_info->log_ram_addr, 0, SPIF_LOG_RAM_MAX_SIZE_U32 * sizeof(uint32_t));
+    memset((void *)dev_config->log_info->log_ram_addr, 0, SPIF_LOG_RAM_MAX_SIZE_U32 * sizeof(uint32_t));
 
     spif_cfg_t spif_cfg;
     spif_cfg.value = sys_read32(dev_config->base + SPIF_CFG);
@@ -1173,7 +1196,7 @@ int spif_dma_start(const struct device *dev)
 
     dev_data->spif_dma_config.dma_block.block_size = SPIF_LOG_RAM_MAX_SIZE_U32;
     dev_data->spif_dma_config.dma_block.source_address = dev_config->base + SPIF_DMA_DATA;
-    dev_data->spif_dma_config.dma_block.dest_address = (uint32_t)dev_data->log_info->log_ram_addr;
+    dev_data->spif_dma_config.dma_block.dest_address = (uint32_t)dev_config->log_info->log_ram_addr;
 
     dev_data->spif_dma_config.dma_cfg.block_count = 1;
     dev_data->spif_dma_config.dma_cfg.dma_slot = dev_config->dma_handshake;
@@ -1421,53 +1444,37 @@ int spif_passthrough_analog_mux_enable(const struct device *dev, bool enable)
     return 0;
 }
 
-static void spif_dma_rx_thread(void *arg1, void *unused1, void *unused2)
+static void spif_dma_work(struct k_work *work)
 {
-    const struct device *dev = (const struct device *)arg1;
+    struct linkedsemi_spi_filter_data *dev_data = CONTAINER_OF(work, struct linkedsemi_spi_filter_data, dma_work);
+    const struct device *dev = dev_data->dev;
     const struct linkedsemi_spi_filter_config *dev_config = dev->config;
-    struct linkedsemi_spi_filter_data *dev_data = dev->data;
 
-    for(;;) {
-        k_sem_take(&dev_data->rx_new_log, K_FOREVER);
+    while (1) {
         struct dma_status stat;
         dma_get_status(dev_config->dev_dma, dev_config->dma_channel, &stat);
         uint16_t block_ts = stat.pending_length >> 2;
-        if (dev_data->log_info->log_idx < block_ts) {
-            for (uint16_t i = dev_data->log_info->log_idx; i < block_ts; i++) {
-                spif_dma_data_t *spif_dma_data = (spif_dma_data_t *)dev_data->log_info->log_ram_addr;
+        if (dev_config->log_info->log_idx < block_ts) {
+            for (uint16_t i = dev_config->log_info->log_idx; i < block_ts; i++) {
+                spif_dma_data_t *spif_dma_data = (spif_dma_data_t *)dev_config->log_info->log_ram_addr;
                 LOG_DBG("dma log idx: %d", i);
-                void *align_addr = (void *)ROUND_DOWN((uint32_t)&spif_dma_data[i], CONFIG_DCACHE_LINE_SIZE);
-                sys_cache_data_invd_range(align_addr, sizeof(spif_dma_data_t));
 #if defined(CONFIG_SPI_FILTER_DMA_LOG)
                 spif_dma_data_print(spif_dma_data[i]);
 #endif
             }
+            dev_config->log_info->log_idx = block_ts;
+        } else if ((dev_config->log_info->log_idx == block_ts) && (SPIF_LOG_RAM_MAX_SIZE_U32 != block_ts)) {
+            break;
         }
-        dev_data->log_info->log_idx = block_ts;
-        if (block_ts == SPIF_LOG_RAM_MAX_SIZE_U32) {
-            dev_data->log_info->log_idx = 0;
+
+        if (SPIF_LOG_RAM_MAX_SIZE_U32 == block_ts) {
+            dev_config->log_info->log_idx = 0;
             dma_suspend(dev_config->dev_dma, dev_config->dma_channel);
             dma_stop(dev_config->dev_dma, dev_config->dma_channel);
             spif_dma_start(dev);
+            break;
         }
     }
-}
-
-int spi_filter_dma_thread_init(const struct device *dev)
-{
-    __ASSERT_NO_MSG(dev);
-
-    struct linkedsemi_spi_filter_data *dev_data = dev->data;
-
-    k_sem_init(&dev_data->rx_new_log, 0, 1);
-
-    k_thread_create(&dev_data->spif_dma_rx_thread, dev_data->spif_dma_rx_thread_stack,
-            K_KERNEL_STACK_SIZEOF(dev_data->spif_dma_rx_thread_stack),
-            spif_dma_rx_thread, (void *)dev, NULL, NULL,
-            0, K_PRIO_PREEMPT(0), K_NO_WAIT);
-    k_thread_name_set(&dev_data->spif_dma_rx_thread, "spif_dma_rx_thread");
-
-    return 0;
 }
 
 void spif_enable(const struct device *dev, bool enable)
@@ -1536,8 +1543,8 @@ int linkedsemi_spi_filter_cold_reset(const struct device *dev)
     for (uint8_t i = 0; i < SPIF_FIXED_CMD_TABLE_NUM; i++) {
         mm_reg_t table_base = dev_config->base + SPIF_CMD_BASE;
         spif_cmd_t spif_cmd;
-        spif_cmd.CMD = dev_data->fixed_cmd_tab[i];
-        spif_cmd.DUMMY_CYCLE = dev_data->fixed_cmd_dummy_tab[i];
+        spif_cmd.CMD = dev_config->fixed_cmd_tab[i];
+        spif_cmd.DUMMY_CYCLE = dev_config->fixed_cmd_dummy_tab[i];
         spif_cmd.EN = 0;
         sys_write32(spif_cmd.value, table_base + i * 4); /* init fixed table */
     }
@@ -1561,6 +1568,8 @@ int linkedsemi_spi_filter_cold_reset(const struct device *dev)
     intr_mask.TARGET_ADDR = 0;
     sys_write32(intr_mask.value, dev_config->base + SPIF_INTR_MASK);
 
+    k_work_init(&dev_data->dma_work, spif_dma_work);
+
     return 0;
 }
 
@@ -1571,6 +1580,8 @@ static int linkedsemi_spi_filter_init(const struct device *dev)
     const struct linkedsemi_spi_filter_config *dev_config = dev->config;
     struct linkedsemi_spi_filter_data *dev_data = dev->data;
 
+    dev_data->dev = dev;
+
     if (IS_ENABLED(CONFIG_MULTITHREADING))
         k_sem_init(&dev_data->sem_spif, 1, 1);
 
@@ -1579,111 +1590,110 @@ static int linkedsemi_spi_filter_init(const struct device *dev)
     return 0;
 }
 
-#define SPI_FILTER_INIT(inst)                                                                                                                \
-    static void linkedsemi_spi_filter_irq_config_func_##inst(const struct device *dev)                                                       \
-    {                                                                                                                                        \
-        ARG_UNUSED(dev);                                                                                                                     \
-        IRQ_CONNECT(DT_INST_IRQN(inst),                                                                                                      \
-                    DT_INST_IRQ(inst, priority),                                                                                             \
-                    linkedsemi_spi_filter_isr,                                                                                               \
-                    DEVICE_DT_INST_GET(inst),                                                                                                \
-                    0);                                                                                                                      \
-        irq_enable(DT_INST_IRQN(inst));                                                                                                      \
-    }                                                                                                                                        \
-    PINCTRL_DT_INST_DEFINE(inst);                                                                                                            \
-    __nocache uint32_t log_ram_##inst[SPIF_LOG_RAM_MAX_SIZE_U32];                                                                            \
-    struct spif_log_info log_info_##inst = {                                                                                                 \
-       .log_ram_addr = (uint32_t)log_ram_##inst,                                                                                             \
-       .log_max_sz = SPIF_LOG_RAM_MAX_SIZE_U32 * sizeof(uint32_t),                                                                           \
-       .log_idx = 0,                                                                                                                         \
-    };                                                                                                                                       \
-    static const struct linkedsemi_spi_filter_config linkedsemi_spi_filter_cfg_##inst = {                                                    \
-        .base = (mm_reg_t)DT_INST_REG_ADDR(inst),                                                                                            \
-        .spi = DEVICE_DT_GET(DT_INST_PHANDLE(inst, spi)),                                                                                    \
-        .cs = GPIO_DT_SPEC_INST_GET(inst, cs_gpios),                                                                                         \
-        .irq_config_func = linkedsemi_spi_filter_irq_config_func_##inst,                                                                     \
-        .index = DT_INST_PROP(inst, index),                                                                                                  \
-        IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, dmas), (.dev_dma = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(inst, rx)),))                      \
-        IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, dmas), (.dma_channel = DT_INST_DMAS_CELL_BY_NAME(inst, rx, channel),))                        \
-        IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, dmas), (.dma_handshake = DT_INST_DMAS_CELL_BY_NAME(inst, rx, handshake),))                    \
-        IF_ENABLED(CONFIG_PINCTRL, (.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst), ))                                                         \
-        IF_ENABLED(DT_HAS_CLOCKS(inst), (.ccfg = LS_DT_CLK_CFG_ITEM(inst), ))                                                                \
-        IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, resets), (.reset = RESET_DT_SPEC_INST_GET(inst), ))                                           \
-    };                                                                                                                                       \
-static struct linkedsemi_spi_filter_data linkedsemi_spi_filter_data_##inst = {                                                               \
-    .fixed_cmd_tab = {                                                                                                                       \
-        [IDX_CMD_PAGE_PROGRAM] = DT_INST_PROP_OR(inst, cmd_page_program, 0),                                                                 \
-        [IDX_CMD_PAGE_PROGRAM_QUAD_ADDR_QUAD_DATA] = DT_INST_PROP_OR(inst, cmd_page_program_quad_addr_quad_data, 0),                         \
-        [IDX_CMD_ERASE_4KB] = DT_INST_PROP_OR(inst, cmd_erase_4kb, 0),                                                                       \
-        [IDX_CMD_ERASE_32KB] = DT_INST_PROP_OR(inst, cmd_erase_32kb, 0),                                                                     \
-        [IDX_CMD_ERASE_64KB] = DT_INST_PROP_OR(inst, cmd_erase_64kb, 0),                                                                     \
-        [IDX_CMD_READ] = DT_INST_PROP_OR(inst, cmd_read, 0),                                                                                 \
-        [IDX_CMD_FAST_READ] = DT_INST_PROP_OR(inst, cmd_fast_read, 0),                                                                       \
-        [IDX_CMD_READ_QUAD_DATA] = DT_INST_PROP_OR(inst, cmd_read_quad_data, 0),                                                             \
-        [IDX_CMD_READ_QUAD_ADDR_QUAD_DATA] = DT_INST_PROP_OR(inst, cmd_read_quad_addr_quad_data, 0),                                         \
-        [IDX_CMD_QUAD_SPI_MODE_ENTER] = DT_INST_PROP_OR(inst, cmd_quad_spi_mode_enter, 0),                                                   \
-        [IDX_CMD_QUAD_SPI_MODE_EXIT] = DT_INST_PROP_OR(inst, cmd_quad_spi_mode_exit, 0),                                                     \
-        [IDX_CMD_4BYTE_MODE_ENTER] = DT_INST_PROP_OR(inst, cmd_4byte_mode_enter, 0),                                                         \
-        [IDX_CMD_4BYTE_MODE_EXIT] = DT_INST_PROP_OR(inst, cmd_4byte_mode_exit, 0),                                                           \
-        [IDX_CMD_4BYTE_READ_EXTENDED_ADDR] = DT_INST_PROP_OR(inst, cmd_4byte_read_extended_addr, 0),                                         \
-        [IDX_CMD_4BYTE_WRITE_EXTENDED_ADDR] = DT_INST_PROP_OR(inst, cmd_4byte_write_extended_addr, 0),                                       \
-        [IDX_CMD_4BYTE_PAGE_PROGRAM] = DT_INST_PROP_OR(inst, cmd_4byte_page_program, 0),                                                     \
-        [IDX_CMD_4BYTE_PAGE_PROGRAM_QUAD_ADDR_QUAD_DATA] = DT_INST_PROP_OR(inst, cmd_4byte_page_program_quad_addr_quad_data, 0),             \
-        [IDX_CMD_4BYTE_ERASE_4KB] = DT_INST_PROP_OR(inst, cmd_4byte_erase_4kb, 0),                                                           \
-        [IDX_CMD_4BYTE_ERASE_32KB] = DT_INST_PROP_OR(inst, cmd_4byte_erase_32kb, 0),                                                         \
-        [IDX_CMD_4BYTE_ERASE_64KB] = DT_INST_PROP_OR(inst, cmd_4byte_erase_64kb, 0),                                                         \
-        [IDX_CMD_4BYTE_READ] = DT_INST_PROP_OR(inst, cmd_4byte_read, 0),                                                                     \
-        [IDX_CMD_4BYTE_FAST_READ] = DT_INST_PROP_OR(inst, cmd_4byte_fast_read, 0),                                                           \
-        [IDX_CMD_4BYTE_READ_QUAD_DATA] = DT_INST_PROP_OR(inst, cmd_4byte_read_quad_data, 0),                                                 \
-        [IDX_CMD_4BYTE_READ_QUAD_ADDR_QUAD_DATA] = DT_INST_PROP_OR(inst, cmd_4byte_read_quad_addr_quad_data, 0),                             \
-        [IDX_CMD_READ_DUAL_DATA] = DT_INST_PROP_OR(inst, cmd_read_dual_data, 0),                                                             \
-        [IDX_CMD_READ_DUAL_ADDR_DUAL_DATA] = DT_INST_PROP_OR(inst, cmd_read_dual_addr_dual_data, 0),                                         \
-        [IDX_CMD_4BYTE_READ_DUAL_DATA] = DT_INST_PROP_OR(inst, cmd_4byte_read_dual_data, 0),                                                 \
-        [IDX_CMD_4BYTE_READ_DUAL_ADDR_DUAL_DATA] = DT_INST_PROP_OR(inst, cmd_4byte_read_dual_addr_dual_data, 0),                             \
-        [IDX_CMD_PROGRAM_QUAD_DATA] = DT_INST_PROP_OR(inst, cmd_program_quad_data, 0),                                                       \
-        [IDX_CMD_4BYTE_PROGRAM_QUAD_DATA] = DT_INST_PROP_OR(inst, cmd_4byte_program_quad_data, 0),                                           \
-    },                                                                                                                                       \
-    .fixed_cmd_dummy_tab = {                                                                                                                 \
-        [IDX_CMD_PAGE_PROGRAM_DUMMY] = DT_INST_PROP_OR(inst, cmd_page_program_dummy, 0),                                                     \
-        [IDX_CMD_PAGE_PROGRAM_QUAD_ADDR_QUAD_DATA_DUMMY] = DT_INST_PROP_OR(inst, cmd_page_program_quad_addr_quad_data_dummy, 0),             \
-        [IDX_CMD_ERASE_4KB_DUMMY] = DT_INST_PROP_OR(inst, cmd_erase_4kb_dummy, 0),                                                           \
-        [IDX_CMD_ERASE_32KB_DUMMY] = DT_INST_PROP_OR(inst, cmd_erase_32kb_dummy, 0),                                                         \
-        [IDX_CMD_ERASE_64KB_DUMMY] = DT_INST_PROP_OR(inst, cmd_erase_64kb_dummy, 0),                                                         \
-        [IDX_CMD_READ_DUMMY] = DT_INST_PROP_OR(inst, cmd_read_dummy, 0),                                                                     \
-        [IDX_CMD_FAST_READ_DUMMY] = DT_INST_PROP_OR(inst, cmd_fast_read_dummy, 0),                                                           \
-        [IDX_CMD_READ_QUAD_DATA_DUMMY] = DT_INST_PROP_OR(inst, cmd_read_quad_data_dummy, 0),                                                 \
-        [IDX_CMD_READ_QUAD_ADDR_QUAD_DATA_DUMMY] = DT_INST_PROP_OR(inst, cmd_read_quad_addr_quad_data_dummy, 0),                             \
-        [IDX_CMD_QUAD_SPI_MODE_ENTER_DUMMY] = DT_INST_PROP_OR(inst, cmd_quad_spi_mode_enter_dummy, 0),                                       \
-        [IDX_CMD_QUAD_SPI_MODE_EXIT_DUMMY] = DT_INST_PROP_OR(inst, cmd_quad_spi_mode_exit_dummy, 0),                                         \
-        [IDX_CMD_4BYTE_MODE_ENTER_DUMMY] = DT_INST_PROP_OR(inst, cmd_4byte_mode_enter_dummy, 0),                                             \
-        [IDX_CMD_4BYTE_MODE_EXIT_DUMMY] = DT_INST_PROP_OR(inst, cmd_4byte_mode_exit_dummy, 0),                                               \
-        [IDX_CMD_4BYTE_READ_EXTENDED_ADDR_DUMMY] = DT_INST_PROP_OR(inst, cmd_4byte_read_extended_addr_dummy, 0),                             \
-        [IDX_CMD_4BYTE_WRITE_EXTENDED_ADDR_DUMMY] = DT_INST_PROP_OR(inst, cmd_4byte_write_extended_addr_dummy, 0),                           \
-        [IDX_CMD_4BYTE_PAGE_PROGRAM_DUMMY] = DT_INST_PROP_OR(inst, cmd_4byte_page_program_dummy, 0),                                         \
-        [IDX_CMD_4BYTE_PAGE_PROGRAM_QUAD_ADDR_QUAD_DATA_DUMMY] = DT_INST_PROP_OR(inst, cmd_4byte_page_program_quad_addr_quad_data_dummy, 0), \
-        [IDX_CMD_4BYTE_ERASE_4KB_DUMMY] = DT_INST_PROP_OR(inst, cmd_4byte_erase_4kb_dummy, 0),                                               \
-        [IDX_CMD_4BYTE_ERASE_32KB_DUMMY] = DT_INST_PROP_OR(inst, cmd_4byte_erase_32kb_dummy, 0),                                             \
-        [IDX_CMD_4BYTE_ERASE_64KB_DUMMY] = DT_INST_PROP_OR(inst, cmd_4byte_erase_64kb_dummy, 0),                                             \
-        [IDX_CMD_4BYTE_READ_DUMMY] = DT_INST_PROP_OR(inst, cmd_4byte_read_dummy, 0),                                                         \
-        [IDX_CMD_4BYTE_FAST_READ_DUMMY] = DT_INST_PROP_OR(inst, cmd_4byte_fast_read_dummy, 0),                                               \
-        [IDX_CMD_4BYTE_READ_QUAD_DATA_DUMMY] = DT_INST_PROP_OR(inst, cmd_4byte_read_quad_data_dummy, 0),                                     \
-        [IDX_CMD_4BYTE_READ_QUAD_ADDR_QUAD_DATA_DUMMY] = DT_INST_PROP_OR(inst, cmd_4byte_read_quad_addr_quad_data_dummy, 0),                 \
-        [IDX_CMD_READ_DUAL_DATA_DUMMY] = DT_INST_PROP_OR(inst, cmd_read_dual_data_dummy, 0),                                                 \
-        [IDX_CMD_READ_DUAL_ADDR_DUAL_DATA_DUMMY] = DT_INST_PROP_OR(inst, cmd_read_dual_addr_dual_data_dummy, 0),                             \
-        [IDX_CMD_4BYTE_READ_DUAL_DATA_DUMMY] = DT_INST_PROP_OR(inst, cmd_4byte_read_dual_data_dummy, 0),                                     \
-        [IDX_CMD_4BYTE_READ_DUAL_ADDR_DUAL_DATA_DUMMY] = DT_INST_PROP_OR(inst, cmd_4byte_read_dual_addr_dual_data_dummy, 0),                 \
-        [IDX_CMD_PROGRAM_QUAD_DATA_DUMMY] = DT_INST_PROP_OR(inst, cmd_program_quad_data_dummy, 0),                                           \
-        [IDX_CMD_4BYTE_PROGRAM_QUAD_DATA_DUMMY] = DT_INST_PROP_OR(inst, cmd_4byte_program_quad_data_dummy, 0),                               \
-    },                                                                                                                                       \
-    .log_info = &log_info_##inst,                                                                                                            \
-};                                                                                                                                           \
-DEVICE_DT_INST_DEFINE(inst,                                                                                                                  \
-                      linkedsemi_spi_filter_init,                                                                                            \
-                      NULL,                                                                                                                  \
-                      &linkedsemi_spi_filter_data_##inst,                                                                                    \
-                      &linkedsemi_spi_filter_cfg_##inst,                                                                                     \
-                      POST_KERNEL,                                                                                                           \
-                      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,                                                                                    \
+#define SPI_FILTER_INIT(inst)                                                                                                                    \
+    static void linkedsemi_spi_filter_irq_config_func_##inst(const struct device *dev)                                                           \
+    {                                                                                                                                            \
+        ARG_UNUSED(dev);                                                                                                                         \
+        IRQ_CONNECT(DT_INST_IRQN(inst),                                                                                                          \
+                    DT_INST_IRQ(inst, priority),                                                                                                 \
+                    linkedsemi_spi_filter_isr,                                                                                                   \
+                    DEVICE_DT_INST_GET(inst),                                                                                                    \
+                    0);                                                                                                                          \
+        irq_enable(DT_INST_IRQN(inst));                                                                                                          \
+    }                                                                                                                                            \
+    PINCTRL_DT_INST_DEFINE(inst);                                                                                                                \
+    __nocache uint32_t log_ram_##inst[SPIF_LOG_RAM_MAX_SIZE_U32];                                                                                \
+    struct spif_log_info log_info_##inst = {                                                                                                     \
+       .log_ram_addr = (uint32_t)log_ram_##inst,                                                                                                 \
+       .log_max_sz = SPIF_LOG_RAM_MAX_SIZE_U32 * sizeof(uint32_t),                                                                               \
+       .log_idx = 0,                                                                                                                             \
+    };                                                                                                                                           \
+    static const struct linkedsemi_spi_filter_config linkedsemi_spi_filter_cfg_##inst = {                                                        \
+        .base = (mm_reg_t)DT_INST_REG_ADDR(inst),                                                                                                \
+        .spi = DEVICE_DT_GET(DT_INST_PHANDLE(inst, spi)),                                                                                        \
+        .cs = GPIO_DT_SPEC_INST_GET(inst, cs_gpios),                                                                                             \
+        .irq_config_func = linkedsemi_spi_filter_irq_config_func_##inst,                                                                         \
+        .index = DT_INST_PROP(inst, index),                                                                                                      \
+        .fixed_cmd_tab = {                                                                                                                       \
+            [IDX_CMD_PAGE_PROGRAM] = DT_INST_PROP_OR(inst, cmd_page_program, 0),                                                                 \
+            [IDX_CMD_PAGE_PROGRAM_QUAD_ADDR_QUAD_DATA] = DT_INST_PROP_OR(inst, cmd_page_program_quad_addr_quad_data, 0),                         \
+            [IDX_CMD_ERASE_4KB] = DT_INST_PROP_OR(inst, cmd_erase_4kb, 0),                                                                       \
+            [IDX_CMD_ERASE_32KB] = DT_INST_PROP_OR(inst, cmd_erase_32kb, 0),                                                                     \
+            [IDX_CMD_ERASE_64KB] = DT_INST_PROP_OR(inst, cmd_erase_64kb, 0),                                                                     \
+            [IDX_CMD_READ] = DT_INST_PROP_OR(inst, cmd_read, 0),                                                                                 \
+            [IDX_CMD_FAST_READ] = DT_INST_PROP_OR(inst, cmd_fast_read, 0),                                                                       \
+            [IDX_CMD_READ_QUAD_DATA] = DT_INST_PROP_OR(inst, cmd_read_quad_data, 0),                                                             \
+            [IDX_CMD_READ_QUAD_ADDR_QUAD_DATA] = DT_INST_PROP_OR(inst, cmd_read_quad_addr_quad_data, 0),                                         \
+            [IDX_CMD_QUAD_SPI_MODE_ENTER] = DT_INST_PROP_OR(inst, cmd_quad_spi_mode_enter, 0),                                                   \
+            [IDX_CMD_QUAD_SPI_MODE_EXIT] = DT_INST_PROP_OR(inst, cmd_quad_spi_mode_exit, 0),                                                     \
+            [IDX_CMD_4BYTE_MODE_ENTER] = DT_INST_PROP_OR(inst, cmd_4byte_mode_enter, 0),                                                         \
+            [IDX_CMD_4BYTE_MODE_EXIT] = DT_INST_PROP_OR(inst, cmd_4byte_mode_exit, 0),                                                           \
+            [IDX_CMD_4BYTE_READ_EXTENDED_ADDR] = DT_INST_PROP_OR(inst, cmd_4byte_read_extended_addr, 0),                                         \
+            [IDX_CMD_4BYTE_WRITE_EXTENDED_ADDR] = DT_INST_PROP_OR(inst, cmd_4byte_write_extended_addr, 0),                                       \
+            [IDX_CMD_4BYTE_PAGE_PROGRAM] = DT_INST_PROP_OR(inst, cmd_4byte_page_program, 0),                                                     \
+            [IDX_CMD_4BYTE_PAGE_PROGRAM_QUAD_ADDR_QUAD_DATA] = DT_INST_PROP_OR(inst, cmd_4byte_page_program_quad_addr_quad_data, 0),             \
+            [IDX_CMD_4BYTE_ERASE_4KB] = DT_INST_PROP_OR(inst, cmd_4byte_erase_4kb, 0),                                                           \
+            [IDX_CMD_4BYTE_ERASE_32KB] = DT_INST_PROP_OR(inst, cmd_4byte_erase_32kb, 0),                                                         \
+            [IDX_CMD_4BYTE_ERASE_64KB] = DT_INST_PROP_OR(inst, cmd_4byte_erase_64kb, 0),                                                         \
+            [IDX_CMD_4BYTE_READ] = DT_INST_PROP_OR(inst, cmd_4byte_read, 0),                                                                     \
+            [IDX_CMD_4BYTE_FAST_READ] = DT_INST_PROP_OR(inst, cmd_4byte_fast_read, 0),                                                           \
+            [IDX_CMD_4BYTE_READ_QUAD_DATA] = DT_INST_PROP_OR(inst, cmd_4byte_read_quad_data, 0),                                                 \
+            [IDX_CMD_4BYTE_READ_QUAD_ADDR_QUAD_DATA] = DT_INST_PROP_OR(inst, cmd_4byte_read_quad_addr_quad_data, 0),                             \
+            [IDX_CMD_READ_DUAL_DATA] = DT_INST_PROP_OR(inst, cmd_read_dual_data, 0),                                                             \
+            [IDX_CMD_READ_DUAL_ADDR_DUAL_DATA] = DT_INST_PROP_OR(inst, cmd_read_dual_addr_dual_data, 0),                                         \
+            [IDX_CMD_4BYTE_READ_DUAL_DATA] = DT_INST_PROP_OR(inst, cmd_4byte_read_dual_data, 0),                                                 \
+            [IDX_CMD_4BYTE_READ_DUAL_ADDR_DUAL_DATA] = DT_INST_PROP_OR(inst, cmd_4byte_read_dual_addr_dual_data, 0),                             \
+            [IDX_CMD_PROGRAM_QUAD_DATA] = DT_INST_PROP_OR(inst, cmd_program_quad_data, 0),                                                       \
+            [IDX_CMD_4BYTE_PROGRAM_QUAD_DATA] = DT_INST_PROP_OR(inst, cmd_4byte_program_quad_data, 0),                                           \
+        },                                                                                                                                       \
+        .fixed_cmd_dummy_tab = {                                                                                                                 \
+            [IDX_CMD_PAGE_PROGRAM_DUMMY] = DT_INST_PROP_OR(inst, cmd_page_program_dummy, 0),                                                     \
+            [IDX_CMD_PAGE_PROGRAM_QUAD_ADDR_QUAD_DATA_DUMMY] = DT_INST_PROP_OR(inst, cmd_page_program_quad_addr_quad_data_dummy, 0),             \
+            [IDX_CMD_ERASE_4KB_DUMMY] = DT_INST_PROP_OR(inst, cmd_erase_4kb_dummy, 0),                                                           \
+            [IDX_CMD_ERASE_32KB_DUMMY] = DT_INST_PROP_OR(inst, cmd_erase_32kb_dummy, 0),                                                         \
+            [IDX_CMD_ERASE_64KB_DUMMY] = DT_INST_PROP_OR(inst, cmd_erase_64kb_dummy, 0),                                                         \
+            [IDX_CMD_READ_DUMMY] = DT_INST_PROP_OR(inst, cmd_read_dummy, 0),                                                                     \
+            [IDX_CMD_FAST_READ_DUMMY] = DT_INST_PROP_OR(inst, cmd_fast_read_dummy, 0),                                                           \
+            [IDX_CMD_READ_QUAD_DATA_DUMMY] = DT_INST_PROP_OR(inst, cmd_read_quad_data_dummy, 0),                                                 \
+            [IDX_CMD_READ_QUAD_ADDR_QUAD_DATA_DUMMY] = DT_INST_PROP_OR(inst, cmd_read_quad_addr_quad_data_dummy, 0),                             \
+            [IDX_CMD_QUAD_SPI_MODE_ENTER_DUMMY] = DT_INST_PROP_OR(inst, cmd_quad_spi_mode_enter_dummy, 0),                                       \
+            [IDX_CMD_QUAD_SPI_MODE_EXIT_DUMMY] = DT_INST_PROP_OR(inst, cmd_quad_spi_mode_exit_dummy, 0),                                         \
+            [IDX_CMD_4BYTE_MODE_ENTER_DUMMY] = DT_INST_PROP_OR(inst, cmd_4byte_mode_enter_dummy, 0),                                             \
+            [IDX_CMD_4BYTE_MODE_EXIT_DUMMY] = DT_INST_PROP_OR(inst, cmd_4byte_mode_exit_dummy, 0),                                               \
+            [IDX_CMD_4BYTE_READ_EXTENDED_ADDR_DUMMY] = DT_INST_PROP_OR(inst, cmd_4byte_read_extended_addr_dummy, 0),                             \
+            [IDX_CMD_4BYTE_WRITE_EXTENDED_ADDR_DUMMY] = DT_INST_PROP_OR(inst, cmd_4byte_write_extended_addr_dummy, 0),                           \
+            [IDX_CMD_4BYTE_PAGE_PROGRAM_DUMMY] = DT_INST_PROP_OR(inst, cmd_4byte_page_program_dummy, 0),                                         \
+            [IDX_CMD_4BYTE_PAGE_PROGRAM_QUAD_ADDR_QUAD_DATA_DUMMY] = DT_INST_PROP_OR(inst, cmd_4byte_page_program_quad_addr_quad_data_dummy, 0), \
+            [IDX_CMD_4BYTE_ERASE_4KB_DUMMY] = DT_INST_PROP_OR(inst, cmd_4byte_erase_4kb_dummy, 0),                                               \
+            [IDX_CMD_4BYTE_ERASE_32KB_DUMMY] = DT_INST_PROP_OR(inst, cmd_4byte_erase_32kb_dummy, 0),                                             \
+            [IDX_CMD_4BYTE_ERASE_64KB_DUMMY] = DT_INST_PROP_OR(inst, cmd_4byte_erase_64kb_dummy, 0),                                             \
+            [IDX_CMD_4BYTE_READ_DUMMY] = DT_INST_PROP_OR(inst, cmd_4byte_read_dummy, 0),                                                         \
+            [IDX_CMD_4BYTE_FAST_READ_DUMMY] = DT_INST_PROP_OR(inst, cmd_4byte_fast_read_dummy, 0),                                               \
+            [IDX_CMD_4BYTE_READ_QUAD_DATA_DUMMY] = DT_INST_PROP_OR(inst, cmd_4byte_read_quad_data_dummy, 0),                                     \
+            [IDX_CMD_4BYTE_READ_QUAD_ADDR_QUAD_DATA_DUMMY] = DT_INST_PROP_OR(inst, cmd_4byte_read_quad_addr_quad_data_dummy, 0),                 \
+            [IDX_CMD_READ_DUAL_DATA_DUMMY] = DT_INST_PROP_OR(inst, cmd_read_dual_data_dummy, 0),                                                 \
+            [IDX_CMD_READ_DUAL_ADDR_DUAL_DATA_DUMMY] = DT_INST_PROP_OR(inst, cmd_read_dual_addr_dual_data_dummy, 0),                             \
+            [IDX_CMD_4BYTE_READ_DUAL_DATA_DUMMY] = DT_INST_PROP_OR(inst, cmd_4byte_read_dual_data_dummy, 0),                                     \
+            [IDX_CMD_4BYTE_READ_DUAL_ADDR_DUAL_DATA_DUMMY] = DT_INST_PROP_OR(inst, cmd_4byte_read_dual_addr_dual_data_dummy, 0),                 \
+            [IDX_CMD_PROGRAM_QUAD_DATA_DUMMY] = DT_INST_PROP_OR(inst, cmd_program_quad_data_dummy, 0),                                           \
+            [IDX_CMD_4BYTE_PROGRAM_QUAD_DATA_DUMMY] = DT_INST_PROP_OR(inst, cmd_4byte_program_quad_data_dummy, 0),                               \
+        },                                                                                                                                       \
+        .log_info = &log_info_##inst,                                                                                                            \
+        IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, dmas), (.dev_dma = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(inst, rx)),))                          \
+        IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, dmas), (.dma_channel = DT_INST_DMAS_CELL_BY_NAME(inst, rx, channel),))                            \
+        IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, dmas), (.dma_handshake = DT_INST_DMAS_CELL_BY_NAME(inst, rx, handshake),))                        \
+        IF_ENABLED(CONFIG_PINCTRL, (.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst), ))                                                             \
+        IF_ENABLED(DT_HAS_CLOCKS(inst), (.ccfg = LS_DT_CLK_CFG_ITEM(inst), ))                                                                    \
+        IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, resets), (.reset = RESET_DT_SPEC_INST_GET(inst), ))                                               \
+    };                                                                                                                                           \
+    static struct linkedsemi_spi_filter_data linkedsemi_spi_filter_data_##inst;                                                                  \
+DEVICE_DT_INST_DEFINE(inst,                                                                                                                      \
+                      linkedsemi_spi_filter_init,                                                                                                \
+                      NULL,                                                                                                                      \
+                      &linkedsemi_spi_filter_data_##inst,                                                                                        \
+                      &linkedsemi_spi_filter_cfg_##inst,                                                                                         \
+                      POST_KERNEL,                                                                                                               \
+                      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,                                                                                        \
                       NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_FILTER_INIT)

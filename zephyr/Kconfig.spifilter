@@ -17,6 +17,12 @@ config SPI_FILTER_LINKEDSEMI_SHELL
     help
       SPI_FILTER_LINKEDSEMI_SHELL
 
+config SPI_FILTER_ADDR_WHITELIST_BUF
+    bool "SPI_FILTER_ADDR_WHITELIST_BUF"
+    default y
+    help
+      SPI_FILTER_ADDR_WHITELIST_BUF
+
 config SPIM_NAME
     bool "SPIM_NAME"
     default n

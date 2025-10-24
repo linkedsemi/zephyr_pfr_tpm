@@ -127,7 +127,6 @@ bool spif_pinctrl_passthrough_mode_check(const struct device *dev);
 bool spif_pinctrl_master_mode_check(const struct device *dev);
 
 int spif_dma_start(const struct device *dev);
-int spi_filter_dma_thread_init(const struct device *dev);
 uint32_t spif_get_ctrl_idx(const struct device *dev);
 void spif_get_log_info(const struct device *dev, struct spif_log_info *info);
 void spif_enable(const struct device *dev, bool enable);
