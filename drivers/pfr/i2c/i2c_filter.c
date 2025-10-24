@@ -33,6 +33,7 @@ LOG_MODULE_REGISTER(i2c_pfr_filter);
 struct linkedsemi_i2c_filter_config {
     mm_reg_t base;
     const struct device *i2c;
+    uint16_t scl_hold_time;
     void (*irq_config_func)(const struct device *dev);
     IF_ENABLED(CONFIG_PINCTRL, (const struct pinctrl_dev_config *pcfg;))
     IF_ENABLED(CONFIG_CLOCK_CONTROL, (struct ls_clk_cfg ccfg;))
@@ -41,7 +42,6 @@ struct linkedsemi_i2c_filter_config {
 
 struct linkedsemi_i2c_filter_data {
     struct k_mutex lock;
-    uint16_t scl_hold_time;
     i2c_filter_callback_t cb;
     void *user_data;
 };
@@ -342,7 +342,7 @@ int linkedsemi_i2c_filter_cold_reset(const struct device *dev)
     sys_write32(intr_mask.value, dev_config->base + INTR_MSK);
 
     linkedsemi_i2c_filter_en(dev, false, false, true);
-    linkedsemi_i2c_filter_config_scl_hold_time(dev, dev_data->scl_hold_time);
+    linkedsemi_i2c_filter_config_scl_hold_time(dev, dev_config->scl_hold_time);
 
     return 0;
 }
@@ -375,13 +375,12 @@ static int linkedsemi_i2c_filter_init(const struct device *dev)
         .base = (mm_reg_t)DT_INST_REG_ADDR(inst),                                                  \
         .irq_config_func = linkedsemi_i2c_filter_irq_config_func_##inst,                           \
         .i2c = DEVICE_DT_GET(DT_INST_PHANDLE(inst, i2c)),                                          \
+        .scl_hold_time = DT_INST_PROP(inst, scl_hold_time),                                        \
         IF_ENABLED(CONFIG_PINCTRL, (.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst), ))               \
         IF_ENABLED(DT_HAS_CLOCKS(inst), (.ccfg = LS_DT_CLK_CFG_ITEM(inst), ))                      \
         IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, resets), (.reset = RESET_DT_SPEC_INST_GET(inst), )) \
     };                                                                                             \
-    static struct linkedsemi_i2c_filter_data linkedsemi_i2c_filter_data_##inst = {                 \
-        .scl_hold_time = DT_INST_PROP(inst, scl_hold_time),                                        \
-    };                                                                                             \
+    static struct linkedsemi_i2c_filter_data linkedsemi_i2c_filter_data_##inst;                    \
                                                                                                    \
     DEVICE_DT_INST_DEFINE(inst,                                                                    \
                           linkedsemi_i2c_filter_init,                                              \
