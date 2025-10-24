@@ -1455,13 +1455,13 @@ static void spif_dma_work(struct k_work *work)
         dma_get_status(dev_config->dev_dma, dev_config->dma_channel, &stat);
         uint16_t block_ts = stat.pending_length >> 2;
         if (dev_config->log_info->log_idx < block_ts) {
+#if defined(CONFIG_SPI_FILTER_DMA_LOG)
             for (uint16_t i = dev_config->log_info->log_idx; i < block_ts; i++) {
                 spif_dma_data_t *spif_dma_data = (spif_dma_data_t *)dev_config->log_info->log_ram_addr;
                 LOG_DBG("dma log idx: %d", i);
-#if defined(CONFIG_SPI_FILTER_DMA_LOG)
                 spif_dma_data_print(spif_dma_data[i]);
-#endif
             }
+#endif
             dev_config->log_info->log_idx = block_ts;
         } else if ((dev_config->log_info->log_idx == block_ts) && (SPIF_LOG_RAM_MAX_SIZE_U32 != block_ts)) {
             break;
