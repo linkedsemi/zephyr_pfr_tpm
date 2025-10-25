@@ -13,6 +13,7 @@ extern "C" {
 
 #include <reg_spi_filter.h>
 
+#define SPIF_ADDR_WHITELIST_SIZE   MB(256)
 #define SPIF_FIXED_CMD_TABLE_NUM   30
 #define SPIF_GENERAL_CMD_TABLE_NUM 40
 #define SPIF_CMD_TABLE_NUM         (SPIF_FIXED_CMD_TABLE_NUM + SPIF_GENERAL_CMD_TABLE_NUM)
@@ -148,6 +149,8 @@ void spim_get_log_info(const struct device *dev, struct spim_log_info *info);
 uint32_t spim_get_ctrl_idx(const struct device *dev);
 void spim_allow_command_get(const struct device *dev, uint8_t cmd[SPIF_CMD_TABLE_NUM], uint32_t *cmd_num);
 void spim_log_parser(const struct device *dev, uint32_t idx, uint32_t log_val);
+uint32_t spif_flash_size_get(const struct device *dev);
+int spif_flash_size_set(const struct device *dev, uint32_t size);
 /**
  * @}
  */

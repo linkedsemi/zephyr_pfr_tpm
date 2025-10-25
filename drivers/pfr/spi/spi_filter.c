@@ -156,12 +156,34 @@ struct linkedsemi_spi_filter_data {
     uint32_t write_addr_whitelist[SPIF_ADDR_PRIV_REG_NUN];
 #endif
     const struct device *dev;
+    uint32_t flash_size;
     struct k_sem sem_spif;
     spif_callback_t cb;
     void *user_data;
     struct spif_dma_config spif_dma_config;
     struct k_work dma_work;
 };
+
+uint32_t spif_flash_size_get(const struct device *dev)
+{
+    struct linkedsemi_spi_filter_data *dev_data = dev->data;
+
+    return dev_data->flash_size;
+}
+
+int spif_flash_size_set(const struct device *dev, uint32_t size)
+{
+    struct linkedsemi_spi_filter_data *dev_data = dev->data;
+
+    if ((size == 0) || (!IS_ALIGNED(SPIF_ADDR_WHITELIST_SIZE, size))) {
+        LOG_ERR("invalid flash size: %#x", size);
+        return -EINVAL;
+    }
+
+    dev_data->flash_size = size;
+
+    return 0;
+}
 
 uint32_t spif_get_ctrl_idx(const struct device *dev)
 {
@@ -581,7 +603,7 @@ static uint32_t spif_get_cross_block_num(uint32_t addr, uint32_t len)
     return len / KB(16);
 }
 
-int spif_address_privilege_config(const struct device *dev,
+int spif_address_privilege_config_op(const struct device *dev,
                                   enum addr_priv_rw_select rw_select,
                                   enum addr_priv_op priv_op,
                                   mm_reg_t addr,
@@ -682,6 +704,24 @@ end:
     release_spif_device(dev);
 
     return ret;
+}
+
+int spif_address_privilege_config(const struct device *dev,
+                                  enum addr_priv_rw_select rw_select,
+                                  enum addr_priv_op priv_op,
+                                  mm_reg_t addr,
+                                  uint32_t len)
+{
+    struct linkedsemi_spi_filter_data *dev_data = dev->data;
+    if (0 == dev_data->flash_size) {
+        return spif_address_privilege_config_op(dev, rw_select, priv_op, addr, len);
+    }
+
+    for (int off = (addr % dev_data->flash_size); off < SPIF_ADDR_WHITELIST_SIZE; off += dev_data->flash_size) {
+        spif_address_privilege_config_op(dev, rw_select, priv_op, off, len);
+    }
+
+    return 0;
 }
 
 void spif_memset_read_addr_whitelist(const struct device *dev, uint8_t num)
