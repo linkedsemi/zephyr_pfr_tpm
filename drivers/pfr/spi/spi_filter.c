@@ -3,11 +3,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#if 0
-    #if !defined(CONFIG_NOCACHE_MEMORY)
-        #error "missing memory attribute for descriptors"
-    #endif
-#endif
 
 #define DT_DRV_COMPAT linkedsemi_spi_filter
 
@@ -41,6 +36,8 @@ LOG_MODULE_REGISTER(spi_pfr_filter);
 #include <reg_spi_filter.h>
 #include <lsqsh-pinctrl_pfr_tpm_func_pinctrl.h>
 #include <ls_soc_gpio.h>
+
+BUILD_ASSERT(CONFIG_NOCACHE_MEMORY, "missing memory attribute for dma log");
 
 #define PINCTRL_STATE_PASSTHROUGH PINCTRL_STATE_PRIV_START
 #define PINCTRL_STATE_MASTER      (PINCTRL_STATE_PRIV_START + 1U)
@@ -231,7 +228,20 @@ static void linkedsemi_spi_filter_isr(const struct device *dev)
     }
     if (intr_status.ERROR) {
         LOG_ERR("ERROR");
+        spif_dma_data_t spif_dma_data;
+        spif_dma_data.value = sys_read32(dev_config->base + SPIF_DMA_DATA);
+        LOG_ERR("ADDR_ERR: %#x "
+                "CMD_ERR: %#x "
+                "POR_ADDR: %#x "
+                "ERROR_ADDR: %#8.8x "
+                "ERROR_CMD: %#2.2x",
+                spif_dma_data.ADDR_ERR,
+                spif_dma_data.CMD_ERR,
+                spif_dma_data.POR_ADDR,
+                spif_dma_data.ERROR_ADDR << 11,
+                spif_dma_data.ERROR_CMD);
     }
+#endif
     if (intr_status.TARGET_ADDR) {
         uint32_t addr = sys_read32(dev_config->base + SPIF_TARGET_ADDR);
         LOG_ERR("TARGET_ADDR: %#x", addr);
@@ -248,7 +258,6 @@ static void linkedsemi_spi_filter_isr(const struct device *dev)
                spif_sck_fqc_hi.SCK_FQC_HI,
                spif_sck_set.SCK_FQC);
     }
-#endif
     if (dev_data->cb) {
         dev_data->cb(dev);
     }
@@ -1241,14 +1250,15 @@ int spif_dma_start(const struct device *dev)
     dev_data->spif_dma_config.dma_cfg.block_count = 1;
     dev_data->spif_dma_config.dma_cfg.dma_slot = dev_config->dma_handshake;
     dev_data->spif_dma_config.dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
-    dev_data->spif_dma_config.dma_cfg.source_burst_length = 0;
-    dev_data->spif_dma_config.dma_cfg.dest_burst_length = 0;
+    dev_data->spif_dma_config.dma_cfg.source_burst_length = 1;
+    dev_data->spif_dma_config.dma_cfg.dest_burst_length = 1;
     dev_data->spif_dma_config.dma_cfg.channel_priority = 0;
     dev_data->spif_dma_config.dma_cfg.complete_callback_en = 1;
     dev_data->spif_dma_config.dma_cfg.dma_callback = spif_dma_callback;
     dev_data->spif_dma_config.dma_cfg.user_data = (void *)dev;
     dev_data->spif_dma_config.dma_cfg.source_data_size = 4;
     dev_data->spif_dma_config.dma_cfg.dest_data_size = 4;
+    dev_data->spif_dma_config.dma_cfg.cyclic = 1;
     dev_data->spif_dma_config.dma_cfg.head_block = &(dev_data->spif_dma_config.dma_block);
 
     if (dev_config->dev_dma == NULL || !device_is_ready(dev_config->dev_dma)) {
@@ -1489,31 +1499,52 @@ static void spif_dma_work(struct k_work *work)
     struct linkedsemi_spi_filter_data *dev_data = CONTAINER_OF(work, struct linkedsemi_spi_filter_data, dma_work);
     const struct device *dev = dev_data->dev;
     const struct linkedsemi_spi_filter_config *dev_config = dev->config;
+#if defined(CONFIG_SPI_FILTER_DMA_LOG)
+    const spif_dma_data_t *spif_dma_data = (spif_dma_data_t *)dev_config->log_info->log_ram_addr;
+#endif
+    struct spif_log_info *log_info = dev_config->log_info;
+    uint32_t last_log_idx = 0;
+    uint16_t last_xfer_len = 0;
 
     while (1) {
         struct dma_status stat;
         dma_get_status(dev_config->dev_dma, dev_config->dma_channel, &stat);
-        uint16_t block_ts = stat.pending_length >> 2;
-        if (dev_config->log_info->log_idx < block_ts) {
+        const uint16_t xfer_len = stat.pending_length >> 2;
+        LOG_INF("xfer_len: %d", xfer_len);
+        if (last_xfer_len == xfer_len) {
+            break;
+        } else {
+            last_log_idx = log_info->log_idx;
+            last_xfer_len = xfer_len;
+        }
+        if (log_info->log_idx < xfer_len) {
 #if defined(CONFIG_SPI_FILTER_DMA_LOG)
-            for (uint16_t i = dev_config->log_info->log_idx; i < block_ts; i++) {
-                spif_dma_data_t *spif_dma_data = (spif_dma_data_t *)dev_config->log_info->log_ram_addr;
+            for (uint16_t i = log_info->log_idx; i < xfer_len; i++) {
                 LOG_DBG("dma log idx: %d", i);
                 spif_dma_data_print(spif_dma_data[i]);
             }
 #endif
-            dev_config->log_info->log_idx = block_ts;
-        } else if ((dev_config->log_info->log_idx == block_ts) && (SPIF_LOG_RAM_MAX_SIZE_U32 != block_ts)) {
-            break;
+        } else {
+            uint16_t start_idx = log_info->log_idx;
+            if (xfer_len == start_idx) {
+                if (SPIF_LOG_RAM_MAX_SIZE_U32 == start_idx) {
+                    start_idx = 0;
+                } else {
+                    start_idx++;
+                }
+            }
+#if defined(CONFIG_SPI_FILTER_DMA_LOG)
+            for (uint16_t i = start_idx; i < SPIF_LOG_RAM_MAX_SIZE_U32; i++) {
+                LOG_DBG("dma log idx: %d\n", i);
+                spif_dma_data_print(spif_dma_data[i]);
+            }
+            for (uint16_t i = 0; i < xfer_len; i++) {
+                LOG_DBG("dma log idx: %d\n", i);
+                spif_dma_data_print(spif_dma_data[i]);
+            }
+#endif
         }
-
-        if (SPIF_LOG_RAM_MAX_SIZE_U32 == block_ts) {
-            dev_config->log_info->log_idx = 0;
-            dma_suspend(dev_config->dev_dma, dev_config->dma_channel);
-            dma_stop(dev_config->dev_dma, dev_config->dma_channel);
-            spif_dma_start(dev);
-            break;
-        }
+        log_info->log_idx = xfer_len;
     }
 }
 
