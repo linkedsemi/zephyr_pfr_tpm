@@ -40,3 +40,10 @@ config SPI_FILTER_DMA_LOG
     default y
     help
       SPI_FILTER_DMA_LOG
+
+config SPI_FILTER_DMA_LOG_SIZE
+    int "SPI_FILTER_DMA_LOG_SIZE"
+    default 8188
+    range 32 8188
+    help
+      SPI_FILTER_DMA_LOG_SIZE
