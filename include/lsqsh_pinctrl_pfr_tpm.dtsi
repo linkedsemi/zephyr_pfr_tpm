@@ -1067,3 +1067,13 @@
     >;
     pinctrl-names = "default";
 };
+
+&spi3 {
+    dmas =<&dmac2 6 DMA_SPI3_RX>,<&dmac2 6 DMA_SPI3_TX>;
+    dma-names ="rx","tx";
+};
+
+&spi4 {
+    dmas =<&dmac2 7 DMA_SPI4_RX>,<&dmac2 7 DMA_SPI4_TX>;
+    dma-names ="rx","tx";
+};
