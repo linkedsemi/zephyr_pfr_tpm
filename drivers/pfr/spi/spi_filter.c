@@ -422,7 +422,7 @@ void spif_get_cmd_table(const struct device *dev, uint8_t cmd[SPIF_CMD_TABLE_NUM
         spif_cmd_t spif_cmd;
         spif_cmd.value = sys_read32(dev_config->base + SPIF_CMD_BASE + i * 4);
         if (1 == spif_cmd.EN) {
-            cmd[i] = spif_cmd.CMD;
+            cmd[*cmd_num] = spif_cmd.CMD;
             (*cmd_num)++;
         }
     }
