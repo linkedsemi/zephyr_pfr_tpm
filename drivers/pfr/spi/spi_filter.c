@@ -1676,7 +1676,7 @@ static int linkedsemi_spi_filter_init(const struct device *dev)
     __nocache uint32_t log_ram_##inst[SPIF_LOG_RAM_MAX_SIZE_U32];                                                                                \
     struct spif_log_info log_info_##inst = {                                                                                                     \
        .log_ram_addr = (uint32_t)log_ram_##inst,                                                                                                 \
-       .log_max_sz = SPIF_LOG_RAM_MAX_SIZE_U32 * sizeof(uint32_t),                                                                               \
+       .log_max_sz = SPIF_LOG_RAM_MAX_SIZE_U32,                                                                                                  \
        .log_idx = 0,                                                                                                                             \
     };                                                                                                                                           \
     static const struct linkedsemi_spi_filter_config linkedsemi_spi_filter_cfg_##inst = {                                                        \
