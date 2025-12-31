@@ -1,0 +1,114 @@
+#include "lsqsh_pinctrl_pfr_tpm.dtsi"
+
+/ {
+    aliases {
+#if 1
+        spifilter = &spif3;
+        spifiltermaster = &spif1;
+        spiflash = &flash3_0;
+#endif
+#if 0
+        spifilter = &spif2;
+        spifiltermaster = &spif4;
+        spiflash = &flash4_1;
+#endif
+    };
+};
+
+&spif1 {
+    status = "okay";
+};
+
+&spif2 {
+    status = "okay";
+};
+
+&spif3 {
+    cmd-page-program-quad-addr-quad-data =<0xc2>;
+    cmd-quad-spi-mode-enter = <0x38>;
+    cmd-quad-spi-mode-exit = <0xff>;
+    status = "okay";
+};
+
+&spif4 {
+    status = "okay";
+};
+
+&spi3 {
+    cs-gpios = <&gpioi 8 GPIO_ACTIVE_LOW>,
+                <&gpiog 2 GPIO_ACTIVE_LOW>;
+    pinctrl-0 = <>;
+    pinctrl-names = "default";
+    //timing-calibration-disabled;
+    dmas =<&dmac2 6 DMA_SPI3_RX>,<&dmac2 6 DMA_SPI3_TX>;
+    dma-names ="rx","tx";
+    status = "okay";
+
+    flash3_0: flash3@0 {
+        compatible = "jedec,spi-nor";
+        reg = <0>;
+        spi-max-frequency = <DT_FREQ_M(10)>;
+        spi-max-buswidth = <4>;
+        //spi-nor-caps-mask=<0x40000>;
+        re-init-support;
+    };
+    flash3_1: flash3@1 {
+        compatible = "jedec,spi-nor";
+        reg = <1>;
+        spi-max-frequency = <DT_FREQ_M(10)>;
+        spi-max-buswidth = <4>;
+        re-init-support;
+    };
+};
+
+&spi4 {
+    cs-gpios = <&gpioi 0 GPIO_ACTIVE_LOW>,
+                <&gpioq 0 GPIO_ACTIVE_LOW>;
+    pinctrl-0 = <>;
+    pinctrl-names = "default";
+    timing-calibration-disabled;
+    dmas =<&dmac2 6 DMA_SPI4_RX>,<&dmac2 6 DMA_SPI4_TX>;
+    dma-names ="rx","tx";
+    status = "okay";
+
+    flash4_0: flash4@0 {
+        compatible = "jedec,spi-nor";
+        reg = <0>;
+        spi-max-frequency = <DT_FREQ_M(10)>;
+        spi-max-buswidth = <4>;
+        re-init-support;
+    };
+    flash4_1: flash4@1 {
+        compatible = "jedec,spi-nor";
+        reg = <1>;
+        spi-max-frequency = <DT_FREQ_M(10)>;
+        spi-max-buswidth = <4>;
+        re-init-support;
+    };
+};
+
+&dmac1 {
+    status = "okay";
+};
+
+&dmac2 {
+    status = "okay";
+};
+
+#if 0
+#undef SRAM_TOTAL_SIZE
+#undef SRAM_RO_SIZE
+#undef SRAM_RW_SIZE
+
+#define SRAM_TOTAL_SIZE DT_SIZE_K(512 - 128)
+#define SRAM_RO_SIZE    DT_SIZE_K(256 - 128)
+#define SRAM_RW_SIZE    (SRAM_TOTAL_SIZE - SRAM_RO_SIZE)
+
+&sram_ro {
+    reg = <0x10020000 SRAM_RO_SIZE>;
+};
+
+&sram {
+    reg = <(0x10020000 + SRAM_RO_SIZE) SRAM_RW_SIZE>;
+};
+#endif
