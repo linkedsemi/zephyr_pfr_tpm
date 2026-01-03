@@ -69,6 +69,7 @@ typedef void (*spif_callback_t)(const struct device *dev);
 #define spim_callback_t spif_callback_t
 
 int linkedsemi_spif_register_callback(const struct device *dev, spif_callback_t cb);
+int linkedsemi_spif_dma_register_callback(const struct device *dev, spif_callback_t cb);
 void spif_dump_cmd_table(const struct device *dev);
 void spif_get_cmd_table(const struct device *dev, uint8_t cmd[SPIF_CMD_TABLE_NUM], uint32_t *cmd_num);
 int spif_add_cmd(const struct device *dev, uint8_t cmd);

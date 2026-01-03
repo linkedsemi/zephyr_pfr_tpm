@@ -87,6 +87,11 @@ void spim_isr_callback_install(const struct device *dev, spim_callback_t isr_cal
     linkedsemi_spif_register_callback(dev, isr_callback);
 }
 
+void spim_dma_callback_install(const struct device *dev, spim_callback_t dma_callback)
+{
+    linkedsemi_spif_dma_register_callback(dev, dma_callback);
+}
+
 void spim_get_log_info(const struct device *dev, struct spim_log_info *info)
 {
     spif_get_log_info(dev, info);
@@ -156,6 +161,7 @@ struct linkedsemi_spi_filter_data {
     uint32_t flash_size;
     struct k_sem sem_spif;
     spif_callback_t cb;
+    spif_callback_t dma_cb;
     void *user_data;
     struct spif_dma_config spif_dma_config;
     struct k_work dma_work;
@@ -210,6 +216,17 @@ int linkedsemi_spif_register_callback(const struct device *dev, spif_callback_t 
     struct linkedsemi_spi_filter_data *dev_data = dev->data;
 
     dev_data->cb = cb;
+
+    return 0;
+}
+
+int linkedsemi_spif_dma_register_callback(const struct device *dev, spif_callback_t cb)
+{
+    __ASSERT_NO_MSG(dev);
+
+    struct linkedsemi_spi_filter_data *dev_data = dev->data;
+
+    dev_data->dma_cb = cb;
 
     return 0;
 }
@@ -1218,6 +1235,9 @@ static void spif_dma_callback(const struct device *dev_dma, void *callback_arg,
     if(status == DMA_STATUS_TRIGGER) {
         if (!k_work_busy_get(&dev_data->dma_work)) {
             k_work_submit(&dev_data->dma_work);
+        }
+        if (dev_data->dma_cb) {
+            dev_data->dma_cb(dev);
         }
         LOG_DBG("DMA_STATUS_TRIGGER");
     }
