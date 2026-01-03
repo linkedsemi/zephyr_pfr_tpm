@@ -230,7 +230,7 @@ int linkedsemi_i2c_filter_en(const struct device *dev,
     smbf_set_t smbf_set = {
         .BLOCK_DISABLE = filter_en ? 0 : 1,
         .FILTER_DISABLE = wlist_en ? 0 : 1,
-        .MASTER_WRITE_MODE = 1,
+        .MASTER_WRITE_MODE = 0,
         .reserve0 = 0,
     };
 
