@@ -75,6 +75,7 @@ void spif_get_cmd_table(const struct device *dev, uint8_t cmd[SPIF_CMD_TABLE_NUM
 int spif_add_cmd(const struct device *dev, uint8_t cmd);
 int spif_add_cmd_with_dummy(const struct device *dev, uint8_t cmd, uint8_t dummy_cycle);
 void spif_set_cmd_by_idx(const struct device *dev, uint8_t cmd, uint8_t idx);
+void spif_set_enter_qpi_cmd(const struct device *dev,uint8_t cmd);
 void spif_set_dummy_by_idx(const struct device *dev, uint8_t dummy_cycle, uint8_t idx);
 void spif_get_cmd_by_idx(const struct device *dev, uint8_t *cmd, uint8_t idx);
 void spif_get_dummy_by_idx(const struct device *dev, uint8_t *dummy_cycle, uint8_t idx);
