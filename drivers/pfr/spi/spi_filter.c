@@ -973,6 +973,13 @@ void spif_set_cmd_by_idx(const struct device *dev, uint8_t cmd, uint8_t idx)
     return;
 }
 
+void spif_set_enter_qpi_cmd(const struct device *dev,uint8_t cmd)
+{
+    __ASSERT_NO_MSG(dev);
+    spif_set_cmd_by_idx(dev,cmd,IDX_CMD_QUAD_SPI_MODE_ENTER);
+    return;
+}
+
 void spif_set_dummy_by_idx(const struct device *dev, uint8_t dummy_cycle, uint8_t idx)
 {
     __ASSERT_NO_MSG(dev);
