@@ -57,3 +57,8 @@ if(CONFIG_SPI_FILTER_LINKEDSEMI)
 
   # riscv64-unknown-elf-objdump -d -x -z  zephyr.elf > zephyr.elf.asm
 endif()
+
+if(CONFIG_PFR_TPM_LINKER_LD)
+  zephyr_linker_sources(RAM_SECTIONS ${ZEPHYR_CURRENT_MODULE_DIR}/common/linker.ld)
+  # riscv64-unknown-elf-objdump -d -x -z  zephyr.elf > zephyr.elf.asm
+endif()

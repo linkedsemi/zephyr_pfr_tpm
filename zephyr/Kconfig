@@ -1,6 +1,11 @@
 # Copyright (c) 2024 linkedsemi
 # SPDX-License-Identifier: Apache-2.0
 
+config PFR_TPM_LINKER_LD
+    bool
+    default y
+    depends on SPI_FILTER_LINKEDSEMI
+
 rsource "Kconfig.i2cfilter"
 rsource "Kconfig.spifilter"
 rsource "Kconfig.spid"

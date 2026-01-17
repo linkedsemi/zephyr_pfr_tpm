@@ -119,6 +119,18 @@
     };
 };
 
+&driver_share_memory {
+   reg = <(0x100c0000 - DT_FREQ_K(4) - DT_FREQ_K(4) - DT_FREQ_K(50)) DT_FREQ_K(1)>;
+};
+
+&soc {
+    pfr_tpm: memory@100b0000 {
+        compatible = "zephyr,memory-region", "mmio-sram";
+        reg = <(0x100c0000 - DT_FREQ_K(4) - DT_FREQ_K(50)) DT_FREQ_K(50)>;
+        zephyr,memory-region = "PFR_TPM";
+    };
+};
+
 &pinctrl {
     /omit-if-no-ref/tpm_spis1_miso_pi04: tpm_spis1_miso_pi04 {
         pinmux = <TPM_SPIS1_MISO_FUNC2_PI04_PINMUX>;
