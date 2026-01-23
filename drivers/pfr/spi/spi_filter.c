@@ -36,6 +36,7 @@ LOG_MODULE_REGISTER(spi_pfr_filter);
 #include <reg_spi_filter.h>
 #include <lsqsh-pinctrl_pfr_tpm_func_pinctrl.h>
 #include <ls_soc_gpio.h>
+#include <soc.h>
 
 BUILD_ASSERT(CONFIG_NOCACHE_MEMORY, "missing memory attribute for dma log");
 
@@ -50,7 +51,7 @@ void spim_dump_allow_command_table(const struct device *dev)
 int spim_add_allow_command(const struct device *dev, uint8_t cmd, uint32_t flag)
 {
     if (FLAG_CMD_TABLE_VALID_ONCE == flag) {
-        LOG_ERR("FLAG_CMD_TABLE_VALID_ONCE is not support");
+        DEV_ERR(dev, "FLAG_CMD_TABLE_VALID_ONCE is not support");
         return -ENOTSUP;
     }
 
@@ -103,17 +104,17 @@ void spim_log_parser(const struct device *dev, uint32_t idx, uint32_t log_val)
     spif_dma_data_t *log = (spif_dma_data_t *)&log_val;
     if (log->CMD_ERR) {
         /* block command */
-        LOG_ERR("[%s][b][%03d][cmd] %02xh", dev->name, idx, log->ERROR_CMD);
+        DEV_ERR(dev, "[b][%03d][cmd] %02xh", idx, log->ERROR_CMD);
     } else if (log->ADDR_ERR) {
         if (log->POR_ADDR) {
             /* block read command */
-            LOG_ERR("[%s][b][%03d][r_addr] 0x%08x", dev->name, idx, log->ERROR_ADDR << 11);
+            DEV_ERR(dev, "[b][%03d][r_addr] 0x%08x", idx, log->ERROR_ADDR << 11);
         } else {
             /* block write command */
-            LOG_ERR("[%s][b][%03d][w_addr] 0x%08x", dev->name, idx, log->ERROR_ADDR << 11);
+            DEV_ERR(dev, "[b][%03d][w_addr] 0x%08x", idx, log->ERROR_ADDR << 11);
         }
     } else {
-        LOG_ERR("[%s][%03d]invalid ctx: 0x%08x", dev->name, idx, log_val);
+        DEV_ERR(dev, "[%03d]invalid ctx: 0x%08x", idx, log_val);
     }
 }
 
@@ -179,7 +180,7 @@ int spif_flash_size_set(const struct device *dev, uint32_t size)
     struct linkedsemi_spi_filter_data *dev_data = dev->data;
 
     if ((size == 0) || (!IS_ALIGNED(SPIF_ADDR_WHITELIST_SIZE, size))) {
-        LOG_ERR("invalid flash size: %#x", size);
+        DEV_ERR(dev, "invalid flash size: %#x", size);
         return -EINVAL;
     }
 
@@ -241,13 +242,13 @@ static void linkedsemi_spi_filter_isr(const struct device *dev)
     sys_write32(intr_status.value, dev_config->base + SPIF_INTR_CLR);
 #if defined(CONFIG_SPI_FILTER_INTERRUPT_LOG)
     if (intr_status.ERROR_OVERFLOW) {
-        LOG_ERR("ERROR_OVERFLOW");
+        DEV_ERR(dev, "ERROR_OVERFLOW");
     }
     if (intr_status.ERROR) {
-        LOG_ERR("ERROR");
+        DEV_ERR(dev, "ERROR");
         spif_dma_data_t spif_dma_data;
         spif_dma_data.value = sys_read32(dev_config->base + SPIF_DMA_DATA);
-        LOG_ERR("ADDR_ERR: %#x "
+        DEV_ERR(dev, "ADDR_ERR: %#x "
                 "CMD_ERR: %#x "
                 "POR_ADDR: %#x "
                 "ERROR_ADDR: %#8.8x "
@@ -261,7 +262,7 @@ static void linkedsemi_spi_filter_isr(const struct device *dev)
 #endif
     if (intr_status.TARGET_ADDR) {
         uint32_t addr = sys_read32(dev_config->base + SPIF_TARGET_ADDR);
-        LOG_ERR("TARGET_ADDR: %#x", addr);
+        DEV_ERR(dev, "TARGET_ADDR: %#x", addr);
     }
     if (intr_status.SCK_CHECK) {
         spif_sck_fqc_hi_t spif_sck_fqc_hi;
@@ -270,7 +271,7 @@ static void linkedsemi_spi_filter_isr(const struct device *dev)
         spif_sck_fqc_hi.value = sys_read32(dev_config->base + SPIF_SCK_FQC_HI);
         spif_sck_fqc_lo.value = sys_read32(dev_config->base + SPIF_SCK_FQC_LO);
         spif_sck_set.value = sys_read32(dev_config->base + SPIF_SCK_SET);
-        LOG_ERR("SCK_CHECK: expect [%#x, %#x] but got %#x",
+        DEV_ERR(dev, "SCK_CHECK: expect [%#x, %#x] but got %#x",
                spif_sck_fqc_lo.SCK_FQC_LO,
                spif_sck_fqc_hi.SCK_FQC_HI,
                spif_sck_set.SCK_FQC);
@@ -416,9 +417,9 @@ void spif_dump_cmd_table(const struct device *dev)
         if (spif_cmd.value == 0)
             continue;
         if (i < SPIF_FIXED_CMD_TABLE_NUM) {
-            LOG_INF("[%s]idx %02d: %-46.46s: 0x%02x: %s", dev->name, i, fix_cmd_desc[i], spif_cmd.CMD, spif_cmd.EN == 1 ? "enabled" : "disabled");
+            DEV_INF(dev, "idx %02d: %-46.46s: 0x%02x: %s", i, fix_cmd_desc[i], spif_cmd.CMD, spif_cmd.EN == 1 ? "enabled" : "disabled");
         } else {
-            LOG_INF("[%s]idx %02d: %-46.46s: 0x%02x: %s", dev->name, i, general_cmd_desc, spif_cmd.CMD, spif_cmd.EN == 1 ? "enabled" : "disabled");
+            DEV_INF(dev, "idx %02d: %-46.46s: 0x%02x: %s", i, general_cmd_desc, spif_cmd.CMD, spif_cmd.EN == 1 ? "enabled" : "disabled");
         }
     }
 
@@ -486,7 +487,7 @@ static int spif_peek_rw_area(const struct device *dev, enum addr_priv_rw_select 
     timeout = sys_timepoint_calc(K_MSEC(100));
     while (sys_read32(dev_config->base + SPIF_READ_ADDR_REQ)) { /* wait for cs line idle */
         if (sys_timepoint_expired(timeout)) {
-            LOG_ERR( "cs line busy");
+            DEV_ERR(dev,  "cs line busy");
             ret = -EIO;
             goto err;
         }
@@ -588,7 +589,7 @@ int spif_dump_rw_addr_privilege_table(const struct device *dev)
     for (rw = 0; rw < 2; rw++) {
         memset(&start, 0x0, sizeof(struct priv_reg_info));
         memset(&res, 0x0, sizeof(struct priv_reg_info));
-        LOG_INF("%s protect regions:", rw == 0 ? "read" : "write");
+        DEV_INF(dev, "%s protect regions:", rw == 0 ? "read" : "write");
         do {
             spif_protect_area_parser(dev, start, &res, &num_protect_blk, rw);
             if (ret) {
@@ -596,7 +597,7 @@ int spif_dump_rw_addr_privilege_table(const struct device *dev)
             }
             if (num_protect_blk != 0) {
                 protect_en = true;
-                LOG_INF("[0x%08x - 0x%08x]",
+                DEV_INF(dev, "[0x%08x - 0x%08x]",
                        SPIF_ABS_ADDR(res.start_reg_off, res.start_bit_off),
                        SPIF_ABS_ADDR(res.end_reg_off, res.end_bit_off));
                 start.start_reg_off = res.end_reg_off;
@@ -605,9 +606,9 @@ int spif_dump_rw_addr_privilege_table(const struct device *dev)
         } while (num_protect_blk != 0);
 
         if (!protect_en) {
-            LOG_INF("all regions are free!");
+            DEV_INF(dev, "all regions are free!");
         }
-        LOG_INF("======END======");
+        DEV_INF(dev, "======END======");
     }
 
 end:
@@ -673,8 +674,8 @@ int spif_address_privilege_config_op(const struct device *dev,
     reg_off = addr / KB(512);            /* 512K per register; */
     bit_off = (addr % KB(512)) / KB(16); /* (512K / 16K); */
     total_bit_num = spif_get_cross_block_num(addr, len);
-    LOG_DBG("addr: 0x%08lx, len: 0x%08x", addr, len);
-    LOG_DBG("reg_off: 0x%08x, bit_off: 0x%08x, total_bit_num: 0x%08x",
+    DEV_DBG(dev, "addr: 0x%08lx, len: 0x%08x", addr, len);
+    DEV_DBG(dev, "reg_off: 0x%08x, bit_off: 0x%08x, total_bit_num: 0x%08x",
             reg_off,
             bit_off,
             total_bit_num);
@@ -719,7 +720,7 @@ int spif_address_privilege_config_op(const struct device *dev,
             }
             addr_whitelist[reg_off] = reg_val;
             sys_write32(reg_val, priv_table_base + reg_off * 4);
-            LOG_DBG("reg: 0x%08lx, val: 0x%08x", priv_table_base + reg_off * 4, reg_val);
+            DEV_DBG(dev, "reg: 0x%08lx, val: 0x%08x", priv_table_base + reg_off * 4, reg_val);
 
             bit_off++;
             total_bit_num--;
@@ -768,7 +769,7 @@ void spif_memset_read_addr_whitelist(const struct device *dev, uint8_t num)
             sys_write32(0xffffffff, dev_config->base + SPIF_READ_ADDR_VALID_EN_ADDR + off);  /* memset READ_ADDR */
         }
     } else {
-        LOG_ERR("num should be 0 or 1");
+        DEV_ERR(dev, "num should be 0 or 1");
     }
 }
 
@@ -790,7 +791,7 @@ void spif_memset_write_addr_whitelist(const struct device *dev, uint8_t num)
             sys_write32(0xffffffff, dev_config->base + SPIF_WRITE_ADDR_VALID_EN_ADDR + off); /* memset WRITE_ADDR */
         }
     } else {
-        LOG_ERR("num should be 0 or 1");
+        DEV_ERR(dev, "num should be 0 or 1");
     }
 }
 
@@ -805,7 +806,7 @@ void spif_memset_addr_whitelist(const struct device *dev, uint8_t num)
         spif_memset_read_addr_whitelist(dev, 1);
         spif_memset_write_addr_whitelist(dev, 1);
     } else {
-        LOG_ERR("num should be 0 or 1");
+        DEV_ERR(dev, "num should be 0 or 1");
     }
 }
 
@@ -835,7 +836,7 @@ int spif_add_general_cmd(const struct device *dev, uint8_t cmd)
 
     idx = spif_get_empty_general_cmd_slot(dev);
     if (idx < 0) {
-        LOG_ERR("No more space for new cmd");
+        DEV_ERR(dev, "No more space for new cmd");
         ret = -ENOSR;
         goto end;
     }
@@ -886,7 +887,7 @@ int spif_add_cmd(const struct device *dev, uint8_t cmd)
 
     idx = spif_get_empty_cmd_slot(dev);
     if (idx < 0) {
-        LOG_ERR("No more space for new cmd");
+        DEV_ERR(dev, "No more space for new cmd");
         ret = -ENOSR;
         goto end;
     }
@@ -939,7 +940,7 @@ int spif_add_cmd_with_dummy(const struct device *dev, uint8_t cmd, uint8_t dummy
 
     idx = spif_get_empty_cmd_slot(dev);
     if (idx < 0) {
-        LOG_ERR("No more space for new cmd");
+        DEV_ERR(dev, "No more space for new cmd");
         ret = -ENOSR;
         goto end;
     }
@@ -1058,7 +1059,7 @@ int spif_remove_general_cmd(const struct device *dev, uint8_t cmd)
     }
 
     if (!found) {
-        LOG_ERR("cmd %02x is not found in allow cmd table", cmd);
+        DEV_ERR(dev, "cmd %02x is not found in allow cmd table", cmd);
         ret = -EINVAL;
         goto end;
     }
@@ -1099,7 +1100,7 @@ int spif_remove_cmd(const struct device *dev, uint8_t cmd)
     }
 
     if (!found) {
-        LOG_ERR("cmd %02x is not found in allow cmd table", cmd);
+        DEV_ERR(dev, "cmd %02x is not found in allow cmd table", cmd);
         ret = -EINVAL;
         goto end;
     }
@@ -1218,9 +1219,9 @@ spif_dma_data_t *spif_log_dma_buf(const struct device *dev)
 }
 
 #if defined(CONFIG_SPI_FILTER_DMA_LOG)
-static void spif_dma_data_print(spif_dma_data_t spif_dma_data)
+static void spif_dma_data_print(const struct device *dev, spif_dma_data_t spif_dma_data)
 {
-    LOG_ERR("ADDR_ERR: %#x "
+    DEV_ERR(dev, "ADDR_ERR: %#x "
             "CMD_ERR: %#x "
             "POR_ADDR: %#x "
             "ERROR_ADDR: %#8.8x "
@@ -1246,13 +1247,13 @@ static void spif_dma_callback(const struct device *dev_dma, void *callback_arg,
         if (dev_data->dma_cb) {
             dev_data->dma_cb(dev);
         }
-        LOG_DBG("DMA_STATUS_TRIGGER");
+        DEV_DBG(dev, "DMA_STATUS_TRIGGER");
     }
     if (status == DMA_STATUS_BLOCK) {
-        LOG_DBG("DMA_STATUS_BLOCK");
+        DEV_DBG(dev, "DMA_STATUS_BLOCK");
     }
     if (status == DMA_STATUS_COMPLETE) {
-        LOG_DBG("DMA_STATUS_COMPLETE");
+        DEV_DBG(dev, "DMA_STATUS_COMPLETE");
     }
 }
 
@@ -1289,7 +1290,7 @@ int spif_dma_start(const struct device *dev)
     dev_data->spif_dma_config.dma_cfg.head_block = &(dev_data->spif_dma_config.dma_block);
 
     if (dev_config->dev_dma == NULL || !device_is_ready(dev_config->dev_dma)) {
-        LOG_ERR("dma binding fail");
+        DEV_ERR(dev, "dma binding fail");
         return -EINVAL;
     }
 
@@ -1480,10 +1481,10 @@ int spif_switch_to_master_handle(const struct device *dev, bool force)
     if (spif_out_check_dev) {
         if (spif_pinctrl_master_mode_check(spif_out_check_dev)) {
             if (force) {
-                LOG_INF("another spi filter out pin is master function, force switch to master mode");
+                DEV_INF(dev, "another spi filter out pin is master function, force switch to master mode");
                 spif_switch_to_filter(spif_out_check_dev);
             } else {
-                LOG_ERR("another spi filter out pin is master function, cannot switch to master mode");
+                DEV_ERR(dev, "another spi filter out pin is master function, cannot switch to master mode");
                 ret = -EBUSY;
                 goto err;
             }
@@ -1537,7 +1538,7 @@ static void spif_dma_work(struct k_work *work)
         struct dma_status stat;
         dma_get_status(dev_config->dev_dma, dev_config->dma_channel, &stat);
         const uint16_t xfer_len = stat.pending_length >> 2;
-        LOG_INF("xfer_len: %d", xfer_len);
+        DEV_INF(dev, "xfer_len: %d", xfer_len);
         if (last_xfer_len == xfer_len) {
             break;
         } else {
@@ -1547,8 +1548,8 @@ static void spif_dma_work(struct k_work *work)
         if (log_info->log_idx < xfer_len) {
 #if defined(CONFIG_SPI_FILTER_DMA_LOG)
             for (uint16_t i = log_info->log_idx; i < xfer_len; i++) {
-                LOG_DBG("dma log idx: %d", i);
-                spif_dma_data_print(spif_dma_data[i]);
+                DEV_DBG(dev, "dma log idx: %d", i);
+                spif_dma_data_print(dev, spif_dma_data[i]);
             }
 #endif
         } else {
@@ -1562,12 +1563,12 @@ static void spif_dma_work(struct k_work *work)
             }
 #if defined(CONFIG_SPI_FILTER_DMA_LOG)
             for (uint16_t i = start_idx; i < SPIF_LOG_RAM_MAX_SIZE_U32; i++) {
-                LOG_DBG("dma log idx: %d\n", i);
-                spif_dma_data_print(spif_dma_data[i]);
+                DEV_DBG(dev, "dma log idx: %d\n", i);
+                spif_dma_data_print(dev, spif_dma_data[i]);
             }
             for (uint16_t i = 0; i < xfer_len; i++) {
-                LOG_DBG("dma log idx: %d\n", i);
-                spif_dma_data_print(spif_dma_data[i]);
+                DEV_DBG(dev, "dma log idx: %d\n", i);
+                spif_dma_data_print(dev, spif_dma_data[i]);
             }
 #endif
         }
@@ -1599,7 +1600,7 @@ int linkedsemi_spi_filter_cold_reset(const struct device *dev)
     if (dev_config->ccfg.cctl_dev) {
         const struct device *clk_dev = dev_config->ccfg.cctl_dev;
         if (!device_is_ready(clk_dev)) {
-            LOG_DBG("%s device not ready", clk_dev->name);
+            DEV_DBG(dev, "%s device not ready", clk_dev->name);
             return -ENODEV;
         }
         clock_control_off(clk_dev, (clock_control_subsys_t)&dev_config->ccfg);
@@ -1609,13 +1610,13 @@ int linkedsemi_spi_filter_cold_reset(const struct device *dev)
 #if defined(CONFIG_RESET)
     if (dev_config->reset.dev != NULL) {
         if (!device_is_ready(dev_config->reset.dev)) {
-            LOG_ERR("Reset controller device is not ready");
+            DEV_ERR(dev, "Reset controller device is not ready");
             return -ENODEV;
         }
 
         ret = reset_line_toggle(dev_config->reset.dev, dev_config->reset.id);
         if (ret != 0) {
-            LOG_ERR("toggle reset line failed");
+            DEV_ERR(dev, "toggle reset line failed");
             return ret;
         }
     }
@@ -1631,7 +1632,7 @@ int linkedsemi_spi_filter_cold_reset(const struct device *dev)
 #if defined(CONFIG_PINCTRL)
     ret = pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_DEFAULT);
     if (ret < 0) {
-        LOG_DBG("%s: Could not configure pins", dev->name);
+        DEV_DBG(dev, "Could not configure pins");
     }
 #endif
 
