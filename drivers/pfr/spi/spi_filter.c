@@ -247,13 +247,11 @@ static void linkedsemi_spi_filter_isr(const struct device *dev)
         LOG_ERR("ERROR");
         spif_dma_data_t spif_dma_data;
         spif_dma_data.value = sys_read32(dev_config->base + SPIF_DMA_DATA);
-        LOG_ERR("device@%s "
-                "ADDR_ERR: %#x "
+        LOG_ERR("ADDR_ERR: %#x "
                 "CMD_ERR: %#x "
                 "POR_ADDR: %#x "
                 "ERROR_ADDR: %#8.8x "
                 "ERROR_CMD: %#2.2x",
-                dev->name,
                 spif_dma_data.ADDR_ERR,
                 spif_dma_data.CMD_ERR,
                 spif_dma_data.POR_ADDR,
@@ -263,7 +261,7 @@ static void linkedsemi_spi_filter_isr(const struct device *dev)
 #endif
     if (intr_status.TARGET_ADDR) {
         uint32_t addr = sys_read32(dev_config->base + SPIF_TARGET_ADDR);
-        LOG_ERR("device@%s ""TARGET_ADDR: %#x",dev->name,addr);
+        LOG_ERR("TARGET_ADDR: %#x", addr);
     }
     if (intr_status.SCK_CHECK) {
         spif_sck_fqc_hi_t spif_sck_fqc_hi;
@@ -272,8 +270,7 @@ static void linkedsemi_spi_filter_isr(const struct device *dev)
         spif_sck_fqc_hi.value = sys_read32(dev_config->base + SPIF_SCK_FQC_HI);
         spif_sck_fqc_lo.value = sys_read32(dev_config->base + SPIF_SCK_FQC_LO);
         spif_sck_set.value = sys_read32(dev_config->base + SPIF_SCK_SET);
-        LOG_ERR("device@%s ""SCK_CHECK: expect [%#x, %#x] but got %#x",
-               dev->name,
+        LOG_ERR("SCK_CHECK: expect [%#x, %#x] but got %#x",
                spif_sck_fqc_lo.SCK_FQC_LO,
                spif_sck_fqc_hi.SCK_FQC_HI,
                spif_sck_set.SCK_FQC);
@@ -1221,15 +1218,13 @@ spif_dma_data_t *spif_log_dma_buf(const struct device *dev)
 }
 
 #if defined(CONFIG_SPI_FILTER_DMA_LOG)
-static void spif_dma_data_print(const struct device *dev,spif_dma_data_t spif_dma_data)
+static void spif_dma_data_print(spif_dma_data_t spif_dma_data)
 {
-    LOG_ERR("device@%s "
-            "ADDR_ERR: %#x "
+    LOG_ERR("ADDR_ERR: %#x "
             "CMD_ERR: %#x "
             "POR_ADDR: %#x "
             "ERROR_ADDR: %#8.8x "
             "ERROR_CMD: %#2.2x",
-            dev->name,
             spif_dma_data.ADDR_ERR,
             spif_dma_data.CMD_ERR,
             spif_dma_data.POR_ADDR,
@@ -1553,7 +1548,7 @@ static void spif_dma_work(struct k_work *work)
 #if defined(CONFIG_SPI_FILTER_DMA_LOG)
             for (uint16_t i = log_info->log_idx; i < xfer_len; i++) {
                 LOG_DBG("dma log idx: %d", i);
-                spif_dma_data_print(dev,spif_dma_data[i]);
+                spif_dma_data_print(spif_dma_data[i]);
             }
 #endif
         } else {
@@ -1568,11 +1563,11 @@ static void spif_dma_work(struct k_work *work)
 #if defined(CONFIG_SPI_FILTER_DMA_LOG)
             for (uint16_t i = start_idx; i < SPIF_LOG_RAM_MAX_SIZE_U32; i++) {
                 LOG_DBG("dma log idx: %d\n", i);
-                spif_dma_data_print(dev,spif_dma_data[i]);
+                spif_dma_data_print(spif_dma_data[i]);
             }
             for (uint16_t i = 0; i < xfer_len; i++) {
                 LOG_DBG("dma log idx: %d\n", i);
-                spif_dma_data_print(dev,spif_dma_data[i]);
+                spif_dma_data_print(spif_dma_data[i]);
             }
 #endif
         }
