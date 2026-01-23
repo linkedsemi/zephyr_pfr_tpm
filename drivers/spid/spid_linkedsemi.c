@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(spid_linkedsemi);
 
 #include "spid_linkedsemi.h"
 #include "reg_spid.h"
+#include <soc.h>
 
 #define DT_DRV_COMPAT linkedsemi_spid
 
@@ -52,7 +53,7 @@ static void linkedsemi_spid_main_isr(const struct device *dev)
     struct spid_linkedsemi_config *cfg = (struct spid_linkedsemi_config *)dev->config;
 
     uint32_t stat = sys_read32(cfg->reg + SPID_INTR_STATE);
-    LOG_DBG("%s stat: 0x%x\n", __func__, stat);
+    DEV_DBG(dev, "%s stat: 0x%x\n", __func__, stat);
     if (stat) {
         if (data->cb) {
             data->cb(dev, 0, data->user_data, NULL);
@@ -103,7 +104,7 @@ int spid_linkedsemi_cold_reset(const struct device *dev)
     if (dev_config->ccfg.cctl_dev) {
         const struct device *clk_dev = dev_config->ccfg.cctl_dev;
         if (!device_is_ready(clk_dev)) {
-            LOG_DBG("%s device not ready", clk_dev->name);
+            DEV_DBG(dev, "%s device not ready", clk_dev->name);
             return -ENODEV;
         }
         clock_control_off(clk_dev, (clock_control_subsys_t)&dev_config->ccfg);
@@ -113,13 +114,13 @@ int spid_linkedsemi_cold_reset(const struct device *dev)
 #if defined(CONFIG_RESET)
     if (dev_config->reset.dev != NULL) {
         if (!device_is_ready(dev_config->reset.dev)) {
-            LOG_ERR("Reset controller device is not ready");
+            DEV_ERR(dev, "Reset controller device is not ready");
             return -ENODEV;
         }
 
         ret = reset_line_toggle(dev_config->reset.dev, dev_config->reset.id);
         if (ret != 0) {
-            LOG_ERR("toggle reset line failed");
+            DEV_ERR(dev, "toggle reset line failed");
             return ret;
         }
     }
@@ -135,7 +136,7 @@ int spid_linkedsemi_cold_reset(const struct device *dev)
 #if defined(CONFIG_PINCTRL)
     ret = pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_DEFAULT);
     if (ret < 0) {
-        LOG_DBG("%s: Could not configure pins", dev->name);
+        DEV_DBG(dev, "Could not configure pins");
     }
 #endif
 
