@@ -29,6 +29,7 @@ LOG_MODULE_REGISTER(i2c_pfr_filter);
 
 #include <i2c_filter.h>
 #include <reg_i2c_filter.h>
+#include <soc.h>
 
 struct linkedsemi_i2c_filter_config {
     mm_reg_t base;
@@ -90,10 +91,10 @@ static void linkedsemi_i2c_filter_isr(const struct device *dev)
     smbf_nonwhitelist.value = sys_read32(dev_config->base + SMBF_NONWHITELIST);
 
     if (intr_status.ADDRESS_BEYOND_WHITELIST) {
-        LOG_ERR("address beyond whitelist: i2c@%#x\n", smbf_nonwhitelist.ERROR_ADDRESS);
+        DEV_ERR(dev, "address beyond whitelist: i2c@%#x\n", smbf_nonwhitelist.ERROR_ADDRESS);
     }
     if (intr_status.COMMAND_BEYOND_WHITELIST) {
-        LOG_ERR("command beyond whitelist: i2c@%#x cmd@%#x\n",
+        DEV_ERR(dev, "command beyond whitelist: i2c@%#x cmd@%#x\n",
                                                     smbf_nonwhitelist.ERROR_ADDRESS,
                                                     smbf_nonwhitelist.ERROR_COMMAND);
     }
@@ -111,7 +112,7 @@ int linkedsemi_i2c_filter_enable_channel(const struct device *dev,
     __unused struct linkedsemi_i2c_filter_data *dev_data = dev->data;
 
     if (idx > (LINKEDSEMI_I2C_F_ADDR_NUM - 1)) {
-        LOG_ERR("i2c filter index invalid");
+        DEV_ERR(dev, "i2c filter index invalid");
         return -EINVAL;
     }
 
@@ -139,10 +140,10 @@ int linkedsemi_i2c_filter_fill_bitmap(const struct device *dev,
     __unused struct linkedsemi_i2c_filter_data *dev_data = dev->data;
 
     if (idx > (LINKEDSEMI_I2C_F_ADDR_NUM - 1)) {
-        LOG_ERR("i2c filter index invalid");
+        DEV_ERR(dev, "i2c filter index invalid");
         return -EINVAL;
     } else if (!bitmap) {
-        LOG_ERR("i2c filter bitmap is NULL");
+        DEV_ERR(dev, "i2c filter bitmap is NULL");
         return -EINVAL;
     }
 
@@ -156,7 +157,7 @@ int linkedsemi_i2c_filter_fill_bitmap(const struct device *dev,
             if ((wht_addr.field[addr_idx].WHITELIST_ADDRESS == addr) && (it_idx != idx)) {
                 uint32_t smbf_address_enable = sys_read32(dev_config->base + SMBF_ADDRESS_ENABLE);
                 if (smbf_address_enable & BIT(it_idx)) {
-                    LOG_ERR("operation fail: addr[%#x] is duplicated with channel %d", addr, it_idx);
+                    DEV_ERR(dev, "operation fail: addr[%#x] is duplicated with channel %d", addr, it_idx);
                     k_mutex_unlock(&dev_data->lock);
                     return -EINVAL;
                 }
@@ -195,10 +196,10 @@ int linkedsemi_i2c_filter_dump_bitmap(const struct device *dev,
     __unused struct linkedsemi_i2c_filter_data *dev_data = dev->data;
 
     if (idx > (LINKEDSEMI_I2C_F_ADDR_NUM - 1)) {
-        LOG_ERR("i2c filter index invalid");
+        DEV_ERR(dev, "i2c filter index invalid");
         return -EINVAL;
     } else if (!bitmap) {
-        LOG_ERR("i2c filter bitmap is NULL");
+        DEV_ERR(dev, "i2c filter bitmap is NULL");
         return -EINVAL;
     }
 
@@ -298,7 +299,7 @@ int linkedsemi_i2c_filter_cold_reset(const struct device *dev)
     if (dev_config->ccfg.cctl_dev) {
         const struct device *clk_dev = dev_config->ccfg.cctl_dev;
         if (!device_is_ready(clk_dev)) {
-            LOG_DBG("%s device not ready", clk_dev->name);
+            DEV_DBG(dev, "%s device not ready", clk_dev->name);
             return -ENODEV;
         }
         clock_control_off(clk_dev, (clock_control_subsys_t)&dev_config->ccfg);
@@ -308,13 +309,13 @@ int linkedsemi_i2c_filter_cold_reset(const struct device *dev)
 #if defined(CONFIG_RESET)
     if (dev_config->reset.dev != NULL) {
         if (!device_is_ready(dev_config->reset.dev)) {
-            LOG_ERR("Reset controller device is not ready");
+            DEV_ERR(dev, "Reset controller device is not ready");
             return -ENODEV;
         }
 
         ret = reset_line_toggle(dev_config->reset.dev, dev_config->reset.id);
         if (ret != 0) {
-            LOG_ERR("toggle reset line failed");
+            DEV_ERR(dev, "toggle reset line failed");
             return ret;
         }
     }
@@ -330,7 +331,7 @@ int linkedsemi_i2c_filter_cold_reset(const struct device *dev)
 #if defined(CONFIG_PINCTRL)
     ret = pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_DEFAULT);
     if (ret < 0) {
-        LOG_DBG("%s: Could not configure pins", dev->name);
+        DEV_DBG(dev, "Could not configure pins");
     }
 #endif
 
