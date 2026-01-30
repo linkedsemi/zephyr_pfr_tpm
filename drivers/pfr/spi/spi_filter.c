@@ -1548,7 +1548,7 @@ static void spif_dma_work(struct k_work *work)
         if (log_info->log_idx < xfer_len) {
 #if defined(CONFIG_SPI_FILTER_DMA_LOG)
             for (uint16_t i = log_info->log_idx; i < xfer_len; i++) {
-                DEV_DBG(dev, "dma log idx: %d", i);
+                DEV_INF(dev, "dma log idx: %d", i);
                 spif_dma_data_print(dev, spif_dma_data[i]);
             }
 #endif
@@ -1563,11 +1563,11 @@ static void spif_dma_work(struct k_work *work)
             }
 #if defined(CONFIG_SPI_FILTER_DMA_LOG)
             for (uint16_t i = start_idx; i < SPIF_LOG_RAM_MAX_SIZE_U32; i++) {
-                DEV_DBG(dev, "dma log idx: %d\n", i);
+                DEV_INF(dev, "dma log idx: %d\n", i);
                 spif_dma_data_print(dev, spif_dma_data[i]);
             }
             for (uint16_t i = 0; i < xfer_len; i++) {
-                DEV_DBG(dev, "dma log idx: %d\n", i);
+                DEV_INF(dev, "dma log idx: %d\n", i);
                 spif_dma_data_print(dev, spif_dma_data[i]);
             }
 #endif
