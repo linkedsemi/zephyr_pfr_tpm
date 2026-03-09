@@ -1665,7 +1665,22 @@ int linkedsemi_spi_filter_cold_reset(const struct device *dev)
     intr_mask.TARGET_ADDR = 0;
     sys_write32(intr_mask.value, dev_config->base + SPIF_INTR_MASK);
 
-    k_work_init(&dev_data->dma_work, spif_dma_work);
+    if (dev_config->log_info != NULL) {
+        dev_config->log_info->log_idx = 0;
+        dev_config->log_info->log_ram_addr = dev_config->log_ram_addr;
+        dev_config->log_info->log_max_sz = SPIF_LOG_RAM_MAX_SIZE_U32;
+
+    }
+#if defined(CONFIG_SPI_FILTER_ADDR_WHITELIST_BUF)
+    if (dev_config->read_addr_whitelist != NULL) {
+        memset(dev_config->read_addr_whitelist, 0, SPIF_ADDR_PRIV_REG_NUN * sizeof(uint32_t));
+    }
+    if (dev_config->write_addr_whitelist != NULL) {
+        memset(dev_config->write_addr_whitelist, 0, SPIF_ADDR_PRIV_REG_NUN * sizeof(uint32_t));
+    }
+#endif
+    sys_cache_data_flush_all();
+
 
     return 0;
 }
@@ -1678,6 +1693,7 @@ static int linkedsemi_spi_filter_init(const struct device *dev)
     struct linkedsemi_spi_filter_data *dev_data = dev->data;
 
     dev_data->dev = dev;
+    k_work_init(&dev_data->dma_work, spif_dma_work);
     dev_config->log_info->log_ram_addr = dev_config->log_ram_addr;
     dev_config->log_info->log_max_sz = SPIF_LOG_RAM_MAX_SIZE_U32;
 
