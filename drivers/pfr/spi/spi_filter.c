@@ -148,16 +148,17 @@ struct linkedsemi_spi_filter_config {
     uint8_t fixed_cmd_tab[SPIF_FIXED_CMD_TABLE_NUM];
     uint8_t fixed_cmd_dummy_tab[SPIF_FIXED_CMD_TABLE_NUM];
     struct spif_log_info *log_info;
+    mem_addr_t log_ram_addr;
+#if defined(CONFIG_SPI_FILTER_ADDR_WHITELIST_BUF)
+    uint32_t *read_addr_whitelist;
+    uint32_t *write_addr_whitelist;
+#endif
     IF_ENABLED(CONFIG_PINCTRL, (const struct pinctrl_dev_config *pcfg;))
     IF_ENABLED(CONFIG_CLOCK_CONTROL, (struct ls_clk_cfg ccfg;))
     IF_ENABLED(CONFIG_RESET, (struct reset_dt_spec reset;))
 };
 
 struct linkedsemi_spi_filter_data {
-#if defined(CONFIG_SPI_FILTER_ADDR_WHITELIST_BUF)
-    uint32_t read_addr_whitelist[SPIF_ADDR_PRIV_REG_NUN];
-    uint32_t write_addr_whitelist[SPIF_ADDR_PRIV_REG_NUN];
-#endif
     const struct device *dev;
     uint32_t flash_size;
     struct k_sem sem_spif;
@@ -453,13 +454,13 @@ static inline int spif_peek_rw_area(const struct device *dev, enum addr_priv_rw_
 {
     __ASSERT_NO_MSG(addr < SPIF_ADDR_PRIV_REG_NUN);
 
-    struct linkedsemi_spi_filter_data *dev_data = dev->data;
+    const struct linkedsemi_spi_filter_config *dev_config = dev->config;
     int ret = 0;
 
     if (rw_select == FLAG_ADDR_PRIV_READ_SELECT) {
-        *data = dev_data->read_addr_whitelist[addr];
+        *data = dev_config->read_addr_whitelist[addr];
     } else {
-        *data = dev_data->write_addr_whitelist[addr];
+        *data = dev_config->write_addr_whitelist[addr];
     }
 
     return ret;
@@ -639,7 +640,6 @@ int spif_address_privilege_config_op(const struct device *dev,
     __ASSERT_NO_MSG(dev);
 
     const struct linkedsemi_spi_filter_config *dev_config = dev->config;
-    struct linkedsemi_spi_filter_data *dev_data = dev->data;
     mm_reg_t priv_table_base;
     uint32_t *addr_whitelist;
     int ret = 0;
@@ -684,10 +684,10 @@ int spif_address_privilege_config_op(const struct device *dev,
 
     if (rw_select == FLAG_ADDR_PRIV_READ_SELECT) {
         priv_table_base = dev_config->base + SPIF_READ_ADDR_VALID_EN_ADDR;
-        addr_whitelist = dev_data->read_addr_whitelist;
+        addr_whitelist = dev_config->read_addr_whitelist;
     } else {
         priv_table_base = dev_config->base + SPIF_WRITE_ADDR_VALID_EN_ADDR;
-        addr_whitelist = dev_data->write_addr_whitelist;
+        addr_whitelist = dev_config->write_addr_whitelist;
     }
 
     do {
@@ -756,16 +756,15 @@ void spif_memset_read_addr_whitelist(const struct device *dev, uint8_t num)
     __ASSERT_NO_MSG(dev);
 
     const struct linkedsemi_spi_filter_config *dev_config = dev->config;
-    struct linkedsemi_spi_filter_data *dev_data = dev->data;
 
     if (num == 0) {
         for (uint32_t off = 0; off < SPIF_ADDR_SIZE; off += 4) {
-            memset(dev_data->read_addr_whitelist, 0, SPIF_ADDR_PRIV_REG_NUN * sizeof(uint32_t));
+            memset(dev_config->read_addr_whitelist, 0, SPIF_ADDR_PRIV_REG_NUN * sizeof(uint32_t));
             sys_write32(0, dev_config->base + SPIF_READ_ADDR_VALID_EN_ADDR + off);  /* memset READ_ADDR */
         }
     } else if (num == 1) {
         for (uint32_t off = 0; off < SPIF_ADDR_SIZE; off += 4) {
-            memset(dev_data->read_addr_whitelist, 0xff, SPIF_ADDR_PRIV_REG_NUN * sizeof(uint32_t));
+            memset(dev_config->read_addr_whitelist, 0xff, SPIF_ADDR_PRIV_REG_NUN * sizeof(uint32_t));
             sys_write32(0xffffffff, dev_config->base + SPIF_READ_ADDR_VALID_EN_ADDR + off);  /* memset READ_ADDR */
         }
     } else {
@@ -778,16 +777,15 @@ void spif_memset_write_addr_whitelist(const struct device *dev, uint8_t num)
     __ASSERT_NO_MSG(dev);
 
     const struct linkedsemi_spi_filter_config *dev_config = dev->config;
-    struct linkedsemi_spi_filter_data *dev_data = dev->data;
 
     if (num == 0) {
         for (uint32_t off = 0; off < SPIF_ADDR_SIZE; off += 4) {
-            memset(dev_data->write_addr_whitelist, 0, SPIF_ADDR_PRIV_REG_NUN * sizeof(uint32_t));
+            memset(dev_config->write_addr_whitelist, 0, SPIF_ADDR_PRIV_REG_NUN * sizeof(uint32_t));
             sys_write32(0, dev_config->base + SPIF_WRITE_ADDR_VALID_EN_ADDR + off); /* memset WRITE_ADDR */
         }
     } else if (num == 1) {
         for (uint32_t off = 0; off < SPIF_ADDR_SIZE; off += 4) {
-            memset(dev_data->write_addr_whitelist, 0xff, SPIF_ADDR_PRIV_REG_NUN * sizeof(uint32_t));
+            memset(dev_config->write_addr_whitelist, 0xff, SPIF_ADDR_PRIV_REG_NUN * sizeof(uint32_t));
             sys_write32(0xffffffff, dev_config->base + SPIF_WRITE_ADDR_VALID_EN_ADDR + off); /* memset WRITE_ADDR */
         }
     } else {
@@ -1667,7 +1665,22 @@ int linkedsemi_spi_filter_cold_reset(const struct device *dev)
     intr_mask.TARGET_ADDR = 0;
     sys_write32(intr_mask.value, dev_config->base + SPIF_INTR_MASK);
 
-    k_work_init(&dev_data->dma_work, spif_dma_work);
+    if (dev_config->log_info != NULL) {
+        dev_config->log_info->log_idx = 0;
+        dev_config->log_info->log_ram_addr = dev_config->log_ram_addr;
+        dev_config->log_info->log_max_sz = SPIF_LOG_RAM_MAX_SIZE_U32;
+
+    }
+#if defined(CONFIG_SPI_FILTER_ADDR_WHITELIST_BUF)
+    if (dev_config->read_addr_whitelist != NULL) {
+        memset(dev_config->read_addr_whitelist, 0, SPIF_ADDR_PRIV_REG_NUN * sizeof(uint32_t));
+    }
+    if (dev_config->write_addr_whitelist != NULL) {
+        memset(dev_config->write_addr_whitelist, 0, SPIF_ADDR_PRIV_REG_NUN * sizeof(uint32_t));
+    }
+#endif
+    sys_cache_data_flush_all();
+
 
     return 0;
 }
@@ -1680,6 +1693,9 @@ static int linkedsemi_spi_filter_init(const struct device *dev)
     struct linkedsemi_spi_filter_data *dev_data = dev->data;
 
     dev_data->dev = dev;
+    k_work_init(&dev_data->dma_work, spif_dma_work);
+    dev_config->log_info->log_ram_addr = dev_config->log_ram_addr;
+    dev_config->log_info->log_max_sz = SPIF_LOG_RAM_MAX_SIZE_U32;
 
     if (IS_ENABLED(CONFIG_MULTITHREADING))
         k_sem_init(&dev_data->sem_spif, 1, 1);
@@ -1701,18 +1717,20 @@ static int linkedsemi_spi_filter_init(const struct device *dev)
         irq_enable(DT_INST_IRQN(inst));                                                                                                          \
     }                                                                                                                                            \
     PINCTRL_DT_INST_DEFINE(inst);                                                                                                                \
-    __nocache uint32_t log_ram_##inst[SPIF_LOG_RAM_MAX_SIZE_U32];                                                                                \
-    struct spif_log_info log_info_##inst = {                                                                                                     \
-       .log_ram_addr = (uint32_t)log_ram_##inst,                                                                                                 \
-       .log_max_sz = SPIF_LOG_RAM_MAX_SIZE_U32,                                                                                                  \
-       .log_idx = 0,                                                                                                                             \
-    };                                                                                                                                           \
+    __noinit_named(spi_filter_log_info_##inst) struct spif_log_info spi_filter_log_info_##inst;                                                  \
+    __noinit_named(spi_filter_log_buf_##inst) uint32_t spi_filter_log_buf_##inst[SPIF_LOG_RAM_MAX_SIZE_U32];                                     \
+    __noinit_named(spi_filter_read_addr_whitelist_##inst) uint32_t spi_filter_read_addr_whitelist_##inst[SPIF_ADDR_PRIV_REG_NUN];                \
+    __noinit_named(spi_filter_write_addr_whitelist_##inst) uint32_t spi_filter_write_addr_whitelist_##inst[SPIF_ADDR_PRIV_REG_NUN];              \
     static const struct linkedsemi_spi_filter_config linkedsemi_spi_filter_cfg_##inst = {                                                        \
         .base = (mm_reg_t)DT_INST_REG_ADDR(inst),                                                                                                \
         .spi = DEVICE_DT_GET(DT_INST_PHANDLE(inst, spi)),                                                                                        \
         .cs = GPIO_DT_SPEC_INST_GET(inst, cs_gpios),                                                                                             \
         .irq_config_func = linkedsemi_spi_filter_irq_config_func_##inst,                                                                         \
         .index = DT_INST_PROP(inst, index),                                                                                                      \
+        .read_addr_whitelist = spi_filter_read_addr_whitelist_##inst,                                                                            \
+        .write_addr_whitelist = spi_filter_write_addr_whitelist_##inst,                                                                          \
+        .log_info = &spi_filter_log_info_##inst,                                                                                                 \
+        .log_ram_addr = (mem_addr_t)spi_filter_log_buf_##inst,                                                                                   \
         .fixed_cmd_tab = {                                                                                                                       \
             [IDX_CMD_PAGE_PROGRAM] = DT_INST_PROP_OR(inst, cmd_page_program, 0),                                                                 \
             [IDX_CMD_PAGE_PROGRAM_QUAD_ADDR_QUAD_DATA] = DT_INST_PROP_OR(inst, cmd_page_program_quad_addr_quad_data, 0),                         \
@@ -1777,7 +1795,6 @@ static int linkedsemi_spi_filter_init(const struct device *dev)
             [IDX_CMD_PROGRAM_QUAD_DATA_DUMMY] = DT_INST_PROP_OR(inst, cmd_program_quad_data_dummy, 0),                                           \
             [IDX_CMD_4BYTE_PROGRAM_QUAD_DATA_DUMMY] = DT_INST_PROP_OR(inst, cmd_4byte_program_quad_data_dummy, 0),                               \
         },                                                                                                                                       \
-        .log_info = &log_info_##inst,                                                                                                            \
         IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, dmas), (.dev_dma = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(inst, rx)),))                          \
         IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, dmas), (.dma_channel = DT_INST_DMAS_CELL_BY_NAME(inst, rx, channel),))                            \
         IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, dmas), (.dma_handshake = DT_INST_DMAS_CELL_BY_NAME(inst, rx, handshake),))                        \
