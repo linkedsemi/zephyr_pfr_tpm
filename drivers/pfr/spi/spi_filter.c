@@ -1673,10 +1673,10 @@ int linkedsemi_spi_filter_cold_reset(const struct device *dev)
     }
 #if defined(CONFIG_SPI_FILTER_ADDR_WHITELIST_BUF)
     if (dev_config->read_addr_whitelist != NULL) {
-        memset(dev_config->read_addr_whitelist, 0, SPIF_ADDR_PRIV_REG_NUN * sizeof(uint32_t));
+        spif_memset_read_addr_whitelist(dev, 1);
     }
     if (dev_config->write_addr_whitelist != NULL) {
-        memset(dev_config->write_addr_whitelist, 0, SPIF_ADDR_PRIV_REG_NUN * sizeof(uint32_t));
+        spif_memset_write_addr_whitelist(dev, 1);
     }
 #endif
     sys_cache_data_flush_all();
