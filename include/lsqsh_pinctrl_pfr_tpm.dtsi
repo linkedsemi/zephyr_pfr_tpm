@@ -120,13 +120,13 @@
 };
 
 &driver_share_memory {
-   reg = <(0x100c0000 - DT_FREQ_K(4) - DT_FREQ_K(4) - DT_FREQ_K(50)) DT_FREQ_K(1)>;
+   reg = <(0x100c0000 - DT_SIZE_K(4) - DT_SIZE_K(4) - DT_SIZE_K(52)) DT_SIZE_K(1)>;
 };
 
 &soc {
-    pfr_tpm: memory@100b0000 {
+    pfr_tpm: memory@100b2800 {
         compatible = "zephyr,memory-region", "mmio-sram";
-        reg = <(0x100c0000 - DT_FREQ_K(4) - DT_FREQ_K(50)) DT_FREQ_K(50)>;
+        reg = <(0x100c0000 - DT_SIZE_K(4) - DT_SIZE_K(50)) DT_SIZE_K(52)>;
         zephyr,memory-region = "PFR_TPM";
     };
 };
