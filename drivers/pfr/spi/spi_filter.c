@@ -1591,7 +1591,6 @@ int linkedsemi_spi_filter_cold_reset(const struct device *dev)
     __ASSERT_NO_MSG(dev);
 
     const struct linkedsemi_spi_filter_config *dev_config = dev->config;
-    struct linkedsemi_spi_filter_data *dev_data = dev->data;
     int ret;
 
 #if defined(CONFIG_CLOCK_CONTROL)
@@ -1705,6 +1704,15 @@ static int linkedsemi_spi_filter_init(const struct device *dev)
     return 0;
 }
 
+struct spi_filter_retain_var {
+    uint32_t read_addr_whitelist[SPIF_ADDR_PRIV_REG_NUN];
+    uint32_t write_addr_whitelist[SPIF_ADDR_PRIV_REG_NUN];
+    uint32_t log_buf[SPIF_LOG_RAM_MAX_SIZE_U32];
+    struct spif_log_info log_info;
+};
+
+#define SPI_FILTER_RETAIN_VAR_NAME(inst) UTIL_CAT(spi_filter_retain_var_, DT_INST_PROP(inst, index))
+
 #define SPI_FILTER_INIT(inst)                                                                                                                    \
     static void linkedsemi_spi_filter_irq_config_func_##inst(const struct device *dev)                                                           \
     {                                                                                                                                            \
@@ -1717,20 +1725,17 @@ static int linkedsemi_spi_filter_init(const struct device *dev)
         irq_enable(DT_INST_IRQN(inst));                                                                                                          \
     }                                                                                                                                            \
     PINCTRL_DT_INST_DEFINE(inst);                                                                                                                \
-    __noinit_named(spi_filter_log_info_##inst) struct spif_log_info spi_filter_log_info_##inst;                                                  \
-    __noinit_named(spi_filter_log_buf_##inst) uint32_t spi_filter_log_buf_##inst[SPIF_LOG_RAM_MAX_SIZE_U32];                                     \
-    __noinit_named(spi_filter_read_addr_whitelist_##inst) uint32_t spi_filter_read_addr_whitelist_##inst[SPIF_ADDR_PRIV_REG_NUN];                \
-    __noinit_named(spi_filter_write_addr_whitelist_##inst) uint32_t spi_filter_write_addr_whitelist_##inst[SPIF_ADDR_PRIV_REG_NUN];              \
+    __noinit_named(SPI_FILTER_RETAIN_VAR_NAME(inst)) struct spi_filter_retain_var SPI_FILTER_RETAIN_VAR_NAME(inst);                              \
     static const struct linkedsemi_spi_filter_config linkedsemi_spi_filter_cfg_##inst = {                                                        \
         .base = (mm_reg_t)DT_INST_REG_ADDR(inst),                                                                                                \
         .spi = DEVICE_DT_GET(DT_INST_PHANDLE(inst, spi)),                                                                                        \
         .cs = GPIO_DT_SPEC_INST_GET(inst, cs_gpios),                                                                                             \
         .irq_config_func = linkedsemi_spi_filter_irq_config_func_##inst,                                                                         \
         .index = DT_INST_PROP(inst, index),                                                                                                      \
-        .read_addr_whitelist = spi_filter_read_addr_whitelist_##inst,                                                                            \
-        .write_addr_whitelist = spi_filter_write_addr_whitelist_##inst,                                                                          \
-        .log_info = &spi_filter_log_info_##inst,                                                                                                 \
-        .log_ram_addr = (mem_addr_t)spi_filter_log_buf_##inst,                                                                                   \
+        .read_addr_whitelist = SPI_FILTER_RETAIN_VAR_NAME(inst).read_addr_whitelist,                                                             \
+        .write_addr_whitelist = SPI_FILTER_RETAIN_VAR_NAME(inst).write_addr_whitelist,                                                           \
+        .log_info = &SPI_FILTER_RETAIN_VAR_NAME(inst).log_info,                                                                                  \
+        .log_ram_addr = (mem_addr_t)SPI_FILTER_RETAIN_VAR_NAME(inst).log_buf,                                                                    \
         .fixed_cmd_tab = {                                                                                                                       \
             [IDX_CMD_PAGE_PROGRAM] = DT_INST_PROP_OR(inst, cmd_page_program, 0),                                                                 \
             [IDX_CMD_PAGE_PROGRAM_QUAD_ADDR_QUAD_DATA] = DT_INST_PROP_OR(inst, cmd_page_program_quad_addr_quad_data, 0),                         \
