@@ -1,24 +1,16 @@
-.link_to_pfr_tpm_bss :
-{
-    . = ALIGN(4);
-    __pfr_tpm_bss_start = .;
+#define SPI_FILTER_RETAIN_VAR_SIZE  0x3008
+ASSERT((SPI_FILTER_RETAIN_VAR_SIZE % 4) == 0, "(SPI_FILTER_RETAIN_VAR_SIZE % 4) == 0")
 
-    . = ALIGN(4);
-    __pfr_tpm_bss_end = .;
-} > PFR_TPM
-__pfr_tpm_bss_size = __pfr_tpm_bss_end - __pfr_tpm_bss_start;
+#define SPI_FILTER_RETAIN_VAR_0_ADDR (DT_REG_ADDR(DT_NODELABEL(pfr_tpm)) + SPI_FILTER_RETAIN_VAR_SIZE * 0)
+#define SPI_FILTER_RETAIN_VAR_1_ADDR (DT_REG_ADDR(DT_NODELABEL(pfr_tpm)) + SPI_FILTER_RETAIN_VAR_SIZE * 1)
+#define SPI_FILTER_RETAIN_VAR_2_ADDR (DT_REG_ADDR(DT_NODELABEL(pfr_tpm)) + SPI_FILTER_RETAIN_VAR_SIZE * 2)
+#define SPI_FILTER_RETAIN_VAR_3_ADDR (DT_REG_ADDR(DT_NODELABEL(pfr_tpm)) + SPI_FILTER_RETAIN_VAR_SIZE * 3)
 
-.link_to_pfr_tpm_noinit :
-{
-    . = ALIGN(4);
-    __pfr_tpm_noinit_start = .;
+#define PFR_TPM_SPI_FILTER_FILE_GLOB .noinit.*pfr_tpm/drivers/pfr/spi/spi_filter.c*
+#define PFR_TPM_FIXED_NOINIT(sec_addr, var_name) \
+    pfr_tpm_##var_name sec_addr (NOLOAD) : { KEEP(*(PFR_TPM_SPI_FILTER_FILE_GLOB.var_name)) } > PFR_TPM AT > PFR_TPM
 
-    *(.noinit.*drivers/pfr/spi/spi_filter.c*.spi_filter_log_buf_*)
-    *(.noinit.*drivers/pfr/spi/spi_filter.c*.spi_filter_log_info_*)
-    *(.noinit.*drivers/pfr/spi/spi_filter.c*.spi_filter_read_addr_whitelist_*)
-    *(.noinit.*drivers/pfr/spi/spi_filter.c*.spi_filter_write_addr_whitelist_*)
-
-    . = ALIGN(4);
-    __pfr_tpm_noinit_end = .;
-} > PFR_TPM
-__pfr_tpm_noinit_size = __pfr_tpm_noinit_end - __pfr_tpm_noinit_start;
+PFR_TPM_FIXED_NOINIT(SPI_FILTER_RETAIN_VAR_0_ADDR, spi_filter_retain_var_0)
+PFR_TPM_FIXED_NOINIT(SPI_FILTER_RETAIN_VAR_1_ADDR, spi_filter_retain_var_1)
+PFR_TPM_FIXED_NOINIT(SPI_FILTER_RETAIN_VAR_2_ADDR, spi_filter_retain_var_2)
+PFR_TPM_FIXED_NOINIT(SPI_FILTER_RETAIN_VAR_3_ADDR, spi_filter_retain_var_3)
