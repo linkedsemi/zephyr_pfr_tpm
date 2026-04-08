@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config PFR_TPM_LINKER_LD
-    bool
+    bool "pfr_tpm project default linker.ld"
     default y
     depends on SPI_FILTER_LINKEDSEMI
 
