@@ -1711,7 +1711,7 @@ struct spi_filter_retain_var {
     struct spif_log_info log_info;
 };
 
-#define SPI_FILTER_RETAIN_VAR_NAME(inst) UTIL_CAT(spi_filter_retain_var_, DT_INST_REG_ADDR_RAW(inst))
+#define SPI_FILTER_RETAIN_VAR_NAME(inst) _CONCAT(spi_filter_retain_var_, DT_INST_REG_ADDR_RAW(inst))
 
 #define SPI_FILTER_INIT(inst)                                                                                                                    \
     static void linkedsemi_spi_filter_irq_config_func_##inst(const struct device *dev)                                                           \
