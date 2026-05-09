@@ -1,0 +1,16 @@
+sample:
+  description: spi_monitor_high_bit_ignore sample, the simplest Zephyr
+    application
+  name: spi_monitor_high_bit_ignore
+common:
+  tags: introduction
+  integration_platforms:
+    - native_sim
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "spi_monitor_high_bit_ignore! (.*)"
+tests:
+  sample.basic.helloworld:
+    tags: introduction
