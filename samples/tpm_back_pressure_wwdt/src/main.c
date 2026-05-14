@@ -27,20 +27,11 @@
 #include <ls_soc_gpio.h>
 #include <zephyr/drivers/watchdog.h>
 #include <ls_soc_gpio.h>
+#include <soc.h>
 
 LOG_MODULE_REGISTER(tpm_back_pressure_wwdt, LOG_LEVEL_INF);
 
-#define tpm_spis2  0x4000e000
-#define cfg_base_reg  0x4000e000
-
-void spid_callback(const struct device *dev, uint32_t callback_idx, void *user_data, void *drv_data) {
-	uint32_t stat = sys_read32(SPID_TPM_ACCESS_0); //
-	LOG_INF("Callback: TPM_ACCESS_X register state: 0x%x", stat);
-
-	if ((stat & (1 << callback_idx)) == 0) {
-		LOG_ERR("Error: Bit %d not set correctly!", callback_idx);
-	}
-}
+#define tpm_base            DT_REG_ADDR(DT_ALIAS(tpm))
 
 void spi_monitor_target_addr_send(const struct device *const spifiltermaster)
 {
@@ -125,12 +116,9 @@ void spi_monitor_target_addr(const struct device *const spifiltermaster)
 
 }
 
-
 void main(void) {
-	printk("run\n");
-	io_cfg_output(PA05);
-	io_clr_pin(PA05);
-	io_toggle_pin(PA05);
+	printk("tpm_back_pressure_wwdt\n");
+
 	const struct device *tpm = DEVICE_DT_GET(DT_ALIAS(tpm));
 
 	if (!device_is_ready(tpm)) {
@@ -148,13 +136,10 @@ void main(void) {
 	// FIFO
 	init_spid_registers(tpm, INTF_FIFO_MODE);
 
-	spid_linkedsemi_register_callback(tpm, 0, spid_callback, NULL);
-
-	// init_spid_registers(tpm, INTF_CRB_MODE);
-	uint32_t tpm_cfg_num = sys_read32(tpm_spis2+SPID_TPM_CFG);
+	uint32_t tpm_cfg_num = sys_read32(tpm_base+SPID_TPM_CFG);
 	LOG_INF("tpm_cfg_num 0x%08x ", tpm_cfg_num);
-	sys_write32(0x12345678, tpm_spis2+SPID_TPM_ACCESS_0);
-	uint32_t ACCESS_0 = sys_read32(tpm_spis2+SPID_TPM_ACCESS_0);
+	sys_write32(0x12345678, tpm_base+SPID_TPM_ACCESS_0);
+	uint32_t ACCESS_0 = sys_read32(tpm_base+SPID_TPM_ACCESS_0);
 	LOG_INF("SPID_TPM_ACCESS_0 0x%08x ", ACCESS_0);
 
 	const struct device *const spifiltermaster = DEVICE_DT_GET(DT_ALIAS(spifiltermaster));
@@ -166,36 +151,10 @@ void main(void) {
 	uint32_t freq = DT_PROP(DT_ALIAS(spiflash), spi_max_frequency);
 	uintptr_t base_address = DT_REG_ADDR(DT_ALIAS(spifiltermaster));
 	LOG_INF("spifiltermaster base address: 0x%08lx", base_address);
-
-	uint32_t cs = sys_read32(0x40021018);
-	LOG_INF("0x40021018 = 0x%08x ", cs);
-	sys_write32(cs|0x200000, 0x40021018);//设置TPM2的cs 给到wwdt1 的输入
-	uint32_t n1 = sys_read32(0x40021018);
-	LOG_INF("0x40021018 = 0x%08x ", n1);
-
-	sys_write32( 0x1ACCE551, 0x400A1D00);//解除WWDT1的lock通过校验lock字
-	uint32_t n2 = sys_read32(0x400A1D00);
-	LOG_INF("0x400A1D00 = 0x%08x ", n2);
-
-	sys_write32( 0x20000000, 0x400A1C20);//将WWDT1的复位功能与TPM2联系起来
-	uint32_t n3 = sys_read32(0x400A1C20);
-	LOG_INF("0x400A1C20 = 0x%08x ", n3);
-
-	sys_write32( 0x80, 0x400A1C00);//设置对应的timeout 时间，以32khz为单位
-	uint32_t n4 = sys_read32(0x400A1C00);
-	LOG_INF("0x400A1C00 = 0x%08x ", n4);
-
-	sys_write32(0xd, 0x400A1C08);//使能WWDT1,选择时钟源为32Khz
-	uint32_t n5 = sys_read32(0x400A1C08);
-	LOG_INF("0x400A1C08 = 0x%08x ", n5);
+	wwdt1_tpm_init(tpm, 3*1000);
 
 	spi_monitor_target_addr(spifiltermaster);
 
 	LOG_INF("spi_back_pressure");
-
-	while (1) {
-		io_toggle_pin(PA05);
-	}
-
 
 }
