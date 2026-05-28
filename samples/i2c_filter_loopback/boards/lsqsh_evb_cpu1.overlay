@@ -5,8 +5,8 @@
         i2cmaster1 = &i2c5;
         i2cmaster2 = &i2c6;
         i2cfilter = &i2cf4;
-        i2ceepromlocal = &eeprom5_1;
-        i2ceepromremote = &eeprom6_1;
+        i2ctargeteeprom1 = &eeprom5_1;
+        i2ctargeteeprom2 = &eeprom6_1;
     };
 };
 

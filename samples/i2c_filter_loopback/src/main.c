@@ -89,24 +89,34 @@ static int write_read_compare(const struct device *const i2c, uint16_t dev_addr,
 int main(void)
 {
     const struct device *const i2cmaster1 = DEVICE_DT_GET(DT_ALIAS(i2cmaster1));
-    static const struct device *i2ceepromremote = DEVICE_DT_GET(DT_ALIAS(i2ceepromremote));
+    static const struct device *i2ctargeteeprom1 = DEVICE_DT_GET(DT_ALIAS(i2ctargeteeprom1));
+    static const struct device *i2ctargeteeprom2 = DEVICE_DT_GET(DT_ALIAS(i2ctargeteeprom2));
     const struct device *const i2cfilter = DEVICE_DT_GET(DT_ALIAS(i2cfilter));
     uint32_t bitmap[LINKEDSEMI_I2C_F_REMAP_SIZE_U32] = { 0 };
     uint32_t dump_bitmap[LINKEDSEMI_I2C_F_REMAP_SIZE_U32] = { 0 };
-    uint16_t dev_addr = DT_REG_ADDR(DT_ALIAS(i2ceepromremote));
+    uint16_t i2ctargeteeprom1_addr = DT_REG_ADDR(DT_ALIAS(i2ctargeteeprom1));
+    uint16_t i2ctargeteeprom2_addr = DT_REG_ADDR(DT_ALIAS(i2ctargeteeprom2));
     uint8_t dump_addr = 0;
 
-    if (!device_is_ready(i2cmaster1)) {
-        __ASSERT(0, "I2C device is not ready\n");
-    }
-    if (i2c_configure(i2cmaster1, I2C_SPEED_SET(I2C_SPEED_STANDARD) | I2C_MODE_CONTROLLER)) {
-        __ASSERT(0, "I2C device config failed\n");
-    }
-    if (!device_is_ready(i2ceepromremote)) {
+    // if (!device_is_ready(i2cmaster1)) {
+    //     __ASSERT(0, "I2C device is not ready\n");
+    // }
+    // if (i2c_configure(i2cmaster1, I2C_SPEED_SET(I2C_SPEED_STANDARD) | I2C_MODE_CONTROLLER)) {
+    //     __ASSERT(0, "I2C device config failed\n");
+    // }
+    if (!device_is_ready(i2ctargeteeprom1)) {
         printf("eeprom device not ready\n");
         return 0;
     }
-    if (i2c_target_driver_register(i2ceepromremote) < 0) {
+    if (i2c_target_driver_register(i2ctargeteeprom1) < 0) {
+        printf("Failed to register i2c target driver\n");
+        return 0;
+    }
+    if (!device_is_ready(i2ctargeteeprom2)) {
+        printf("eeprom device not ready\n");
+        return 0;
+    }
+    if (i2c_target_driver_register(i2ctargeteeprom2) < 0) {
         printf("Failed to register i2c target driver\n");
         return 0;
     }
@@ -151,11 +161,11 @@ while(1);
         printf("\n------------------------------------------------------\n");
         sys_bitfield_set_bit((mem_addr_t)bitmap, bit);
         linkedsemi_i2c_filter_en(i2cfilter, false, is_whitelist_on, false); /* disable filter */
-        linkedsemi_i2c_filter_fill_bitmap(i2cfilter, 0, dev_addr, bitmap); /* set bitmap */
+        linkedsemi_i2c_filter_fill_bitmap(i2cfilter, 0, i2ctargeteeprom2_addr, bitmap); /* set bitmap */
         linkedsemi_i2c_filter_dump_bitmap(i2cfilter, 0, &dump_addr, dump_bitmap);
         int ret = memcmp(bitmap, dump_bitmap, LINKEDSEMI_I2C_F_REMAP_SIZE_BYTE);
         __ASSERT_NO_MSG(ret == 0);
-        __ASSERT_NO_MSG(dev_addr == dump_addr);
+        __ASSERT_NO_MSG(i2ctargeteeprom2_addr == dump_addr);
         linkedsemi_i2c_filter_en(i2cfilter, true, is_whitelist_on, false); /* enable filter */
         for (uint16_t len = 1; len <= BUF_SIZE; len++) {
             printf("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
@@ -177,7 +187,7 @@ while(1);
                     if (sys_bitfield_test_bit((mem_addr_t)bitmap, start_addr)) {
                         expect_ret = 0;
                     }
-                    int ret = write_read_compare(i2cmaster1, dev_addr, start_addr, wdata_buf, rdata_buf, curr_len);
+                    int ret = write_read_compare(i2cmaster1, i2ctargeteeprom2_addr, start_addr, wdata_buf, rdata_buf, curr_len);
                     if (ret != expect_ret) {
                         if (is_whitelist_on) {
                             __ASSERT(0, "filter not work\n");
@@ -188,7 +198,7 @@ while(1);
                     printf("bit: %d  len: %d  start_addr: %#x\n", bit, len, start_addr);
                     printf("result: pass\n");
                     memset(wdata_buf, 0, curr_len);
-                    i2c_burst_write(i2cmaster1, dev_addr, start_addr, wdata_buf, curr_len);
+                    i2c_burst_write(i2cmaster1, i2ctargeteeprom2_addr, start_addr, wdata_buf, curr_len);
                 }
             }
             sys_bitfield_clear_bit((mem_addr_t)bitmap, bit);
