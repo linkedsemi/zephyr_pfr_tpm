@@ -3,62 +3,63 @@
 / {
     aliases {
         i2cmaster1 = &i2c5;
-        i2cmaster2 = &i2c10;
-        i2cfilter = &i2cf3;
-        eeprom1 = &eeprom10_50;
+        i2cmaster2 = &i2c6;
+        i2cfilter = &i2cf4;
+        i2ceepromlocal = &eeprom5_1;
+        i2ceepromremote = &eeprom6_1;
     };
 };
 
-&i2cf1 {
-    status = "okay";
-};
-
-&i2cf2 {
-    status = "okay";
-};
-
-&i2cf3 {
-    status = "okay";
-};
+// &i2cf1 {
+//     status = "okay";
+// };
+//
+// &i2cf2 {
+//     status = "okay";
+// };
+//
+// &i2cf3 {
+//     status = "okay";
+// };
 
 &i2cf4 {
     status = "okay";
 };
 
-&i2c2 {
-    // pinctrl-0 = <&i2c2_sda_pb10 &i2c2_scl_pb11>;
-    // pinctrl-names = "default";
+// &i2c1 {
+//     status = "okay";
+// };
+//
+// &i2c2 {
+//     status = "okay";
+// };
+//
+// &i2c3 {
+//     status = "okay";
+// };
+
+&i2c4 {
     status = "okay";
 };
 
 &i2c5 {
-    // pinctrl-0 = <&i2c5_scl_pe10 &i2c5_sda_pe11>;
-    // pinctrl-names = "default";
-    status = "okay";
-};
-
-&i2c10 {
-    // pinctrl-0 = <&i2c10_scl_pj03 &i2c10_sda_pj02>;
-    // pinctrl-names = "default";
     status = "okay";
 
-    eeprom10_50: eeprom@50 {
+    eeprom5_1: eeprom@55 {
         compatible = "zephyr,i2c-target-eeprom";
-        reg = <0x50>;
+        reg = <0x55>;
         size = <256>;
         status = "okay";
     };
 };
 
-// &i2c13 {
-//     pinctrl-0 = <&i2c13_sda_pn11 &i2c13_scl_pn15>;
-//     pinctrl-names = "default";
-//     status = "disabled";
+&i2c6 {
+    status = "okay";
 
-//     eeprom13_50: eeprom@50 {
-//         compatible = "zephyr,i2c-target-eeprom";
-//         reg = <0x50>;
-//         size = <256>;
-//         status = "disabled";
-//     };
-// };
+    eeprom6_1: eeprom@66 {
+        compatible = "zephyr,i2c-target-eeprom";
+        reg = <0x66>;
+        size = <256>;
+        status = "okay";
+    };
+};

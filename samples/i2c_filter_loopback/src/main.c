@@ -31,7 +31,6 @@
 #include <i2c_filter.h>
 // #include "ls_soc_gpio.h"
 
-#define WHT_ADDR_0 0x50
 #define BUF_SIZE   256
 uint8_t wdata_buf[BUF_SIZE];
 uint8_t rdata_buf[BUF_SIZE];
@@ -89,11 +88,11 @@ static int write_read_compare(const struct device *const i2c, uint16_t dev_addr,
 int main(void)
 {
     const struct device *const i2cmaster1 = DEVICE_DT_GET(DT_ALIAS(i2cmaster1));
-    static const struct device *eeprom1 = DEVICE_DT_GET(DT_ALIAS(eeprom1));
+    static const struct device *i2ceepromremote = DEVICE_DT_GET(DT_ALIAS(i2ceepromremote));
     const struct device *const i2cfilter = DEVICE_DT_GET(DT_ALIAS(i2cfilter));
     uint32_t bitmap[LINKEDSEMI_I2C_F_REMAP_SIZE_U32] = { 0 };
-    uint32_t dump_bitmap[LINKEDSEMI_I2C_F_REMAP_SIZE_U32] = {};
-    uint16_t dev_addr = WHT_ADDR_0;
+    uint32_t dump_bitmap[LINKEDSEMI_I2C_F_REMAP_SIZE_U32] = { 0 };
+    uint16_t dev_addr = DT_REG_ADDR(DT_ALIAS(i2ceepromremote));
     uint8_t dump_addr = 0;
 
     if (!device_is_ready(i2cmaster1)) {
@@ -102,11 +101,11 @@ int main(void)
     if (i2c_configure(i2cmaster1, I2C_SPEED_SET(I2C_SPEED_STANDARD) | I2C_MODE_CONTROLLER)) {
         __ASSERT(0, "I2C device config failed\n");
     }
-    if (!device_is_ready(eeprom1)) {
+    if (!device_is_ready(i2ceepromremote)) {
         printf("eeprom device not ready\n");
         return 0;
     }
-    if (i2c_target_driver_register(eeprom1) < 0) {
+    if (i2c_target_driver_register(i2ceepromremote) < 0) {
         printf("Failed to register i2c target driver\n");
         return 0;
     }
@@ -118,7 +117,7 @@ uint16_t start_addr = 1;
 memset(rdata_buf, 0, len);
 sys_bitfield_set_bit((mem_addr_t)bitmap, bit);
 linkedsemi_i2c_filter_en(i2cfilter, false, true, false); /* close filter */
-linkedsemi_i2c_filter_fill_bitmap(i2cfilter, 0, WHT_ADDR_0, bitmap); /* set bitmap */
+linkedsemi_i2c_filter_fill_bitmap(i2cfilter, 0, dev_addr, bitmap); /* set bitmap */
 linkedsemi_i2c_filter_en(i2cfilter, true, true, false); /* reopen filter */
 // i2c_burst_read(i2cmaster1, 0x50, 0x0, rdata_buf, len);
 wdata_buf[0] = 0xe7;
@@ -136,7 +135,7 @@ uint16_t start_addr = 0;
 memset(rdata_buf, 0, len);
 sys_bitfield_set_bit((mem_addr_t)bitmap, bit);
 linkedsemi_i2c_filter_en(i2cfilter, false, true, false); /* close filter */
-linkedsemi_i2c_filter_fill_bitmap(i2cfilter, 0, WHT_ADDR_0, bitmap); /* set bitmap */
+linkedsemi_i2c_filter_fill_bitmap(i2cfilter, 0, dev_addr, bitmap); /* set bitmap */
 linkedsemi_i2c_filter_en(i2cfilter, true, true, false); /* reopen filter */
 // i2c_burst_read(i2cmaster1, 0x50, 0x0, rdata_buf, len);
 wdata_buf[0] = 0xe7;
@@ -151,11 +150,11 @@ while(1);
         printf("\n------------------------------------------------------\n");
         sys_bitfield_set_bit((mem_addr_t)bitmap, bit);
         linkedsemi_i2c_filter_en(i2cfilter, false, is_whitelist_on, false); /* disable filter */
-        linkedsemi_i2c_filter_fill_bitmap(i2cfilter, 0, WHT_ADDR_0, bitmap); /* set bitmap */
+        linkedsemi_i2c_filter_fill_bitmap(i2cfilter, 0, dev_addr, bitmap); /* set bitmap */
         linkedsemi_i2c_filter_dump_bitmap(i2cfilter, 0, &dump_addr, dump_bitmap);
         int ret = memcmp(bitmap, dump_bitmap, LINKEDSEMI_I2C_F_REMAP_SIZE_BYTE);
         __ASSERT_NO_MSG(ret == 0);
-        __ASSERT_NO_MSG(WHT_ADDR_0 == dump_addr);
+        __ASSERT_NO_MSG(dev_addr == dump_addr);
         linkedsemi_i2c_filter_en(i2cfilter, true, is_whitelist_on, false); /* enable filter */
         for (uint16_t len = 1; len <= BUF_SIZE; len++) {
             printf("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
