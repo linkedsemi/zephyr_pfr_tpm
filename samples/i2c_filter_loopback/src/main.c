@@ -80,6 +80,7 @@ static int write_read_compare(const struct device *const i2c, uint16_t dev_addr,
             printf("%x ", wdata[i]);
         }
         printf("\n\n");
+        printf("wdata rdata match\n");
     }
 #endif
     return 0;
