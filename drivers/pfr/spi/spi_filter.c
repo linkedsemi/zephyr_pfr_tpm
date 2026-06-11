@@ -145,8 +145,8 @@ struct linkedsemi_spi_filter_config {
     const struct device *dev_dma;
     uint32_t dma_channel;
     uint8_t dma_handshake;
-    uint8_t fixed_cmd_tab[SPIF_FIXED_CMD_TABLE_NUM];
-    uint8_t fixed_cmd_dummy_tab[SPIF_FIXED_CMD_TABLE_NUM];
+    uint8_t fixed_cmd_tab_init_value[SPIF_FIXED_CMD_TABLE_NUM];
+    uint8_t fixed_cmd_dummy_tab_init_value[SPIF_FIXED_CMD_TABLE_NUM];
     struct spif_log_info *log_info;
     mem_addr_t log_ram_addr;
 #if defined(CONFIG_SPI_FILTER_ADDR_WHITELIST_BUF)
@@ -167,6 +167,8 @@ struct linkedsemi_spi_filter_data {
     void *user_data;
     struct spif_dma_config spif_dma_config;
     struct k_work dma_work;
+    uint8_t fixed_cmd_tab[SPIF_FIXED_CMD_TABLE_NUM];
+    uint8_t fixed_cmd_dummy_tab[SPIF_FIXED_CMD_TABLE_NUM];
 };
 
 uint32_t spif_flash_size_get(const struct device *dev)
@@ -854,6 +856,7 @@ int spif_add_cmd(const struct device *dev, uint8_t cmd)
     __ASSERT_NO_MSG(dev);
 
     const struct linkedsemi_spi_filter_config *dev_config = dev->config;
+    struct linkedsemi_spi_filter_data *dev_data = dev->data;
     int ret = 0;
     mm_reg_t table_base = dev_config->base + SPIF_CMD_BASE;
     int idx;
@@ -874,7 +877,7 @@ int spif_add_cmd(const struct device *dev, uint8_t cmd)
     }
 
     for (uint8_t off = 0; off < SPIF_FIXED_CMD_TABLE_NUM; off++) {
-        if (dev_config->fixed_cmd_tab[off] == cmd) {
+        if (dev_data->fixed_cmd_tab[off] == cmd) {
             spif_cmd_t spif_cmd;
             spif_cmd.CMD = cmd;
             spif_cmd.EN = 1;
@@ -905,6 +908,7 @@ int spif_add_cmd_with_dummy(const struct device *dev, uint8_t cmd, uint8_t dummy
     __ASSERT_NO_MSG(dev);
 
     const struct linkedsemi_spi_filter_config *dev_config = dev->config;
+    struct linkedsemi_spi_filter_data *dev_data = dev->data;
     int ret = 0;
     mm_reg_t table_base = dev_config->base + SPIF_CMD_BASE;
     int idx;
@@ -926,7 +930,7 @@ int spif_add_cmd_with_dummy(const struct device *dev, uint8_t cmd, uint8_t dummy
     }
 
     for (uint8_t off = 0; off < SPIF_FIXED_CMD_TABLE_NUM; off++) {
-        if (dev_config->fixed_cmd_tab[off] == cmd) {
+        if (dev_data->fixed_cmd_tab[off] == cmd) {
             spif_cmd_t spif_cmd;
             spif_cmd.CMD = cmd;
             spif_cmd.DUMMY_CYCLE = dummy_cycle;
@@ -974,9 +978,12 @@ void spif_set_cmd_by_idx(const struct device *dev, uint8_t cmd, uint8_t idx)
 
 void spif_set_enter_qpi_cmd(const struct device *dev,uint8_t cmd)
 {
+    struct linkedsemi_spi_filter_data *dev_data = dev->data;
+
     __ASSERT_NO_MSG(dev);
-    spif_set_cmd_by_idx(dev,cmd,IDX_CMD_QUAD_SPI_MODE_ENTER);
-    return;
+
+    spif_set_cmd_by_idx(dev, cmd, IDX_CMD_QUAD_SPI_MODE_ENTER);
+    dev_data->fixed_cmd_tab[IDX_CMD_QUAD_SPI_MODE_ENTER] = cmd;
 }
 
 void spif_set_dummy_by_idx(const struct device *dev, uint8_t dummy_cycle, uint8_t idx)
@@ -1591,6 +1598,7 @@ int linkedsemi_spi_filter_cold_reset(const struct device *dev)
     __ASSERT_NO_MSG(dev);
 
     const struct linkedsemi_spi_filter_config *dev_config = dev->config;
+    struct linkedsemi_spi_filter_data *dev_data = dev->data;
     int ret;
 
 #if defined(CONFIG_CLOCK_CONTROL)
@@ -1639,8 +1647,8 @@ int linkedsemi_spi_filter_cold_reset(const struct device *dev)
     for (uint8_t i = 0; i < SPIF_FIXED_CMD_TABLE_NUM; i++) {
         mm_reg_t table_base = dev_config->base + SPIF_CMD_BASE;
         spif_cmd_t spif_cmd;
-        spif_cmd.CMD = dev_config->fixed_cmd_tab[i];
-        spif_cmd.DUMMY_CYCLE = dev_config->fixed_cmd_dummy_tab[i];
+        spif_cmd.CMD = dev_data->fixed_cmd_tab[i];
+        spif_cmd.DUMMY_CYCLE = dev_data->fixed_cmd_dummy_tab[i];
         spif_cmd.EN = 0;
         sys_write32(spif_cmd.value, table_base + i * 4); /* init fixed table */
     }
@@ -1684,6 +1692,47 @@ int linkedsemi_spi_filter_cold_reset(const struct device *dev)
     return 0;
 }
 
+/*
+ * Restore the runtime fixed cmd tables at boot.
+ *
+ * After a warm reset the SPI
+ * filter peripheral is not reset, so the fixed cmd table registers still hold
+ * the values configured before the reset, including any runtime change made
+ * via spif_set_xxx_cmd(). In that case the hardware is the source of
+ * truth and the software tables are synced from it.
+ *
+ * After a cold boot (power-on or full-chip reset) those registers read back
+ * as zero, so the tables are loaded from the devicetree defaults instead.
+ */
+static void spif_fixed_cmd_tab_restore(const struct device *dev)
+{
+    const struct linkedsemi_spi_filter_config *dev_config = dev->config;
+    struct linkedsemi_spi_filter_data *dev_data = dev->data;
+    mm_reg_t table_base = dev_config->base + SPIF_CMD_BASE;
+    bool hw_initialized = false;
+
+    for (uint8_t i = 0; i < SPIF_FIXED_CMD_TABLE_NUM; i++) {
+        if (sys_read32(table_base + i * 4) != 0) {
+            hw_initialized = true;
+            break;
+        }
+    }
+
+    if (hw_initialized) {
+        for (uint8_t i = 0; i < SPIF_FIXED_CMD_TABLE_NUM; i++) {
+            spif_cmd_t spif_cmd;
+            spif_cmd.value = sys_read32(table_base + i * 4);
+            dev_data->fixed_cmd_tab[i] = spif_cmd.CMD;
+            dev_data->fixed_cmd_dummy_tab[i] = spif_cmd.DUMMY_CYCLE;
+        }
+    } else {
+        memcpy(dev_data->fixed_cmd_tab, dev_config->fixed_cmd_tab_init_value,
+               sizeof(dev_data->fixed_cmd_tab));
+        memcpy(dev_data->fixed_cmd_dummy_tab, dev_config->fixed_cmd_dummy_tab_init_value,
+               sizeof(dev_data->fixed_cmd_dummy_tab));
+    }
+}
+
 static int linkedsemi_spi_filter_init(const struct device *dev)
 {
     __ASSERT_NO_MSG(dev);
@@ -1695,6 +1744,7 @@ static int linkedsemi_spi_filter_init(const struct device *dev)
     k_work_init(&dev_data->dma_work, spif_dma_work);
     dev_config->log_info->log_ram_addr = dev_config->log_ram_addr;
     dev_config->log_info->log_max_sz = SPIF_LOG_RAM_MAX_SIZE_U32;
+    spif_fixed_cmd_tab_restore(dev);
 
     if (IS_ENABLED(CONFIG_MULTITHREADING))
         k_sem_init(&dev_data->sem_spif, 1, 1);
@@ -1736,7 +1786,7 @@ struct spi_filter_retain_var {
         .write_addr_whitelist = SPI_FILTER_RETAIN_VAR_NAME(inst).write_addr_whitelist,                                                           \
         .log_info = &SPI_FILTER_RETAIN_VAR_NAME(inst).log_info,                                                                                  \
         .log_ram_addr = (mem_addr_t)SPI_FILTER_RETAIN_VAR_NAME(inst).log_buf,                                                                    \
-        .fixed_cmd_tab = {                                                                                                                       \
+        .fixed_cmd_tab_init_value = {                                                                                                                       \
             [IDX_CMD_PAGE_PROGRAM] = DT_INST_PROP_OR(inst, cmd_page_program, 0),                                                                 \
             [IDX_CMD_PAGE_PROGRAM_QUAD_ADDR_QUAD_DATA] = DT_INST_PROP_OR(inst, cmd_page_program_quad_addr_quad_data, 0),                         \
             [IDX_CMD_ERASE_4KB] = DT_INST_PROP_OR(inst, cmd_erase_4kb, 0),                                                                       \
@@ -1768,7 +1818,7 @@ struct spi_filter_retain_var {
             [IDX_CMD_PROGRAM_QUAD_DATA] = DT_INST_PROP_OR(inst, cmd_program_quad_data, 0),                                                       \
             [IDX_CMD_4BYTE_PROGRAM_QUAD_DATA] = DT_INST_PROP_OR(inst, cmd_4byte_program_quad_data, 0),                                           \
         },                                                                                                                                       \
-        .fixed_cmd_dummy_tab = {                                                                                                                 \
+        .fixed_cmd_dummy_tab_init_value = {                                                                                                                 \
             [IDX_CMD_PAGE_PROGRAM_DUMMY] = DT_INST_PROP_OR(inst, cmd_page_program_dummy, 0),                                                     \
             [IDX_CMD_PAGE_PROGRAM_QUAD_ADDR_QUAD_DATA_DUMMY] = DT_INST_PROP_OR(inst, cmd_page_program_quad_addr_quad_data_dummy, 0),             \
             [IDX_CMD_ERASE_4KB_DUMMY] = DT_INST_PROP_OR(inst, cmd_erase_4kb_dummy, 0),                                                           \
