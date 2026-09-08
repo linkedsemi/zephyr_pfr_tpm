@@ -976,14 +976,36 @@ void spif_set_cmd_by_idx(const struct device *dev, uint8_t cmd, uint8_t idx)
     return;
 }
 
-void spif_set_enter_qpi_cmd(const struct device *dev,uint8_t cmd)
+void spif_replace_fixed_cmd(const struct device *dev, uint8_t cmd, uint8_t idx)
 {
     struct linkedsemi_spi_filter_data *dev_data = dev->data;
 
     __ASSERT_NO_MSG(dev);
+    __ASSERT_NO_MSG(idx < SPIF_FIXED_CMD_TABLE_NUM);
 
-    spif_set_cmd_by_idx(dev, cmd, IDX_CMD_QUAD_SPI_MODE_ENTER);
-    dev_data->fixed_cmd_tab[IDX_CMD_QUAD_SPI_MODE_ENTER] = cmd;
+    spif_set_cmd_by_idx(dev, cmd, idx);
+    dev_data->fixed_cmd_tab[idx] = cmd;
+}
+
+void spif_set_enter_qpi_cmd(const struct device *dev, uint8_t cmd)
+{
+    __ASSERT_NO_MSG(dev);
+
+    spif_replace_fixed_cmd(dev, cmd, IDX_CMD_QUAD_SPI_MODE_ENTER);
+}
+
+void spif_set_exit_qpi_cmd(const struct device *dev, uint8_t cmd)
+{
+    __ASSERT_NO_MSG(dev);
+
+    spif_replace_fixed_cmd(dev, cmd, IDX_CMD_QUAD_SPI_MODE_EXIT);
+}
+
+void spif_set_page_program_quad_cmd(const struct device *dev, uint8_t cmd)
+{
+    __ASSERT_NO_MSG(dev);
+
+    spif_replace_fixed_cmd(dev, cmd, IDX_CMD_PAGE_PROGRAM_QUAD_ADDR_QUAD_DATA);
 }
 
 void spif_set_dummy_by_idx(const struct device *dev, uint8_t dummy_cycle, uint8_t idx)
@@ -1003,6 +1025,17 @@ void spif_set_dummy_by_idx(const struct device *dev, uint8_t dummy_cycle, uint8_
     release_spif_device(dev);
 
     return;
+}
+
+void spif_replace_fixed_dummy(const struct device *dev, uint8_t dummy_cycle, uint8_t idx)
+{
+    struct linkedsemi_spi_filter_data *dev_data = dev->data;
+
+    __ASSERT_NO_MSG(dev);
+    __ASSERT_NO_MSG(idx < SPIF_FIXED_CMD_TABLE_NUM);
+
+    spif_set_dummy_by_idx(dev, dummy_cycle, idx);
+    dev_data->fixed_cmd_dummy_tab[idx] = dummy_cycle;
 }
 
 void spif_get_cmd_by_idx(const struct device *dev, uint8_t *cmd, uint8_t idx)
