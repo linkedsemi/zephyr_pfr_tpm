@@ -11,11 +11,13 @@ config SPI_FILTER_LINKEDSEMI
       SPI_FILTER_LINKEDSEMI
 
 config SPI_FILTER_LINKEDSEMI_SHELL
-    bool "spi filter"
-    default y
+    bool "SPI filter shell commands"
+    default n
     depends on DT_HAS_LINKEDSEMI_SPI_FILTER_ENABLED && SHELL
     help
-      SPI_FILTER_LINKEDSEMI_SHELL
+      Enable the "spif" shell command for SPI filter debug
+      (set_dev / cmd / addr / config). Off by default; enable
+      when needed for bring-up or debugging.
 
 config SPI_FILTER_ADDR_WHITELIST_BUF
     bool "SPI_FILTER_ADDR_WHITELIST_BUF"
