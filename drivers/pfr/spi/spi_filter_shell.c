@@ -19,16 +19,26 @@ LOG_MODULE_REGISTER(spi_filter_shell);
 
 static const struct device *spif_device;
 
+#define SPIF_SET_DEV_HINT \
+	"Usage: spif set_dev <device>  (device name eg: spif@40070000)"
+
 static int probe_parse_helper(const struct shell *shell, size_t *argc,
         char **argv[], const struct device **spif_dev)
 {
     *spif_dev = device_get_binding((*argv)[1]);
     if (!*spif_dev) {
         shell_error(shell, "SPI filter device/driver is not found!");
+        shell_print(shell, SPIF_SET_DEV_HINT);
         return -ENODEV;
     }
 
     return 0;
+}
+
+static void require_spif_device(const struct shell *shell)
+{
+    shell_error(shell, "Please set the device first.");
+    shell_print(shell, SPIF_SET_DEV_HINT);
 }
 
 static int cmd_parse_helper(const struct shell *shell, size_t *argc,
@@ -86,7 +96,7 @@ end:
 static int dump_cmd_table(const struct shell *shell, size_t argc, char *argv[])
 {
     if (!spif_device) {
-        shell_error(shell, "Please set the device first.");
+        require_spif_device(shell);
         return -ENODEV;
     }
 
@@ -102,7 +112,7 @@ static int add_cmd(const struct shell *shell, size_t argc, char *argv[])
     uint8_t dummy_cycle = 0;
 
     if (!spif_device) {
-        shell_error(shell, "Please set the device first.");
+        require_spif_device(shell);
         return -ENODEV;
     }
 
@@ -122,7 +132,7 @@ static int remove_cmd(const struct shell *shell, size_t argc, char *argv[])
     uint8_t cmd = 0;
 
     if (!spif_device) {
-        shell_error(shell, "Please set the device first.");
+        require_spif_device(shell);
         return -ENODEV;
     }
 
@@ -141,7 +151,7 @@ end:
 static int dump_rw_addr_priv_table(const struct shell *shell, size_t argc, char *argv[])
 {
     if (!spif_device) {
-        shell_error(shell, "Please set the device first.");
+        require_spif_device(shell);
         return -ENODEV;
     }
 
@@ -153,7 +163,7 @@ static int dump_rw_addr_priv_table(const struct shell *shell, size_t argc, char 
 static int dump_cmd_bitmap_log(const struct shell *shell, size_t argc, char *argv[])
 {
     if (!spif_device) {
-        shell_error(shell, "Please set the device first.");
+        require_spif_device(shell);
         return -ENODEV;
     }
 
@@ -173,7 +183,7 @@ static int read_addr_priv_table_config(const struct shell *shell, size_t argc, c
     enum addr_priv_op op;
 
     if (!spif_device) {
-        shell_error(shell, "Please set the device first.");
+        require_spif_device(shell);
         return -ENODEV;
     }
 
@@ -206,7 +216,7 @@ static int write_addr_priv_table_config(const struct shell *shell, size_t argc, 
     enum addr_priv_op op;
 
     if (!spif_device) {
-        shell_error(shell, "Please set the device first.");
+        require_spif_device(shell);
         return -ENODEV;
     }
 
@@ -234,7 +244,7 @@ static int spi_filter_enabled(const struct shell *shell, size_t argc, char *argv
 {
 
     if (!spif_device) {
-        shell_error(shell, "Please set the device first.");
+        require_spif_device(shell);
         return -ENODEV;
     }
 
@@ -247,7 +257,7 @@ static int spi_filter_disabled(const struct shell *shell, size_t argc, char *arg
 {
 
     if (!spif_device) {
-        shell_error(shell, "Please set the device first.");
+        require_spif_device(shell);
         return -ENODEV;
     }
 
@@ -283,13 +293,17 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_spif_config,
 );
 
 SHELL_STATIC_SUBCMD_SET_CREATE(spif_cmds,
-    SHELL_CMD_ARG(set_dev, NULL, "<device>", cmd_probe, 2, 0),
-    SHELL_CMD(cmd, &sub_spif_cmds, "cmd table related operations", NULL),
-    SHELL_CMD(addr, &sub_spif_addr, "address privilege table related operations", NULL),
-    SHELL_CMD(config, &sub_spif_config, "SPI filter configuration", NULL),
+    SHELL_CMD_ARG(set_dev, NULL,
+        "Bind device first. Usage: set_dev <device> (eg: spif@40074000)",
+        cmd_probe, 2, 0),
+    SHELL_CMD(cmd, &sub_spif_cmds, "cmd table related operations (requires set_dev)", NULL),
+    SHELL_CMD(addr, &sub_spif_addr,
+        "address privilege table related operations (requires set_dev)", NULL),
+    SHELL_CMD(config, &sub_spif_config, "SPI filter configuration (requires set_dev)", NULL),
 
     SHELL_SUBCMD_SET_END
 );
 
-SHELL_CMD_REGISTER(spif, &spif_cmds, "SPI filter shell cmds", NULL);
+SHELL_CMD_REGISTER(spif, &spif_cmds,
+    "SPI filter shell cmds. First eg:: spif set_dev spif@40074000", NULL);
 
