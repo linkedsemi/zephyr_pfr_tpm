@@ -881,7 +881,9 @@ int spif_add_cmd(const struct device *dev, uint8_t cmd)
             spif_cmd_t spif_cmd;
             spif_cmd.CMD = cmd;
             spif_cmd.EN = 1;
-            sys_write32(spif_cmd.value, table_base + idx * 4);
+            /* Fixed commands occupy the first SPIF_FIXED_CMD_TABLE_NUM slots
+             * of the command table, so the slot index is off. */
+            sys_write32(spif_cmd.value, table_base + off * 4);
             goto end;
         }
     }
@@ -935,7 +937,9 @@ int spif_add_cmd_with_dummy(const struct device *dev, uint8_t cmd, uint8_t dummy
             spif_cmd.CMD = cmd;
             spif_cmd.DUMMY_CYCLE = dummy_cycle;
             spif_cmd.EN = 1;
-            sys_write32(spif_cmd.value, table_base + idx * 4);
+            /* Fixed commands occupy the first SPIF_FIXED_CMD_TABLE_NUM slots
+             * of the command table, so the slot index is off. */
+            sys_write32(spif_cmd.value, table_base + off * 4);
             goto end;
         }
     }
@@ -1443,8 +1447,14 @@ static bool spif_pinctrl_mode_check(const struct device *dev, uint8_t mode)
         const uint8_t pin = pins->pinmux.pin;
         const uint8_t func = per_func_get(pin);
         bool func_valid = is_per_func_valid(func);
+        /* `default` (filter) and `passthrough` drive the same pads with the same
+         * pinmux unit and differ only by the `analog` attribute, which pinctrl
+         * latches in the pad's analog-enable bit. Comparing pinmux alone cannot
+         * tell the two states apart, so the pad's analog state is part of the
+         * comparison. */
         if ((func_valid != pins->pinmux.func_valid)
-            || ((pins->pinmux.func_valid) && (func != pins->pinmux.func))) {
+            || ((pins->pinmux.func_valid) && (func != pins->pinmux.func))
+            || (gpio_ana_enabled(pin) != (pins->pin_attr.analog != 0))) {
             check = false;
             break;
         }
