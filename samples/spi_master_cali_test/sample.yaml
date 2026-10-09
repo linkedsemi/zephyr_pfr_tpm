@@ -1,0 +1,24 @@
+sample:
+  description: DesignWare SPI RX sample delay calibration on two SPI NOR
+    flashes sharing one controller
+  name: spi master calibration test
+common:
+  tags:
+    - spi
+    - flash
+  platform_allow:
+    - lsqsh_evb/lsqsh/cpu1
+  integration_platforms:
+    - lsqsh_evb/lsqsh/cpu1
+  harness: console
+  harness_config:
+    type: multi_line
+    ordered: true
+    regex:
+      - "\\[after spif3 read\\] calib value: slave=0 rx_sample_dly=[0-4]"
+      - "\\[after spif4 read\\] calib value: slave=1 rx_sample_dly=[0-4]"
+      - "all test pass"
+tests:
+  sample.drivers.spi.master_cali_test:
+    tags:
+      - spi
