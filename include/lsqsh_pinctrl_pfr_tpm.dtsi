@@ -16,7 +16,7 @@
             compatible = "linkedsemi,i2c-filter";
             reg = <0x40090000 0x800>;
             interrupts = <155 3>;
-            scl-hold-time = <0xfa>;
+            scl-hold-time = <0x155>;
             clocks = <SMB_FLT1_CLOCK>;
             resets = <SMB_FLT1_RESET>;
             status = "disabled";
@@ -26,7 +26,7 @@
             compatible = "linkedsemi,i2c-filter";
             reg = <0x40090800 0x800>;
             interrupts = <156 3>;
-            scl-hold-time = <0xfa>;
+            scl-hold-time = <0x155>;
             clocks = <SMB_FLT2_CLOCK>;
             resets = <SMB_FLT2_RESET>;
             status = "disabled";
@@ -36,7 +36,7 @@
             compatible = "linkedsemi,i2c-filter";
             reg = <0x40091000 0x800>;
             interrupts = <157 3>;
-            scl-hold-time = <0xfa>;
+            scl-hold-time = <0x155>;
             clocks = <SMB_FLT3_CLOCK>;
             resets = <SMB_FLT3_RESET>;
             status = "disabled";
@@ -46,7 +46,7 @@
             compatible = "linkedsemi,i2c-filter";
             reg = <0x40091800 0x800>;
             interrupts = <158 3>;
-            scl-hold-time = <0xfa>;
+            scl-hold-time = <0x155>;
             clocks = <SMB_FLT4_CLOCK>;
             resets = <SMB_FLT4_RESET>;
             status = "disabled";
