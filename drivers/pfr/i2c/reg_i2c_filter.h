@@ -2,6 +2,8 @@
 #ifndef REG_I2C_FILTER_H_
 #define REG_I2C_FILTER_H_
 
+#include <stdint.h>
+
 #define WHITELIST_COMMAND_0     (0x00)
 #define WHITELIST_COMMAND_1     (0x04)
 #define WHITELIST_COMMAND_2     (0x08)
@@ -40,13 +42,16 @@ typedef union {
     uint32_t value;
     struct {
         uint32_t
-            BLOCK_DISABLE : 1,     /*[0]*/
-            FILTER_DISABLE : 1,    /*[1]*/
-            reserve0 : 1,          /*[2]*/
-            MASTER_WRITE_MODE : 1, /*[3]*/
-            reserve1 : 30;         /*[31:3]*/
+            BLOCK_DISABLE : 1,      /*[0]*/
+            FILTER_DISABLE : 1,     /*[1]*/
+            RELAY_ALL_ADDRESS : 1,  /*[2]*/
+            MASTER_WRITE_MODE : 1,  /*[3]*/
+            reserve1 : 28;          /*[31:4]*/
     };
 } smbf_set_t;
+
+_Static_assert(sizeof(smbf_set_t) == sizeof(uint32_t),
+               "smbf_set_t must remain a 32-bit register image");
 
 typedef union {
     uint32_t value;

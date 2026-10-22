@@ -224,6 +224,7 @@ int linkedsemi_i2c_filter_dump_bitmap(const struct device *dev,
 int linkedsemi_i2c_filter_en(const struct device *dev,
                              bool filter_en,
                              bool wlist_en,
+                             bool relay_all_addr,
                              bool clr_tbl)
 {
     __unused const struct linkedsemi_i2c_filter_config *dev_config = dev->config;
@@ -231,8 +232,8 @@ int linkedsemi_i2c_filter_en(const struct device *dev,
     smbf_set_t smbf_set = {
         .BLOCK_DISABLE = filter_en ? 0 : 1,
         .FILTER_DISABLE = wlist_en ? 0 : 1,
+        .RELAY_ALL_ADDRESS = relay_all_addr ? 1 : 0,
         .MASTER_WRITE_MODE = 0,
-        .reserve0 = 0,
     };
 
     k_mutex_lock(&dev_data->lock, K_FOREVER);
@@ -342,7 +343,7 @@ int linkedsemi_i2c_filter_cold_reset(const struct device *dev)
     sys_write32(0x1, dev_config->base + SMBF_REG_ENABLE);
     sys_write32(intr_mask.value, dev_config->base + INTR_MSK);
 
-    linkedsemi_i2c_filter_en(dev, false, false, true);
+    linkedsemi_i2c_filter_en(dev, false, false, false, true);
     linkedsemi_i2c_filter_config_scl_hold_time(dev, dev_config->scl_hold_time);
 
     return 0;

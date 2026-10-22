@@ -39,7 +39,7 @@ int main(void)
                 // io_set_pin(PD11);
                 // io_clr_pin(PD11);
                 linkedsemi_i2c_filter_enable_channel(i2cfilter, index, false);
-                linkedsemi_i2c_filter_en(i2cfilter, true, true, false);
+                linkedsemi_i2c_filter_en(i2cfilter, true, true, false, false);
             } while(0);
             flag++;
             break;
@@ -59,7 +59,7 @@ int main(void)
                 int ret = memcmp(bitmap, dump_bitmap, LINKEDSEMI_I2C_F_REMAP_SIZE_BYTE);
                 __ASSERT_NO_MSG(ret == 0);
                 __ASSERT_NO_MSG(addr == dump_addr);
-                linkedsemi_i2c_filter_en(i2cfilter, true, true, false);
+                linkedsemi_i2c_filter_en(i2cfilter, true, true, false, false);
             } while(0);
             flag++;
             break;
@@ -70,7 +70,7 @@ int main(void)
             // io_clr_pin(PD11);
             // io_set_pin(PD11);
             // io_clr_pin(PD11);
-            linkedsemi_i2c_filter_en(i2cfilter, true, false, false);
+            linkedsemi_i2c_filter_en(i2cfilter, true, false, false, false);
 
             flag++;
             break;
