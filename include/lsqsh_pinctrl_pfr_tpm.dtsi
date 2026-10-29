@@ -119,7 +119,7 @@
     };
 };
 
-&driver_share_memory {
+&share_memory {
    reg = <(0x100c0000 - DT_SIZE_K(4) - DT_SIZE_K(4) - DT_SIZE_K(52)) DT_SIZE_K(1)>;
 };
 
