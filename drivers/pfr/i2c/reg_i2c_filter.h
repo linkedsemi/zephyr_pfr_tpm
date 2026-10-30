@@ -44,11 +44,7 @@ typedef union {
         uint32_t
             BLOCK_DISABLE : 1,      /*[0]*/
             FILTER_DISABLE : 1,     /*[1]*/
-            RELAY_ALL_ADDRESS : 1,  /*[2]  1: bypass address filter (no address intr).
-                                     *     The command byte is still compared for a
-                                     *     whitelisted address when the frame carries
-                                     *     at least two master-written bytes after it
-                                     *     (measured; one-byte frames are not checked). */
+            RELAY_ALL_ADDRESS : 1,  /*[2]*/
             MASTER_WRITE_MODE : 1,  /*[3]*/
             reserve1 : 28;          /*[31:4]*/
     };
