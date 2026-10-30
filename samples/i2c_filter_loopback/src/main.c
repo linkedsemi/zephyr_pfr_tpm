@@ -128,7 +128,7 @@ uint16_t start_addr = 1;
 memset(rdata_buf, 0, len);
 sys_bitfield_set_bit((mem_addr_t)bitmap, bit);
 linkedsemi_i2c_filter_en(i2cfilter, false, true, false, false); /* close filter */
-linkedsemi_i2c_filter_fill_bitmap(i2cfilter, 0, dev_addr, bitmap); /* set bitmap */
+linkedsemi_i2c_filter_fill_bitmap(i2cfilter, 1, dev_addr, bitmap); /* set bitmap (ch0 reserved) */
 linkedsemi_i2c_filter_en(i2cfilter, true, true, false, false); /* reopen filter */
 // i2c_burst_read(i2cmaster1, 0x50, 0x0, rdata_buf, len);
 wdata_buf[0] = 0xe7;
@@ -146,7 +146,7 @@ uint16_t start_addr = 0;
 memset(rdata_buf, 0, len);
 sys_bitfield_set_bit((mem_addr_t)bitmap, bit);
 linkedsemi_i2c_filter_en(i2cfilter, false, true, false, false); /* close filter */
-linkedsemi_i2c_filter_fill_bitmap(i2cfilter, 0, dev_addr, bitmap); /* set bitmap */
+linkedsemi_i2c_filter_fill_bitmap(i2cfilter, 1, dev_addr, bitmap); /* set bitmap (ch0 reserved) */
 linkedsemi_i2c_filter_en(i2cfilter, true, true, false, false); /* reopen filter */
 // i2c_burst_read(i2cmaster1, 0x50, 0x0, rdata_buf, len);
 wdata_buf[0] = 0xe7;
@@ -161,8 +161,8 @@ while(1);
         printf("\n------------------------------------------------------\n");
         sys_bitfield_set_bit((mem_addr_t)bitmap, bit);
         linkedsemi_i2c_filter_en(i2cfilter, false, is_whitelist_on, false, false); /* disable filter */
-        linkedsemi_i2c_filter_fill_bitmap(i2cfilter, 0, i2ctargeteeprom2_addr, bitmap); /* set bitmap */
-        linkedsemi_i2c_filter_dump_bitmap(i2cfilter, 0, &dump_addr, dump_bitmap);
+        linkedsemi_i2c_filter_fill_bitmap(i2cfilter, 1, i2ctargeteeprom2_addr, bitmap); /* set bitmap (ch0 reserved) */
+        linkedsemi_i2c_filter_dump_bitmap(i2cfilter, 1, &dump_addr, dump_bitmap);
         int ret = memcmp(bitmap, dump_bitmap, LINKEDSEMI_I2C_F_REMAP_SIZE_BYTE);
         __ASSERT_NO_MSG(ret == 0);
         __ASSERT_NO_MSG(i2ctargeteeprom2_addr == dump_addr);

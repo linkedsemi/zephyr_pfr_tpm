@@ -142,6 +142,17 @@ int linkedsemi_i2c_filter_fill_bitmap(const struct device *dev,
     if (idx > (LINKEDSEMI_I2C_F_ADDR_NUM - 1)) {
         DEV_ERR(dev, "i2c filter index invalid");
         return -EINVAL;
+    } else if (idx == 0) {
+        /*
+         * Channel 0 is reserved. The hardware compares the command byte of an
+         * address that matches no whitelist entry against channel 0's bitmap,
+         * and channel 0's entry itself is kept at address 0 (see cold_reset).
+         * Letting an application take channel 0 over would silently change
+         * command filtering for every non-whitelisted address, so reject it.
+         */
+        DEV_ERR(dev, "i2c filter channel 0 is reserved, use channels 1..%d",
+                LINKEDSEMI_I2C_F_ADDR_NUM - 1);
+        return -EINVAL;
     } else if (!bitmap) {
         DEV_ERR(dev, "i2c filter bitmap is NULL");
         return -EINVAL;
@@ -345,6 +356,22 @@ int linkedsemi_i2c_filter_cold_reset(const struct device *dev)
 
     linkedsemi_i2c_filter_en(dev, false, false, false, true);
     linkedsemi_i2c_filter_config_scl_hold_time(dev, dev_config->scl_hold_time);
+
+    /*
+     * Channel 0 is reserved for the hardware's default command comparison:
+     * keep its whitelist address at 0 and its channel enable off so that no
+     * real device address can ever match it. fill_bitmap() rejects channel 0.
+     */
+    whitelist_address_t whitelist;
+    uint32_t address_enable;
+
+    whitelist.value = sys_read32(dev_config->base + WHITELIST_ADDRESS_3_0);
+    whitelist.field[0].WHITELIST_ADDRESS = 0;
+    sys_write32(whitelist.value, dev_config->base + WHITELIST_ADDRESS_3_0);
+
+    address_enable = sys_read32(dev_config->base + SMBF_ADDRESS_ENABLE);
+    address_enable &= ~BIT(0);
+    sys_write32(address_enable, dev_config->base + SMBF_ADDRESS_ENABLE);
 
     return 0;
 }
