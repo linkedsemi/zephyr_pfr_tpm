@@ -119,14 +119,10 @@
     };
 };
 
-&share_memory {
-   reg = <(0x100c0000 - DT_SIZE_K(4) - DT_SIZE_K(4) - DT_SIZE_K(52)) DT_SIZE_K(1)>;
-};
-
 &soc {
-    pfr_tpm: memory@100b2800 {
+    pfr_tpm: memory@100b1000 {
         compatible = "zephyr,memory-region", "mmio-sram";
-        reg = <(0x100c0000 - DT_SIZE_K(4) - DT_SIZE_K(50)) DT_SIZE_K(52)>;
+        reg = <(0x100be000 - DT_SIZE_K(52)) DT_SIZE_K(52)>;
         zephyr,memory-region = "PFR_TPM";
     };
 };
