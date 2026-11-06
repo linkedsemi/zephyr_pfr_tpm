@@ -42,6 +42,7 @@ BUILD_ASSERT(CONFIG_NOCACHE_MEMORY, "missing memory attribute for dma log");
 
 #define PINCTRL_STATE_PASSTHROUGH PINCTRL_STATE_PRIV_START
 #define PINCTRL_STATE_MASTER      (PINCTRL_STATE_PRIV_START + 1U)
+#define PINCTRL_STATE_NOPASSTHROUGH (PINCTRL_STATE_PRIV_START + 2U)
 
 void spim_dump_allow_command_table(const struct device *dev)
 {
@@ -1435,7 +1436,8 @@ static bool spif_pinctrl_mode_check(const struct device *dev, uint8_t mode)
 
     __ASSERT_NO_MSG((PINCTRL_STATE_DEFAULT == mode)
                     || (PINCTRL_STATE_PASSTHROUGH == mode)
-                    || (PINCTRL_STATE_MASTER == mode));
+                    || (PINCTRL_STATE_MASTER == mode)
+                    || (PINCTRL_STATE_NOPASSTHROUGH == mode));
 
     ret = pinctrl_lookup_state(dev_config->pcfg, mode, &state);
     if (ret) {
@@ -1463,6 +1465,7 @@ static bool spif_pinctrl_mode_check(const struct device *dev, uint8_t mode)
     return check;
 }
 
+/*spif_pinctrl_state_get() can replace all check function*/
 bool spif_pinctrl_filter_mode_check(const struct device *dev)
 {
     __ASSERT_NO_MSG(dev);
@@ -1479,6 +1482,27 @@ bool spif_pinctrl_master_mode_check(const struct device *dev)
 {
     __ASSERT_NO_MSG(dev);
     return spif_pinctrl_mode_check(dev, PINCTRL_STATE_MASTER);
+}
+
+/*spif_pinctrl_state_get() can replace all check function*/
+spif_pinctrl_state_t spif_pinctrl_state_get(const struct device *dev)
+{
+    __ASSERT_NO_MSG(dev);
+
+    if (spif_pinctrl_mode_check(dev, PINCTRL_STATE_PASSTHROUGH)) {
+        return spif_multi_passthrough;
+    }
+    if (spif_pinctrl_mode_check(dev, PINCTRL_STATE_MASTER)) {
+        return spif_pinctrl_master;
+    }
+    if (spif_pinctrl_mode_check(dev, PINCTRL_STATE_NOPASSTHROUGH)) {
+        return spif_no_passthrough;
+    }
+    if (spif_pinctrl_mode_check(dev, PINCTRL_STATE_DEFAULT)) {
+        return spif_single_passthrough;
+    }
+
+    return spif_pinctrl_unknown;
 }
 
 /*
@@ -1568,6 +1592,51 @@ int spif_passthrough_analog_mux_enable(const struct device *dev, bool enable)
     pinctrl_apply_state(dev_config->pcfg, PINCTRL_STATE_PASSTHROUGH);
 
     return 0;
+}
+
+/*
+ * all change mode configure
+ */
+int spif_switch_to_mode(const struct device *dev, spif_mode_t mode,
+                        spif_pinctrl_state_t state)
+{
+    __ASSERT_NO_MSG(dev);
+
+    const struct linkedsemi_spi_filter_config *dev_config = dev->config;
+    uint8_t pinctrl_state;
+
+    if (mode == spif_master) {
+        /* master ingnore passthrough */
+        return spif_switch_to_master(dev);
+    }
+
+    if ((mode != spif_monitor) && (mode != spif_filter)) {
+        return -EINVAL;
+    }
+
+    /* filter must cs have signal，no support no_passthrough */
+    if ((mode == spif_filter) && (state == spif_no_passthrough)) {
+        return -EINVAL;
+    }
+
+    switch (state) {
+    case spif_single_passthrough:
+        pinctrl_state = PINCTRL_STATE_DEFAULT;
+        break;
+    case spif_multi_passthrough:
+        pinctrl_state = PINCTRL_STATE_PASSTHROUGH;
+        break;
+    case spif_no_passthrough:
+        pinctrl_state = PINCTRL_STATE_NOPASSTHROUGH;
+        break;
+    default:
+        return -EINVAL;
+    }
+
+    spif_enable(dev, true);//open monitor or filter module
+    spif_operation_mode_config(dev, (mode == spif_filter));//choose monitor or filter
+
+    return pinctrl_apply_state(dev_config->pcfg, pinctrl_state);
 }
 
 static void spif_dma_work(struct k_work *work)

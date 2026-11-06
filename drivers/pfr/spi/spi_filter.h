@@ -59,6 +59,22 @@ enum target_addr_mode {
     FLAG_TARGET_ADDR_M19BIT,
 };
 
+/* SPI filter mode */
+typedef enum {
+    spif_master = 0,   /* EN=0, SPI controller owns the bus */
+    spif_monitor,      /* EN=1, OPERATION_MODE=0: monitor only */
+    spif_filter,       /* EN=1, OPERATION_MODE=1: filter/block */
+} spif_mode_t;
+
+
+typedef enum {
+    spif_single_passthrough = 0, /* out only cs has signal (default pin state) */
+    spif_multi_passthrough,      /* out cs/io/clk all have signal (passthrough pin state) */
+    spif_no_passthrough,         /* out no signal (nopassthrough pin state, monitor only) */
+    spif_pinctrl_master,         /* currently master pin state (query only) */
+    spif_pinctrl_unknown,        /* no DT state matches (query only) */
+} spif_pinctrl_state_t;
+
 /* allow command table control */
 #define FLAG_CMD_TABLE_VALID         0x00000000
 #define FLAG_CMD_TABLE_VALID_ONCE    0x00000001
@@ -120,7 +136,6 @@ spif_dma_data_t *spif_log_dma_buf(const struct device *dev);
 void spif_memset_addr_whitelist(const struct device *dev, uint8_t num);
 void spif_memset_read_addr_whitelist(const struct device *dev, uint8_t num);
 void spif_memset_write_addr_whitelist(const struct device *dev, uint8_t num);
-int spif_set_pinctrl_state(const struct device *dev, uint8_t pinctrl_state);
 int linkedsemi_spi_filter_cold_reset(const struct device *dev);
 const struct device *spif_spi_dev(const struct device *dev);
 const struct gpio_dt_spec *spif_spi_cs(const struct device *dev);
@@ -128,10 +143,25 @@ int spif_switch_to_filter(const struct device *dev);
 int spif_switch_to_master_handle(const struct device *dev, bool force);
 int spif_switch_to_master(const struct device *dev);
 int spif_switch_to_master_force(const struct device *dev);
+
+/*
+ * Switch operation mode and pin state (registers first, then pins).
+ *   spif_master  -> EN=0, master pins; non-force, returns -EBUSY if paired filter is master
+ *   spif_filter  -> EN=1 + OPERATION_MODE=1; single/multi only, no returns -EINVAL
+ *   spif_monitor -> EN=1 + OPERATION_MODE=0; single/multi/no supported
+ */
+int spif_switch_to_mode(const struct device *dev, spif_mode_t mode,
+                        spif_pinctrl_state_t state);
 int spif_passthrough_analog_mux_enable(const struct device *dev, bool enable);
 bool spif_pinctrl_filter_mode_check(const struct device *dev);
 bool spif_pinctrl_passthrough_mode_check(const struct device *dev);
 bool spif_pinctrl_master_mode_check(const struct device *dev);
+/*
+ * Get the current DT pinctrl state.
+ * Returns spif_single_passthrough / spif_multi_passthrough / spif_no_passthrough /
+ * spif_pinctrl_master / spif_pinctrl_unknown.
+ */
+spif_pinctrl_state_t spif_pinctrl_state_get(const struct device *dev);
 
 int spif_dma_start(const struct device *dev);
 uint32_t spif_get_ctrl_idx(const struct device *dev);

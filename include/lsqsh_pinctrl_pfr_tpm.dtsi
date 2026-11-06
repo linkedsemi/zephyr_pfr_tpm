@@ -288,6 +288,11 @@
         pinmux = <SPIF1_CSN_OUT_FUNC4_PI08_PINMUX>;
         input-enable;
     };
+    /omit-if-no-ref/spif1_csn_out_pi08_pullup: spif1_csn_out_pi08_pullup {
+        pinmux = <PI08>;
+        input-enable;
+        bias-pull-up;
+    };
     /omit-if-no-ref/spif1_clk_out_pg00: spif1_clk_out_pg00 {
         pinmux = <SPIF1_CLK_OUT_FUNC4_PG00_PIN>;
         input-enable;
@@ -362,6 +367,11 @@
     /omit-if-no-ref/spif2_csn_out_pg02: spif2_csn_out_pg02 {
         pinmux = <SPIF2_CSN_OUT_FUNC3_PG02_PINMUX>;
         input-enable;
+    };
+    /omit-if-no-ref/spif2_csn_out_pg02_pullup: spif2_csn_out_pg02_pullup {
+        pinmux = <PG02>;
+        input-enable;
+        bias-pull-up;
     };
     /omit-if-no-ref/spif2_clk_out_pg09: spif2_clk_out_pg09 {
         pinmux = <SPIF2_CLK_OUT_FUNC4_PG09_PIN>;
@@ -439,6 +449,11 @@
         pinmux = <SPIF3_CSN_OUT_FUNC4_PI00_PINMUX>;
         input-enable;
     };
+    /omit-if-no-ref/spif3_csn_out_pi00_pullup: spif3_csn_out_pi00_pullup {
+        pinmux = <PI00>;
+        input-enable;
+        bias-pull-up;
+    };
     /omit-if-no-ref/spif3_clk_out_pf09: spif3_clk_out_pf09 {
         pinmux = <SPIF3_CLK_OUT_FUNC4_PF09_PIN>;
         input-enable;
@@ -514,6 +529,11 @@
     /omit-if-no-ref/spif4_csn_out_pq00: spif4_csn_out_pq00 {
         pinmux = <SPIF4_CSN_OUT_FUNC3_PQ00_PINMUX>;
         input-enable;
+    };
+    /omit-if-no-ref/spif4_csn_out_pq00_pullup: spif4_csn_out_pq00_pullup {
+        pinmux = <PQ00>;
+        input-enable;
+        bias-pull-up;
     };
     /omit-if-no-ref/spif4_clk_out_ph13: spif4_clk_out_ph13 {
         pinmux = <SPIF4_CLK_OUT_FUNC4_PH13_PIN>;
@@ -1001,7 +1021,22 @@
         &spi1_mst_io2_ph01
         &spi1_mst_io3_ph03
     >;
-    pinctrl-names = "default", "passthrough", "master";
+    pinctrl-3 = <
+        &spif1_csn_in_pi10
+        &spif1_clk_in_pg04
+        &spif1_io0_in_pf14
+        &spif1_io1_in_pg06
+        &spif1_io2_in_ph00
+        &spif1_io3_in_ph02
+
+        &spif1_csn_out_pi08_pullup
+        &spif1_clk_out_pg00
+        &spif1_io0_out_pf15
+        &spif1_io1_out_pf13
+        &spif1_io2_out_ph01
+        &spif1_io3_out_ph03
+    >;
+    pinctrl-names = "default", "passthrough", "master", "nopassthrough";
 };
 
 &spif2 {
@@ -1052,7 +1087,22 @@
         &spi2_mst_io2_pg15
         &spi2_mst_io3_pg13
     >;
-    pinctrl-names = "default", "passthrough", "master";
+    pinctrl-3 = <
+        &spif2_csn_in_pg03
+        &spif2_clk_in_pg08
+        &spif2_io0_in_ph04
+        &spif2_io1_in_ph06
+        &spif2_io2_in_pg14
+        &spif2_io3_in_pg12
+
+        &spif2_csn_out_pg02_pullup
+        &spif2_clk_out_pg09
+        &spif2_io0_out_ph05
+        &spif2_io1_out_ph07
+        &spif2_io2_out_pg15
+        &spif2_io3_out_pg13
+    >;
+    pinctrl-names = "default", "passthrough", "master", "nopassthrough";
 };
 
 &spif3 {
@@ -1103,7 +1153,22 @@
         &spi3_mst_io2_pf11
         &spi3_mst_io3_pf07
     >;
-    pinctrl-names = "default", "passthrough", "master";
+    pinctrl-3 = <
+        &spif3_csn_in_pi02
+        &spif3_clk_in_pf08
+        &spif3_io0_in_pf04
+        &spif3_io1_in_pf02
+        &spif3_io2_in_pf10
+        &spif3_io3_in_pf06
+
+        &spif3_csn_out_pi00_pullup
+        &spif3_clk_out_pf09
+        &spif3_io0_out_pf05
+        &spif3_io1_out_pf03
+        &spif3_io2_out_pf11
+        &spif3_io3_out_pf07
+    >;
+    pinctrl-names = "default", "passthrough", "master", "nopassthrough";
 };
 
 &spif4 {
@@ -1154,7 +1219,22 @@
         &spi4_mst_io2_pg01
         &spi4_mst_io3_pg05
     >;
-    pinctrl-names = "default", "passthrough", "master";
+    pinctrl-3 = < 
+        &spif4_csn_in_pq05
+        &spif4_clk_in_ph12
+        &spif4_io0_in_ph10
+        &spif4_io1_in_ph08
+        &spif4_io2_in_pf12
+        &spif4_io3_in_pg07
+
+        &spif4_csn_out_pq00_pullup
+        &spif4_clk_out_ph13
+        &spif4_io0_out_ph11
+        &spif4_io1_out_ph09
+        &spif4_io2_out_pg01
+        &spif4_io3_out_pg05
+    >;
+    pinctrl-names = "default", "passthrough", "master", "nopassthrough";
 };
 
 &tpm_spis1 {
